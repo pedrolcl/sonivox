@@ -62,6 +62,8 @@ Example 3: pipe the rendered audio thru the 'lame' utility creating a MP3 file:
 
     $ sonivoxrender ants.mid | lame -r -s 22050 - ants.mp3
 
+You may replace "ants.mid" by another MIDI or XMF file, like "test/res/testmxmf.mxmf"
+
 ## Unit tests
 
 The Android unit tests have been integrated in the CMake build system, with little modifications. A requirement is GoogleTest, either installed system wide or it will be downloaded from the git repository. 

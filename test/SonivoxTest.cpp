@@ -307,6 +307,7 @@ TEST_P(SonivoxTest, SeekTest) {
 }
 
 TEST_P(SonivoxTest, DecodePauseResumeTest) {
+
     EAS_I32 seekPosition = mAudioplayTimeMs / 2;
     // go to middle of the audio
     EAS_RESULT result = EAS_Locate(mEASDataHandle, mEASStreamHandle, seekPosition, false);
@@ -358,8 +359,8 @@ INSTANTIATE_TEST_SUITE_P(SonivoxTestAll, SonivoxTest,
                                            make_tuple("midi8sec.mid", 8002, 2, 22050),
                                            make_tuple("midi_cs.mid", 2000, 2, 22050),
                                            make_tuple("midi_gs.mid", 2000, 2, 22050),
-                                           make_tuple("ants.mid", 17233, 2, 22050)));
-                                           //make_tuple("testmxmf.mxmf", 29095, 2, 22050)));
+                                           make_tuple("ants.mid", 17233, 2, 22050),
+                                           make_tuple("testmxmf.mxmf", 29095, 2, 22050)));
 
 int main(int argc, char **argv) {
     gEnv = new SonivoxTestEnvironment();
