@@ -8,11 +8,12 @@
 audio
 .SH SYNOPSIS
 .PP
-\f[B]sonivoxrender\f[R] [\f[B]-h\f[R]] [\f[B]-v\f[R]] [\f[B]-d\f[R]
-\f[I]file.dls\f[R]] [\f[B]-r\f[R] \f[I]0..4\f[R]] [\f[B]-w\f[R]
-\f[I]0..32767\f[R]] [\f[B]-n\f[R] \f[I]0..32767\f[R]] [\f[B]-c\f[R]
-\f[I]0..4\f[R]] [\f[B]-l\f[R] \f[I]0..32767\f[R]] [\f[B]-g\f[R]
-\f[I]0..100\f[R]] \f[I]midi_file\f[R]
+\f[B]sonivoxrender\f[R] [\f[B]-h|--help\f[R]] [\f[B]-v|--version\f[R]]
+[\f[B]-d|--dls\f[R] \f[I]file.dls\f[R]] [\f[B]-r|--reverb\f[R]
+\f[I]0..4\f[R]] [\f[B]-w|--wet\f[R] \f[I]0..32767\f[R]]
+[\f[B]-n|--dry\f[R] \f[I]0..32767\f[R]] [\f[B]-c|--chorus\f[R]
+\f[I]0..4\f[R]] [\f[B]-l|--level\f[R] \f[I]0..32767\f[R]]
+[\f[B]-g|--gain\f[R] \f[I]0..100\f[R]] \f[I]midi_file\f[R]
 .SH DESCRIPTION
 .PP
 This program is a MIDI file renderer based on the sonivox synthesizer
@@ -21,33 +22,33 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio
 stream to the standard output as raw 16 bit stereo PCM samples.
 .SS Options
 .TP
--h
+-h, --help
 Prints brief usage information.
 .TP
--v
+-v, --version
 Prints the version numbers.
 .TP
--d \f[I]file.dls\f[R]
+-d, --dls \f[I]file.dls\f[R]
 Optional DLS soundfont file name.
 If not provided, it uses an internal embedded soundfont.
 .TP
--r \f[I]reverb_preset\f[R]
+-r, --reverb \f[I]reverb_preset\f[R]
 Reverb preset between 0 and 4: 0=no, 1=large hall, 2=hall, 3=chamber,
 4=room.
 .TP
--w \f[I]reverb_wet\f[R]
+-w, --wet \f[I]reverb_wet\f[R]
 Reverb wet level between 0 and 32767.
 .TP
--n \f[I]reverb_dry\f[R]
+-n, --dry \f[I]reverb_dry\f[R]
 Reverb dry level between 0 and 32767.
 .TP
--c \f[I]chorus_preset\f[R]
+-c, --chorus \f[I]chorus_preset\f[R]
 Chorus preset between 0 and 4: 0=no, 1..4=presets.
 .TP
--l \f[I]chorus_level\f[R]
+-l, --level \f[I]chorus_level\f[R]
 Chorus level between 0 and 32767.
 .TP
--g \f[I]master_gain\f[R]
+-g, --gain \f[I]master_gain\f[R]
 Master gain between 0 and 100, default is 90 (10 dB below maximum).
 .SS Arguments
 .TP

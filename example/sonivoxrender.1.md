@@ -7,7 +7,7 @@
 
 # SYNOPSIS
 
-| **sonivoxrender** [**-h**] [**-v**] [**-d** _file.dls_] [**-r** _0..4_] [**-w** _0..32767_] [**-n** _0..32767_] [**-c** _0..4_] [**-l** _0..32767_] [**-g** _0..100_]  _midi_file_
+| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _file.dls_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..100_]  _midi_file_
 
 # DESCRIPTION
 
@@ -16,39 +16,39 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 
 ## Options
 
--h
+-h, -\-help
 
 :   Prints brief usage information.
 
--v
+-v, -\-version
 
 :   Prints the version numbers.
 
--d  _file.dls_
+-d, -\-dls  _file.dls_
 
 :   Optional DLS soundfont file name. If not provided, it uses an internal embedded soundfont.
 
--r  _reverb_preset_
+-r, -\-reverb  _reverb_preset_
 
 :   Reverb preset between 0 and 4: 0=no, 1=large hall, 2=hall, 3=chamber, 4=room.
 
--w  _reverb_wet_
+-w, -\-wet  _reverb_wet_
 
 :   Reverb wet level between 0 and 32767.
 
--n  _reverb_dry_
+-n, -\-dry  _reverb_dry_
 
 :   Reverb dry level between 0 and 32767.
 
--c  _chorus_preset_
+-c, -\-chorus  _chorus_preset_
 
 :   Chorus preset between 0 and 4: 0=no, 1..4=presets.
 
--l _chorus_level_
+-l, -\-level _chorus_level_
 
 :   Chorus level between 0 and 32767.
 
--g _master_gain_
+-g, -\-gain _master_gain_
 
 :   Master gain between 0 and 100, default is 90 (10 dB below maximum).
 

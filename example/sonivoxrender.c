@@ -15,12 +15,13 @@
  */
 
 #include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <string.h>
-#include <errno.h>
+#include <unistd.h>
 
 #include <eas.h>
 #include <eas_reverb.h>
@@ -323,27 +324,45 @@ int main (int argc, char **argv)
     initLibraryVersion();
 
     opterr = 0;
+    int option_index = 0;
 
-    while ((c = getopt(argc, argv, "hvd:r:w:n:c:l:g:")) != -1) {
-        switch (c)
-        {
+    static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+                                           {"version", no_argument, 0, 'v'},
+                                           {"dls", required_argument, 0, 'd'},
+                                           {"reverb", required_argument, 0, 'r'},
+                                           {"wet", required_argument, 0, 'w'},
+                                           {"dry", required_argument, 0, 'n'},
+                                           {"chorus", required_argument, 0, 'c'},
+                                           {"level", required_argument, 0, 'l'},
+                                           {"gain", required_argument, 0, 'g'},
+                                           {0, 0, 0, 0}};
+
+    while (1) {
+        c = getopt_long(argc, argv, "hvd:r:w:n:c:l:g:", long_options, &option_index);
+
+        if (c == -1) {
+            break;
+        }
+
+        switch (c) {
         case 'h':
-            fprintf(
-                stderr,
-                "Usage: %s [-h] [-v] [-d file.dls] [-r 0..4] [-w 0..32767] [-n 0..32767] [-c 0..4] "
-                "[-l 0..32767] [-g 0..100] file.mid ...\n"
-                "Render standard MIDI files into raw PCM audio.\n"
-                "Options:\n"
-                "\t-h\t\tthis help message.\n"
-                "\t-v\t\tsonivox version.\n"
-                "\t-d file.dls\tDLS soundfont.\n"
-                "\t-r n\t\treverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, 4=room.\n"
-                "\t-w n\t\treverb wet: 0..32767.\n"
-                "\t-n n\t\treverb dry: 0..32767.\n"
-                "\t-c n\t\tchorus preset: 0=no, 1..4=presets.\n"
-                "\t-l n\t\tchorus level: 0..32767.\n"
-                "\t-g n\t\tmaster gain: 0..100.\n",
-                argv[0]);
+            fprintf(stderr,
+                    "Usage: %s [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] "
+                    "[-w|--wet 0..32767] [-n|--dry 0..32767] "
+                    "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..100] file.mid ...\n"
+                    "Render standard MIDI files into raw PCM audio.\n"
+                    "Options:\n"
+                    "\t-h, --help\t\tthis help message.\n"
+                    "\t-v, --version\t\tsonivox version.\n"
+                    "\t-d, --dls file.dls\tDLS soundfont.\n"
+                    "\t-r, --reverb n\treverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, "
+                    "4=room.\n"
+                    "\t-w, --wet n\t\treverb wet: 0..32767.\n"
+                    "\t-n, --dry n\t\treverb dry: 0..32767.\n"
+                    "\t-c, --chorus n\tchorus preset: 0=no, 1..4=presets.\n"
+                    "\t-l, --level n\t\tchorus level: 0..32767.\n"
+                    "\t-g, --gain n\t\tmaster gain: 0..100.\n",
+                    argv[0]);
             return EXIT_FAILURE;
         case 'v':
             fprintf(stderr, "version: %s\n", sLibrary_version);
@@ -393,8 +412,10 @@ int main (int argc, char **argv)
                 return EXIT_FAILURE;
             }
             break;
+        case '?':
+            fprintf(stderr, "unknown option %c\n", optopt);
+            return EXIT_FAILURE;
         default:
-            fprintf (stderr, "unknown option: %c\n", optopt);
             return EXIT_FAILURE;
         }
     }
