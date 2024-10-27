@@ -55,15 +55,15 @@ $ ./sonivoxrender -h
 Usage: ./sonivoxrender [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] [-w|--wet 0..32767] [-n|--dry 0..32767] [-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..100] file.mid ...
 Render standard MIDI files into raw PCM audio.
 Options:
-        -h, --help              this help message.
-        -v, --version           sonivox version.
-        -d, --dls file.dls      DLS soundfont.
-        -r, --reverb n  reverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, 4=room.
-        -w, --wet n             reverb wet: 0..32767.
-        -n, --dry n             reverb dry: 0..32767.
-        -c, --chorus n  chorus preset: 0=no, 1..4=presets.
-        -l, --level n           chorus level: 0..32767.
-        -g, --gain n            master gain: 0..100.
+    -h, --help          this help message.
+    -v, --version       sonivox version.
+    -d, --dls file.dls  DLS soundfont.
+    -r, --reverb n      reverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, 4=room.
+    -w, --wet n         reverb wet: 0..32767.
+    -n, --dry n         reverb dry: 0..32767.
+    -c, --chorus n      chorus preset: 0=no, 1..4=presets.
+    -l, --level n       chorus level: 0..32767.
+    -g, --gain n        master gain: 0..100.
 ~~~
 
 The following examples assume the default option USE_44KHZ=ON:

@@ -355,11 +355,11 @@ int main (int argc, char **argv)
                     "\t-h, --help\t\tthis help message.\n"
                     "\t-v, --version\t\tsonivox version.\n"
                     "\t-d, --dls file.dls\tDLS soundfont.\n"
-                    "\t-r, --reverb n\treverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, "
+                    "\t-r, --reverb n\t\treverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, "
                     "4=room.\n"
                     "\t-w, --wet n\t\treverb wet: 0..32767.\n"
                     "\t-n, --dry n\t\treverb dry: 0..32767.\n"
-                    "\t-c, --chorus n\tchorus preset: 0=no, 1..4=presets.\n"
+                    "\t-c, --chorus n\t\tchorus preset: 0=no, 1..4=presets.\n"
                     "\t-l, --level n\t\tchorus level: 0..32767.\n"
                     "\t-g, --gain n\t\tmaster gain: 0..100.\n",
                     argv[0]);
