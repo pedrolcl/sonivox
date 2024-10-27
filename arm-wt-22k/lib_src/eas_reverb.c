@@ -76,10 +76,8 @@ static EAS_RESULT ReverbInit(EAS_DATA_HANDLE pEASData, EAS_VOID_PTR *pInstData)
 {
     EAS_I32 i;
     EAS_U16 nOffset;
-    EAS_INT temp;
 
     S_REVERB_OBJECT *pReverbData;
-    S_REVERB_PRESET *pPreset;
 
     /* check Configuration Module for data allocation */
     if (pEASData->staticMemoryModel)

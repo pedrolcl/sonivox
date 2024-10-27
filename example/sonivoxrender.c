@@ -34,8 +34,11 @@ EAS_I32 reverb_dry = 0;
 EAS_I32 chorus_type = 0;
 EAS_I32 chorus_level = 32767;
 EAS_DATA_HANDLE mEASDataHandle = NULL;
+const S_EAS_LIB_CONFIG *mEASConfig = NULL;
+char sLibrary_version[16];
 
-int Read(void *handle, void *buf, int offset, int size) {
+int Read(void *handle, void *buf, int offset, int size)
+{
     int ret;
 
     ret = fseek((FILE *) handle, offset, SEEK_SET);
@@ -51,6 +54,22 @@ int Size(void *handle) {
     if (ret < 0) return ret;
 
     return ftell((FILE *) handle);
+}
+
+void initLibraryVersion()
+{
+    memset(sLibrary_version, 0, sizeof(sLibrary_version));
+    mEASConfig = EAS_Config();
+    if (mEASConfig == NULL) {
+        fprintf(stderr, "Failed to get the library configuration\n");
+    } else {
+        u_int8_t v1, v2, v3, v4;
+        v1 = (mEASConfig->libVersion >> 24) & 0xff;
+        v2 = (mEASConfig->libVersion >> 16) & 0xff;
+        v3 = (mEASConfig->libVersion >> 8) & 0xff;
+        v4 = mEASConfig->libVersion & 0xff;
+        snprintf(sLibrary_version, sizeof(sLibrary_version), "%d.%d.%d.%d", v1, v2, v3, v4);
+    }
 }
 
 void shutdownLibrary(void)
@@ -108,7 +127,7 @@ int initializeLibrary(void)
 
     result = EAS_SetVolume(mEASDataHandle, NULL, playback_gain);
     if (result != EAS_SUCCESS) {
-        fprintf(stderr, "Failed to set volume\n");
+        fprintf(stderr, "Failed to set master gain\n");
         ok = EXIT_FAILURE;
         goto cleanup;
     }
@@ -187,7 +206,6 @@ int renderFile(const char *fileName)
     EAS_FILE mEasFile;
     EAS_PCM *mAudioBuffer = NULL;
     EAS_I32 mPCMBufferSize = 0;
-    const S_EAS_LIB_CONFIG *mEASConfig;
 
     int ok = EXIT_SUCCESS;
 
@@ -302,66 +320,75 @@ int main (int argc, char **argv)
     int ok = EXIT_SUCCESS;
     int index, c;
 
+    initLibraryVersion();
+
     opterr = 0;
 
-    while ((c = getopt (argc, argv, "hd:r:w:n:c:l:v:")) != -1) {
+    while ((c = getopt(argc, argv, "hvd:r:w:n:c:l:g:")) != -1) {
         switch (c)
         {
         case 'h':
-            fprintf (stderr, "Usage: %s [-h] [-d file.dls] [-r 0..4] [-w 0..32767] [-n 0..32767] [-c 0..4] [-l 0..32767] [-v 0..100] file.mid ...\n"\
-                        "Render standard MIDI files into raw PCM audio.\n"\
-                        "Options:\n"\
-                        "\t-h\t\tthis help message.\n"\
-                        "\t-d file.dls\tDLS soundfont.\n"\
-                        "\t-r n\t\treverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, 4=room.\n"\
-                        "\t-w n\t\treverb wet: 0..32767.\n"
-                        "\t-n n\t\treverb dry: 0..32767.\n"
-                        "\t-c n\t\tchorus preset: 0=no, 1..4=presets.\n"
-                        "\t-l n\t\tchorus level: 0..32767.\n"
-                        "\t-v n\t\tmaster volume: 0..100.\n"
-                        , argv[0]);
+            fprintf(
+                stderr,
+                "Usage: %s [-h] [-v] [-d file.dls] [-r 0..4] [-w 0..32767] [-n 0..32767] [-c 0..4] "
+                "[-l 0..32767] [-g 0..100] file.mid ...\n"
+                "Render standard MIDI files into raw PCM audio.\n"
+                "Options:\n"
+                "\t-h\t\tthis help message.\n"
+                "\t-v\t\tsonivox version.\n"
+                "\t-d file.dls\tDLS soundfont.\n"
+                "\t-r n\t\treverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, 4=room.\n"
+                "\t-w n\t\treverb wet: 0..32767.\n"
+                "\t-n n\t\treverb dry: 0..32767.\n"
+                "\t-c n\t\tchorus preset: 0=no, 1..4=presets.\n"
+                "\t-l n\t\tchorus level: 0..32767.\n"
+                "\t-g n\t\tmaster gain: 0..100.\n",
+                argv[0]);
+            return EXIT_FAILURE;
+        case 'v':
+            fprintf(stderr, "version: %s\n", sLibrary_version);
             return EXIT_FAILURE;
         case 'd':
             dls_path = optarg;
             break;
         case 'r':
             reverb_type = atoi(optarg);
-            if (reverb_type < 0 || reverb_type > 4) {
+            if ((reverb_type < 0) || (reverb_type > 4)) {
                 fprintf (stderr, "invalid reverb preset: %ld\n", reverb_type);
                 return EXIT_FAILURE;
             }
             break;
         case 'w':
             reverb_wet = atoi(optarg);
-            if (reverb_wet < 0 || reverb_wet > 32767) {
+            if ((reverb_wet < 0) || (reverb_wet > 32767)) {
                 fprintf (stderr, "invalid reverb wet: %ld\n", reverb_wet);
                 return EXIT_FAILURE;
             }
             break;
         case 'n':
             reverb_dry = atoi(optarg);
-            if (reverb_dry < 0 || reverb_dry > 32767) {
+            if ((reverb_dry < 0) || (reverb_dry > 32767)) {
                 fprintf (stderr, "invalid reverb dry: %ld\n", reverb_dry);
                 return EXIT_FAILURE;
             }
             break;
         case 'c':
             chorus_type = atoi(optarg);
-            if (chorus_type < 0 || chorus_type > 4) {
+            if ((chorus_type < 0) || (chorus_type > 4)) {
                 fprintf (stderr, "invalid chorus preset: %ld\n", chorus_type);
                 return EXIT_FAILURE;
             }
             break;
         case 'l':
             chorus_level = atoi(optarg);
-            if (chorus_level < 0 || chorus_level > 32767) {
+            if ((chorus_level < 0) || (chorus_level > 32767)) {
                 fprintf (stderr, "invalid chorus level: %ld\n", chorus_level);
                 return EXIT_FAILURE;
             }
             break;
-        case 'v':
+        case 'g':
             playback_gain = atoi(optarg);
-            if (playback_gain < 0 || playback_gain > 100) {
+            if ((playback_gain < 0) || (playback_gain > 100)) {
                 fprintf (stderr, "invalid playback gain: %ld\n", playback_gain);
                 return EXIT_FAILURE;
             }

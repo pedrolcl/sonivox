@@ -7,7 +7,7 @@
 
 # SYNOPSIS
 
-| **sonivoxrender** [**-h**] [**-d** _file.dls_] [**-r** _0..4_] [**-w** _0..32767_] [**-n** _0..32767_] [**-c** _0..4_] [**-l** _0..32767_] [**-v** _0..100_]  _midi_file_
+| **sonivoxrender** [**-h**] [**-v**] [**-d** _file.dls_] [**-r** _0..4_] [**-w** _0..32767_] [**-n** _0..32767_] [**-c** _0..4_] [**-l** _0..32767_] [**-g** _0..100_]  _midi_file_
 
 # DESCRIPTION
 
@@ -19,6 +19,10 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 -h
 
 :   Prints brief usage information.
+
+-v
+
+:   Prints the version numbers.
 
 -d  _file.dls_
 
@@ -44,9 +48,9 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 
 :   Chorus level between 0 and 32767.
 
--v _master_volume_
+-g _master_gain_
 
-:   Master volume between 0 and 100, default to 90.
+:   Master gain between 0 and 100, default is 90 (10 dB below maximum).
 
 ## Arguments
 

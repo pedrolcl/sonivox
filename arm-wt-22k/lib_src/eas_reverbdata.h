@@ -357,8 +357,6 @@ typedef struct
 
     S_REVERB_PRESET_BANK    m_sPreset;
 
-    //EAS_I8            preset;
-
 } S_REVERB_OBJECT;
 
 
