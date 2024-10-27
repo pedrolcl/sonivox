@@ -63,12 +63,12 @@ void initLibraryVersion()
     if (mEASConfig == NULL) {
         fprintf(stderr, "Failed to get the library configuration\n");
     } else {
-        u_int8_t v1, v2, v3, v4;
+        unsigned char v1, v2, v3, v4;
         v1 = (mEASConfig->libVersion >> 24) & 0xff;
         v2 = (mEASConfig->libVersion >> 16) & 0xff;
         v3 = (mEASConfig->libVersion >> 8) & 0xff;
         v4 = mEASConfig->libVersion & 0xff;
-        snprintf(sLibrary_version, sizeof(sLibrary_version), "%d.%d.%d.%d", v1, v2, v3, v4);
+        snprintf(sLibrary_version, sizeof(sLibrary_version), "%u.%u.%u.%u", v1, v2, v3, v4);
     }
 }
 
