@@ -2,20 +2,23 @@
 // This implements EAS Host Wrapper, using C runtime library, with better performance
 
 #include "eas_host.h"
-#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <linux/limits.h>
 #include <pthread.h>
-#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined (__linux__)
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#elif defined (_WIN32)
+#include <io.h>
+#include <windows.h>
+#endif
 
 /* Only for debugging LED, vibrate, and backlight functions */
 #include "eas_report.h"
@@ -242,6 +245,43 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
 
     *pDupFile = new_file;
     return EAS_SUCCESS;
+#elif defined (_WIN32)
+    char pathName[MAX_PATH];
+    int fd = _fileno(file->handle);
+    if (fd == -1) {
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+    HANDLE hnd = (HANDLE)_get_osfhandle(fd);
+    if (hnd == INVALID_HANDLE_VALUE) {
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+    
+    if (GetFinalPathNameByHandle(hnd, pathName, MAX_PATH, 0) == 0) {
+        return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
+    }
+
+    EAS_HW_FILE* new_file = malloc(sizeof(EAS_HW_FILE));
+    new_file->handle = fopen(pathName, "rb"); // always dup as rb, should be okay   
+    new_file->own = EAS_TRUE;
+    if (new_file->handle == NULL) {
+        free(new_file);
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+    
+    long pos = ftell(file->handle);
+    if (pos == -1) {
+        fclose(new_file->handle);
+        free(new_file);
+        return EAS_ERROR_FILE_POS;
+    }
+    if (fseek(new_file->handle, pos, SEEK_SET) != 0) {
+        fclose(new_file->handle);
+        free(new_file);
+        return EAS_ERROR_FILE_SEEK;
+    }
+
+    *pDupFile = new_file;
+    return EAS_SUCCESS; 
 #endif
 }
 
