@@ -53,8 +53,13 @@ static const union {
 // --- end
 
 typedef struct eas_hw_file_tag {
-    FILE* handle;
+    void* handle;
     EAS_BOOL own;
+
+    // legacy interface for compatibility
+    int pos;
+    int (*readAt)(void *handle, void *buf, int offset, int size);
+    int (*size)(void *handle);
 } EAS_HW_FILE;
 
 EAS_RESULT EAS_HWInit(EAS_HW_DATA_HANDLE* pHWInstData)
@@ -100,6 +105,8 @@ EAS_RESULT EAS_HWOpenFile(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_LOCATOR locato
     *pFile = malloc(sizeof(EAS_HW_FILE));
     (*pFile)->handle = locator->handle;
     (*pFile)->own = EAS_FALSE;
+    (*pFile)->readAt = locator->readAt;
+    (*pFile)->size = locator->size;
     return EAS_SUCCESS;
 }
 
@@ -108,6 +115,18 @@ EAS_RESULT EAS_HWReadFile(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, v
     /* make sure we have a valid handle */
     if (file->handle == NULL) {
         return EAS_ERROR_INVALID_HANDLE;
+    }
+
+    if (file->readAt != NULL) {
+        int count = file->readAt(file->handle, pBuffer, file->pos, n);
+        file->pos += count;
+        if (pBytesRead != NULL) {
+            *pBytesRead = count;
+        }
+        if (count < n) {
+            return EAS_EOF;
+        }
+        return EAS_SUCCESS;
     }
 
     size_t count = fread(pBuffer, 1, n, file->handle);
@@ -172,6 +191,13 @@ EAS_RESULT EAS_HWFilePos(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, EA
         return EAS_ERROR_INVALID_HANDLE;
     }
 
+    if (file->readAt != NULL) {
+        if (pPosition != NULL) {
+            *pPosition = file->pos;
+        }
+        return EAS_SUCCESS;
+    }
+
     long pos = ftell(file->handle);
     if (pPosition != NULL) {
         *pPosition = pos;
@@ -184,6 +210,11 @@ EAS_RESULT EAS_HWFileSeek(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, E
     /* make sure we have a valid handle */
     if (file->handle == NULL) {
         return EAS_ERROR_INVALID_HANDLE;
+    }
+
+    if (file->readAt != NULL) {
+        file->pos = position;
+        return EAS_SUCCESS;
     }
 
     /* validate new position */
@@ -201,6 +232,11 @@ EAS_RESULT EAS_HWFileSeekOfs(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file
         return EAS_ERROR_INVALID_HANDLE;
     }
 
+    if (file->readAt != NULL) {
+        file->pos = position;
+        return EAS_SUCCESS;
+    }
+
     if (fseek(file->handle, position, SEEK_CUR) != 0) {
         return EAS_ERROR_FILE_SEEK;
     }
@@ -211,6 +247,17 @@ EAS_RESULT EAS_HWFileSeekOfs(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file
 EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, EAS_FILE_HANDLE* pDupFile)
 {
     *pDupFile = NULL;
+
+    if (file->readAt != NULL) {
+        *pDupFile = malloc(sizeof(EAS_HW_FILE));
+        (*pDupFile)->handle = file->handle;
+        (*pDupFile)->own = EAS_FALSE;
+        (*pDupFile)->readAt = file->readAt;
+        (*pDupFile)->size = file->size;
+        (*pDupFile)->pos = file->pos;
+        return EAS_SUCCESS;
+    }
+
 #if defined(__linux__) // todo: implement for other platforms
     char filePath[PATH_MAX];
     char linkPath[PATH_MAX];
@@ -290,6 +337,10 @@ EAS_RESULT EAS_HWCloseFile(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file)
     /* make sure we have a valid handle */
     if (file->handle == NULL) {
         return EAS_ERROR_INVALID_HANDLE;
+    }
+
+    if (file->readAt != NULL) {
+        return EAS_SUCCESS;
     }
 
     if (file->own) {

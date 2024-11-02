@@ -106,6 +106,7 @@ int initializeLibrary(void)
 
     if (dls_path != NULL) {
         EAS_FILE mDLSFile;
+        memset(&mDLSFile, 0, sizeof(EAS_FILE));
 
         mDLSFile.handle = fopen(dls_path, "rb");
         if (mDLSFile.handle == NULL) {
@@ -114,8 +115,8 @@ int initializeLibrary(void)
             goto cleanup;
         }
 
-        mDLSFile.readAt = Read;
-        mDLSFile.size = Size;
+        // mDLSFile.readAt = Read;
+        // mDLSFile.size = Size;
 
         result = EAS_LoadDLSCollection(mEASDataHandle, NULL, &mDLSFile);
         fclose(mDLSFile.handle);
@@ -210,6 +211,8 @@ int renderFile(const char *fileName)
 
     int ok = EXIT_SUCCESS;
 
+    memset(&mEasFile, 0, sizeof(EAS_FILE));
+
     mEasFile.handle = fopen(fileName, "rb");
     if (mEasFile.handle == NULL) {
         fprintf(stderr, "Failed to open %s. error: %s\n", fileName, strerror(errno));
@@ -217,8 +220,8 @@ int renderFile(const char *fileName)
         return ok;
     }
 
-    mEasFile.readAt = Read;
-    mEasFile.size = Size;
+    // mEasFile.readAt = Read;
+    // mEasFile.size = Size;
 
     EAS_RESULT result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
     if (result != EAS_SUCCESS) {
