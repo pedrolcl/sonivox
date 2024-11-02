@@ -271,6 +271,7 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
     filePath[len] = '\0';
 
     EAS_HW_FILE* new_file = malloc(sizeof(EAS_HW_FILE));
+    memset(new_file, 0, sizeof(EAS_HW_FILE));
     new_file->handle = fopen(filePath, "rb"); // always dup as rb, should be okay
     new_file->own = EAS_TRUE;
     if (new_file->handle == NULL) {
@@ -308,6 +309,7 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
     }
 
     EAS_HW_FILE* new_file = malloc(sizeof(EAS_HW_FILE));
+    memset(new_file, 0, sizeof(EAS_HW_FILE));
     new_file->handle = fopen(pathName, "rb"); // always dup as rb, should be okay   
     new_file->own = EAS_TRUE;
     if (new_file->handle == NULL) {
