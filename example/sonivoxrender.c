@@ -38,6 +38,7 @@ EAS_DATA_HANDLE mEASDataHandle = NULL;
 const S_EAS_LIB_CONFIG *mEASConfig = NULL;
 char sLibrary_version[16];
 
+#ifndef NEW_HOST_WRAPPER
 int Read(void *handle, void *buf, int offset, int size)
 {
     int ret;
@@ -56,6 +57,7 @@ int Size(void *handle) {
 
     return ftell((FILE *) handle);
 }
+#endif
 
 void initLibraryVersion()
 {
@@ -106,6 +108,7 @@ int initializeLibrary(void)
 
     if (dls_path != NULL) {
         EAS_FILE mDLSFile;
+        memset(&mDLSFile, 0, sizeof(EAS_FILE));
 
         mDLSFile.handle = fopen(dls_path, "rb");
         if (mDLSFile.handle == NULL) {
@@ -114,8 +117,10 @@ int initializeLibrary(void)
             goto cleanup;
         }
 
+#ifndef NEW_HOST_WRAPPER
         mDLSFile.readAt = Read;
         mDLSFile.size = Size;
+#endif
 
         result = EAS_LoadDLSCollection(mEASDataHandle, NULL, &mDLSFile);
         fclose(mDLSFile.handle);
@@ -210,6 +215,8 @@ int renderFile(const char *fileName)
 
     int ok = EXIT_SUCCESS;
 
+    memset(&mEasFile, 0, sizeof(EAS_FILE));
+
     mEasFile.handle = fopen(fileName, "rb");
     if (mEasFile.handle == NULL) {
         fprintf(stderr, "Failed to open %s. error: %s\n", fileName, strerror(errno));
@@ -217,8 +224,10 @@ int renderFile(const char *fileName)
         return ok;
     }
 
+#ifndef NEW_HOST_WRAPPER
     mEasFile.readAt = Read;
     mEasFile.size = Size;
+#endif
 
     EAS_RESULT result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
     if (result != EAS_SUCCESS) {
