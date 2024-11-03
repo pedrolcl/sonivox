@@ -28,6 +28,7 @@ The build system has the following options:
 * `BUILD_TESTING`: ON by default, to control if the unit tests are built, which require Google Test.
 * `BUILD_EXAMPLE`: ON by default, to build and install the example program.
 * `CMAKE_POSITION_INDEPENDENT_CODE`: Whether to create position-independent targets. ON By default.
+* `NEW_HOST_WRAPPER`: Uses the new CRT-based host wrapper for faster DLS loading. ON by default.
 * `MAX_VOICES`: Maximum number of voices. 64 by default.
 
 See also the [CMake documentation](https://cmake.org/cmake/help/latest/index.html) for common build options.

@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined (__linux__)
+#if defined(__unix__)
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -124,10 +124,10 @@ EAS_RESULT EAS_HWReadFile(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, v
         *pBytesRead = count;
     }
 
-    if (feof(file->handle)) {
+    if (feof((FILE *) file->handle)) {
         return EAS_EOF;
     }
-    if (ferror(file->handle)) {
+    if (ferror((FILE *) file->handle)) {
         return EAS_ERROR_FILE_READ_FAILED;
     }
     return EAS_SUCCESS;
