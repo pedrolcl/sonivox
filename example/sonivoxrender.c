@@ -115,8 +115,10 @@ int initializeLibrary(void)
             goto cleanup;
         }
 
-        // mDLSFile.readAt = Read;
-        // mDLSFile.size = Size;
+#ifndef NEW_HOST_WRAPPER
+        mDLSFile.readAt = Read;
+        mDLSFile.size = Size;
+#endif
 
         result = EAS_LoadDLSCollection(mEASDataHandle, NULL, &mDLSFile);
         fclose(mDLSFile.handle);
@@ -220,8 +222,10 @@ int renderFile(const char *fileName)
         return ok;
     }
 
-    // mEasFile.readAt = Read;
-    // mEasFile.size = Size;
+#ifndef NEW_HOST_WRAPPER
+    mEasFile.readAt = Read;
+    mEasFile.size = Size;
+#endif
 
     EAS_RESULT result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
     if (result != EAS_SUCCESS) {

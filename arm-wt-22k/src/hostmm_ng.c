@@ -35,22 +35,12 @@
 #define bswap32 __builtin_bswap32
 #endif
 
-// https://stackoverflow.com/a/2103095
-// CC BY-SA 3.0
-enum {
-    O32_LITTLE_ENDIAN = 0x03020100ul,
-    O32_BIG_ENDIAN = 0x00010203ul,
-    O32_PDP_ENDIAN = 0x01000302ul, /* DEC PDP-11 (aka ENDIAN_LITTLE_WORD) */
-    O32_HONEYWELL_ENDIAN = 0x02030001ul /* Honeywell 316 (aka ENDIAN_BIG_WORD) */
-};
-
-static const union {
-    uint8_t bytes[4];
-    uint32_t value;
-} o32_host_order = { { 0, 1, 2, 3 } };
-
-#define O32_HOST_ORDER (o32_host_order.value)
-// --- end
+const EAS_BOOL O32_BIG_ENDIAN = 
+#ifdef EAS_BIG_ENDIAN
+    EAS_TRUE;
+#else
+    EAS_FALSE;
+#endif
 
 typedef struct eas_hw_file_tag {
     void* handle;
@@ -157,7 +147,7 @@ EAS_RESULT EAS_HWGetWord(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, vo
         return result;
     }
 
-    if (msbFirst ^ (O32_HOST_ORDER == O32_BIG_ENDIAN)) {
+    if (msbFirst ^ O32_BIG_ENDIAN) {
         *((EAS_U16*)p) = bswap16(word);
     } else {
         *((EAS_U16*)p) = word;
@@ -175,7 +165,7 @@ EAS_RESULT EAS_HWGetDWord(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, v
         return result;
     }
 
-    if (msbFirst ^ (O32_HOST_ORDER == O32_BIG_ENDIAN)) {
+    if (msbFirst ^ O32_BIG_ENDIAN) {
         *((EAS_U32*)p) = bswap32(dword);
     } else {
         *((EAS_U32*)p) = dword;

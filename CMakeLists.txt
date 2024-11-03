@@ -32,7 +32,7 @@ option(BUILD_SONIVOX_SHARED "Build the shared library" TRUE)
 option(BUILD_EXAMPLE "Build and install the example program" TRUE)
 option(BUILD_TESTING "Build the unit tests" TRUE)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Whether to create position-independent targets" TRUE)
-option(USE_NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
+option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
 set(MAX_VOICES 64 CACHE STRING "Maximum number of voices")
 
 include(CMakeDependentOption)
@@ -112,7 +112,7 @@ list(APPEND SOURCES
   arm-wt-22k/lib_src/wt_200k_G.c
 )
 
-if (USE_NEW_HOST_WRAPPER)
+if (NEW_HOST_WRAPPER)
     list(APPEND SOURCES arm-wt-22k/src/hostmm_ng.c)
 else()
     list(APPEND SOURCES arm-wt-22k/host_src/eas_hostmm.c)
@@ -145,6 +145,13 @@ target_compile_definitions( sonivox-objects PRIVATE
   #_XMF_PARSER
   #JET_INTERFACE
 )
+
+include(TestBigEndian)
+test_big_endian(BIG_ENDIAN)
+
+if (BIG_ENDIAN) 
+    target_compile_definitions( sonivox-objects PRIVATE EAS_BIG_ENDIAN )
+endif()
 
 if (USE_16BITS_SAMPLES)
     target_compile_definitions( sonivox-objects PRIVATE
