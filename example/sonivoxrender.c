@@ -38,6 +38,7 @@ EAS_DATA_HANDLE mEASDataHandle = NULL;
 const S_EAS_LIB_CONFIG *mEASConfig = NULL;
 char sLibrary_version[16];
 
+#ifndef NEW_HOST_WRAPPER
 int Read(void *handle, void *buf, int offset, int size)
 {
     int ret;
@@ -56,6 +57,7 @@ int Size(void *handle) {
 
     return ftell((FILE *) handle);
 }
+#endif
 
 void initLibraryVersion()
 {
