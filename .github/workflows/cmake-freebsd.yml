@@ -1,16 +1,16 @@
 name: FreeBSD CI
 
 on: 
+  workflow_dispatch:
   push:
     branches: [ "master", "devel" ]
   pull_request:
     branches: [ "master", "devel" ]
-  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: FreeBSD build and test
+    name: FreeBSD CI
     env:
       BUILD_TYPE: RelWithDebInfo
       INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
