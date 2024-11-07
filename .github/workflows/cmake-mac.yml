@@ -14,6 +14,7 @@ env:
 jobs:
   build:
     runs-on: macos-latest
+    name: macOS CI
 
     steps:
     - uses: actions/checkout@v4
