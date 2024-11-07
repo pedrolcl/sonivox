@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__unix__) || defined(__unix)
+#if defined(__linux__)
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -18,6 +18,8 @@
 #elif defined (_WIN32)
 #include <io.h>
 #include <windows.h>
+#elif defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#include <unistd.h>
 #endif
 
 /* Only for debugging LED, vibrate, and backlight functions */
