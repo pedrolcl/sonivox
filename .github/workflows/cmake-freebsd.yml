@@ -1,0 +1,44 @@
+name: FreeBSD CI
+
+on: 
+  push:
+    branches: [ "master", "devel" ]
+  pull_request:
+    branches: [ "master", "devel" ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: FreeBSD build and test
+    env:
+      BUILD_TYPE: RelWithDebInfo
+      INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
+    steps:
+    - uses: actions/checkout@v4
+    - name: FreeBSD test
+      id: test
+      uses: vmactions/freebsd-vm@v1
+      with:
+        envs: 'BUILD_TYPE INSTALL_LOCATION'
+        usesh: true
+        prepare: |
+          pkg install -y \
+              cmake \
+              ninja \
+              pkgconf
+        run: |
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
+          cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          cd ${{github.workspace}}/build
+          ctest -C ${{env.BUILD_TYPE}}
+          cd ${{github.workspace}}
+          cmake --install ${{github.workspace}}/build
+          tar cvf SonivoxV3.tar SonivoxV3
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: SonivoxV3-freebsd
+        path: SonivoxV3.tar
+        retention-days: 90
+        overwrite: true       
