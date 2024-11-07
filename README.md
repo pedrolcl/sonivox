@@ -1,10 +1,12 @@
 # Fork of the AOSP 'platform_external_sonivox' project to use it outside of Android 
 
-[![Linux Build and Test](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-linux.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-linux.yml)
+[![Linux CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-linux.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-linux.yml)
 
-[![Windows Build and Test](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-win.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-win.yml)
+[![Windows CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-win.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-win.yml)
 
-[![MacOS Build and Test](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-mac.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-mac.yml)
+[![macOS CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-mac.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-mac.yml)
+
+[![FreeBSD CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-freebsd.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-freebsd.yml)
 
 This project is a fork of the Android Open Source Project 'platform_external_sonivox', including a CMake based build system to be used not on Android, but on any other computer Operating System.
 Google licensed this work originally named Sonivox EAS (Embedded Audio Synthesis) from the company Sonic Network Inc. under the terms of the Apache License 2.0.
