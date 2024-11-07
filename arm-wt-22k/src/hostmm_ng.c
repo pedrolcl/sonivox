@@ -322,13 +322,13 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
     *pDupFile = new_file;
     return EAS_SUCCESS;
 #else // __unix__ or __unix
-    int fd = fileno(file->handle);
+    int fd = fileno((FILE *) file->handle);
     int dupfd = dup(fd);
     int fdmode = fcntl(fd, F_GETFL) & O_ACCMODE;
     char *mode = NULL;
-    if (fdmode & O_RDONLY != 0) {
+    if ((fdmode & O_RDONLY) != 0) {
         mode = "r";
-    } else if (fdmode & O_WRONLY != 0) {
+    } else if ((fdmode & O_WRONLY) != 0) {
         mode = "w";
     } else {
         mode = "w+";
