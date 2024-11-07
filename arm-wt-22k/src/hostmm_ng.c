@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__unix__)
+#if defined(__unix__) || defined(__unix)
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -248,7 +248,7 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
         return EAS_SUCCESS;
     }
 
-#if defined(__linux__) // todo: implement for other platforms
+#if defined(__linux__)
     char filePath[PATH_MAX];
     char linkPath[PATH_MAX];
 
@@ -320,7 +320,25 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
     }
 
     *pDupFile = new_file;
-    return EAS_SUCCESS; 
+    return EAS_SUCCESS;
+#else // __unix__ or __unix
+    int fd = fileno(file->handle);
+    int dupfd = dup(fd);
+    int fdmode = fcntl(fd, F_GETFL) & O_ACCMODE;
+    char *mode = NULL;
+    if (fdmode & O_RDONLY != 0) {
+        mode = "r";
+    } else if (fdmode & O_WRONLY != 0) {
+        mode = "w";
+    } else {
+        mode = "w+";
+    }
+    EAS_HW_FILE *new_file = malloc(sizeof(EAS_HW_FILE));
+    memset(new_file, 0, sizeof(EAS_HW_FILE));
+    new_file->handle = fdopen(dupfd, mode);
+    new_file->own = EAS_TRUE;
+    *pDupFile = new_file;
+    return EAS_SUCCESS;
 #endif
 }
 
