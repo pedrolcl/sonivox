@@ -38,8 +38,10 @@ static constexpr uint32_t sampleRate = 22050;
 #endif
 
 static SonivoxTestEnvironment *gEnv = nullptr;
+#ifndef NEW_HOST_WRAPPER
 static int readAt(void *, void *, int, int);
 static int getSize(void *);
+#endif
 
 class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
                                                           /*audioPlayTimeMs*/ uint32_t,
@@ -91,10 +93,14 @@ class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
 
           mBase = 0;
           mLength = buf.st_size;
+          memset(&mEasFile, 0, sizeof(mEasFile));
+#ifdef NEW_HOST_WRAPPER
+          mEasFile.handle = fdopen(mFd, "rb");
+#else
           mEasFile.handle = this;
           mEasFile.readAt = ::readAt;
           mEasFile.size = ::getSize;
-
+#endif
           EAS_RESULT result = EAS_Init(&mEASDataHandle);
           ASSERT_EQ(result, EAS_SUCCESS) << "Failed to initialize synthesizer library";
 
@@ -158,8 +164,10 @@ class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
 
     bool seekToLocation(EAS_I32);
     bool renderAudio();
+#ifndef NEW_HOST_WRAPPER
     int readAt(void *buf, int offset, int size);
     int getSize();
+#endif
 
     string mInputMediaFile;
     uint32_t mAudioplayTimeMs;
@@ -179,6 +187,7 @@ class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
     const S_EAS_LIB_CONFIG *mEASConfig;
 };
 
+#ifndef NEW_HOST_WRAPPER
 static int readAt(void *handle, void *buffer, int offset, int size) {
     return ((SonivoxTest *)handle)->readAt(buffer, offset, size);
 }
@@ -200,6 +209,7 @@ int SonivoxTest::readAt(void *buffer, int offset, int size) {
 int SonivoxTest::getSize() {
     return mLength;
 }
+#endif
 
 bool SonivoxTest::seekToLocation(EAS_I32 locationExpectedMs) {
     EAS_RESULT result = EAS_Locate(mEASDataHandle, mEASStreamHandle, locationExpectedMs, false);
