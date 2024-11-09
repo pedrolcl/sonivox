@@ -246,7 +246,42 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
         return EAS_SUCCESS;
     }
 
-#if defined(_WIN32)
+#if defined(__linux__)
+    char filePath[PATH_MAX];
+    char linkPath[PATH_MAX];
+
+    snprintf(linkPath, PATH_MAX, "/proc/self/fd/%d", fileno(file->handle));
+
+    ssize_t len = readlink(linkPath, filePath, PATH_MAX);
+    if (len == -1) {
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+    filePath[len] = '\0';
+
+    EAS_HW_FILE *new_file = malloc(sizeof(EAS_HW_FILE));
+    memset(new_file, 0, sizeof(EAS_HW_FILE));
+    new_file->handle = fopen(filePath, "rb"); // always dup as rb, should be okay
+    new_file->own = EAS_TRUE;
+    if (new_file->handle == NULL) {
+        free(new_file);
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+
+    long pos = ftell(file->handle);
+    if (pos == -1) {
+        fclose(new_file->handle);
+        free(new_file);
+        return EAS_ERROR_FILE_POS;
+    }
+    if (fseek(new_file->handle, pos, SEEK_SET) != 0) {
+        fclose(new_file->handle);
+        free(new_file);
+        return EAS_ERROR_FILE_SEEK;
+    }
+
+    *pDupFile = new_file;
+    return EAS_SUCCESS;
+#elif defined(_WIN32)
     char pathName[MAX_PATH];
     int fd = _fileno(file->handle);
     if (fd == -1) {
@@ -284,9 +319,15 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
 
     *pDupFile = new_file;
     return EAS_SUCCESS;
-#else // Unix, Linux or macOS
+#else // Unix or macOS
     int fd = fileno((FILE *) file->handle);
+    if (fd == -1) {
+        return EAS_ERROR_INVALID_HANDLE;
+    }
     int dupfd = dup(fd);
+    if (dupfd == -1) {
+        return EAS_ERROR_INVALID_HANDLE;
+    }
     EAS_HW_FILE *new_file = malloc(sizeof(EAS_HW_FILE));
     memset(new_file, 0, sizeof(EAS_HW_FILE));
     new_file->handle = fdopen(dupfd, "rb");
