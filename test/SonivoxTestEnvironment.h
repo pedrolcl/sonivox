@@ -27,12 +27,16 @@ class SonivoxTestEnvironment : public::testing::Environment {
   public:
 	SonivoxTestEnvironment() : deleteOutput(true) { 
 		if (getenv("TEMP") != nullptr) {
-			snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%s/output_midi.pcm", getenv("TEMP"));
-		}
-		if (getenv("TEST_RESOURCES") != nullptr) {
-			res = getenv("TEST_RESOURCES");
-		}
-	}
+            tmp = getenv("TEMP");
+            if (tmp.at(tmp.length() - 1) != '/') {
+                tmp.push_back('/');
+            }
+            snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%s/output_midi.pcm", getenv("TEMP"));
+        }
+        if (getenv("TEST_RESOURCES") != nullptr) {
+            res = getenv("TEST_RESOURCES");
+        }
+    }
 
     // Parses the command line arguments
     int initFromOptions(int argc, char **argv);
@@ -41,12 +45,15 @@ class SonivoxTestEnvironment : public::testing::Environment {
 
     const string getRes() const { return res; }
 
+    const string getTmp() const { return tmp; }
+
     bool cleanUp() const { return deleteOutput; }
 
 	char OUTPUT_FILE[256]{"/tmp/output_midi.pcm"};
 
   private:
     string res;
+    string tmp;
     bool deleteOutput;
 };
 

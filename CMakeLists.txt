@@ -44,14 +44,16 @@ include(GNUInstallDirs)
 
 if (BUILD_TESTING)
     find_package(GTest CONFIG)
-    if (NOT GTest_FOUND)
+    if (GTest_FOUND)
+        message( STATUS "Found GTest v${GTest_VERSION}")
+    else()
         message( STATUS "GTest not found. Fetching the git repository..." )
         set( INSTALL_GTEST OFF CACHE BOOL "Enable installation of gooogletest" FORCE )
         set( BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject" FORCE )
         include( FetchContent )
         FetchContent_Declare( googletest
-          GIT_REPOSITORY https://github.com/google/googletest.git
-          GIT_TAG release-1.12.1
+          GIT_REPOSITORY "https://github.com/google/googletest.git"
+          GIT_TAG "v1.15.2"
         )
         # For Windows: Prevent overriding the parent project's compiler/linker settings
         set( gtest_force_shared_crt ON CACHE BOOL "" FORCE )
@@ -61,7 +63,7 @@ endif()
 
 if (UNIX AND NOT APPLE)
     find_library(MATH_LIBRARY m)
-    message(STATUS "Math library: ${MATH_LIBRARY}")
+    message(STATUS "Found Math library: ${MATH_LIBRARY}")
 else()
     set(MATH_LIBRARY "")
 endif()
@@ -149,28 +151,20 @@ target_compile_definitions( sonivox-objects PRIVATE
 include(TestBigEndian)
 test_big_endian(BIG_ENDIAN)
 
-if (BIG_ENDIAN) 
+if (BIG_ENDIAN)
     target_compile_definitions( sonivox-objects PRIVATE EAS_BIG_ENDIAN )
 endif()
 
 if (USE_16BITS_SAMPLES)
-    target_compile_definitions( sonivox-objects PRIVATE
-        _16_BIT_SAMPLES
-    )
+    target_compile_definitions( sonivox-objects PRIVATE _16_BIT_SAMPLES )
 else()
-    target_compile_definitions( sonivox-objects PRIVATE
-        _8_BIT_SAMPLES
-    )
+    target_compile_definitions( sonivox-objects PRIVATE _8_BIT_SAMPLES )
 endif()
 
 if(USE_44KHZ)
-    target_compile_definitions( sonivox-objects PRIVATE
-        _SAMPLE_RATE_44100
-    )
+    target_compile_definitions( sonivox-objects PRIVATE _SAMPLE_RATE_44100 )
 else()
-    target_compile_definitions( sonivox-objects PRIVATE
-        _SAMPLE_RATE_22050
-    )
+    target_compile_definitions( sonivox-objects PRIVATE _SAMPLE_RATE_22050 )
 endif()
 
 target_include_directories( sonivox-objects PRIVATE
@@ -283,17 +277,13 @@ if (BUILD_TESTING)
     enable_testing()
 
     add_executable( SonivoxTest
-      test/SonivoxTest.cpp
+        test/SonivoxTest.cpp
     )
 
     if(USE_44KHZ)
-        target_compile_definitions( SonivoxTest PRIVATE
-            _SAMPLE_RATE_44100
-        )
+        target_compile_definitions( SonivoxTest PRIVATE _SAMPLE_RATE_44100 )
     else()
-        target_compile_definitions( SonivoxTest PRIVATE
-            _SAMPLE_RATE_22050
-        )
+        target_compile_definitions( SonivoxTest PRIVATE _SAMPLE_RATE_22050 )
     endif()
 
     target_include_directories( SonivoxTest PRIVATE
@@ -303,7 +293,7 @@ if (BUILD_TESTING)
     )
 
     target_link_libraries( SonivoxTest PRIVATE
-      GTest::gtest_main
+        GTest::gtest_main
     )
 
     if (BUILD_SONIVOX_STATIC)
@@ -315,6 +305,16 @@ if (BUILD_TESTING)
             sonivox
         )
     endif()
+
+    set(SOUNDFONT "$ENV{TEMP}/soundfont.dls")
+    if (NOT EXISTS ${SOUNDFONT})
+        file(DOWNLOAD "http://www.ronimusic.com/sf2/Airfont_340.dls" ${SOUNDFONT})
+    endif()
+
+    file(SIZE ${SOUNDFONT} SOUNDFONTSIZE)
+    file(MD5 ${SOUNDFONT} SOUNDFONTHASH)
+    message(STATUS "DLS file ${SOUNDFONT} size: ${SOUNDFONTSIZE}")
+    message(STATUS "DLS file ${SOUNDFONT} MD5 hash: ${SOUNDFONTHASH}")
 
     include( GoogleTest )
     gtest_discover_tests( SonivoxTest EXTRA_ARGS "-P${CMAKE_CURRENT_SOURCE_DIR}/test/res/" DISCOVERY_TIMEOUT 300 )

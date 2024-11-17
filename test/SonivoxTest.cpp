@@ -37,6 +37,8 @@ static constexpr uint32_t sampleRate = 44100;
 static constexpr uint32_t sampleRate = 22050;
 #endif
 
+static constexpr uint32_t numChannels = 2;
+
 static SonivoxTestEnvironment *gEnv = nullptr;
 #ifndef NEW_HOST_WRAPPER
 static int readAt(void *, void *, int, int);
@@ -45,108 +47,127 @@ static int getSize(void *);
 
 class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
                                                           /*audioPlayTimeMs*/ uint32_t,
-                                                          /*totalChannels*/ uint32_t,
-                                                          /*sampleRateHz*/ uint32_t>> {
-  public:
-      SonivoxTest()
-          : mFd(-1)
-          , mInputFp(nullptr)
-          , mEASDataHandle(nullptr)
-          , mEASStreamHandle(nullptr)
-          , mPCMBuffer(nullptr)
-          , mAudioBuffer(nullptr)
-          , mEASConfig(nullptr)
-      {}
+                                                          /*soundFont*/ string>>
+{
+public:
+    SonivoxTest()
+        : mFd(-1)
+        , mInputFp(nullptr)
+        , mEASDataHandle(nullptr)
+        , mEASStreamHandle(nullptr)
+        , mPCMBuffer(nullptr)
+        , mAudioBuffer(nullptr)
+        , mEASConfig(nullptr)
+    {}
 
-      ~SonivoxTest()
-      {
-          if (mInputFp)
-              fclose(mInputFp);
-          if (mFd >= 0)
-              close(mFd);
-          if (mPCMBuffer) {
-              delete[] mPCMBuffer;
-              mPCMBuffer = nullptr;
-          }
-          if (mAudioBuffer) {
-              delete[] mAudioBuffer;
-              mAudioBuffer = nullptr;
-          }
-          if (gEnv->cleanUp())
-              remove(gEnv->OUTPUT_FILE);
-      }
+    ~SonivoxTest()
+    {
+        if (mInputFp)
+            fclose(mInputFp);
+        if (mFd >= 0)
+            close(mFd);
+        if (mPCMBuffer) {
+            delete[] mPCMBuffer;
+            mPCMBuffer = nullptr;
+        }
+        if (mAudioBuffer) {
+            delete[] mAudioBuffer;
+            mAudioBuffer = nullptr;
+        }
+        if (gEnv->cleanUp())
+            remove(gEnv->OUTPUT_FILE);
+    }
 
-      virtual void SetUp() override
-      {
-          tuple<string, uint32_t, uint32_t, uint32_t> params = GetParam();
-          mInputMediaFile = gEnv->getRes() + get<0>(params);
-          mAudioplayTimeMs = get<1>(params);
-          mTotalAudioChannels = get<2>(params);
-          mAudioSampleRate = get<3>(params);
+    virtual void SetUp() override
+    {
+        EAS_RESULT result;
+        tuple<string, uint32_t, string> params = GetParam();
+        mInputMediaFile = gEnv->getRes() + get<0>(params);
+        mAudioplayTimeMs = get<1>(params);
+        mSoundFont = get<2>(params);
+        mTotalAudioChannels = numChannels;
+        mAudioSampleRate = sampleRate;
 
-          mFd = open(mInputMediaFile.c_str(), O_RDONLY | OPEN_FLAG);
-          ASSERT_GE(mFd, 0) << "Failed to get the file descriptor for file: " << mInputMediaFile;
+        result = EAS_Init(&mEASDataHandle);
+        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to initialize synthesizer library";
 
-          struct stat buf;
-          int8_t err = stat(mInputMediaFile.c_str(), &buf);
-          ASSERT_EQ(err, 0) << "Failed to get information for file: " << mInputMediaFile;
+        ASSERT_NE(mEASDataHandle, nullptr) << "Failed to initialize EAS data handle";
 
-          mBase = 0;
-          mLength = buf.st_size;
-          memset(&mEasFile, 0, sizeof(mEasFile));
-#ifdef NEW_HOST_WRAPPER
-          mEasFile.handle = fdopen(mFd, "rb");
-#else
-          mEasFile.handle = this;
-          mEasFile.readAt = ::readAt;
-          mEasFile.size = ::getSize;
+        if (mSoundFont.length() > 0) {
+            string soundfontpath = gEnv->getTmp() + mSoundFont;
+            memset(&mDLSFile, 0, sizeof(EAS_FILE));
+
+            mDLSFile.handle = fopen(soundfontpath.c_str(), "rb");
+            ASSERT_NE(mDLSFile.handle, nullptr)
+                << "Failed to open " << soundfontpath << " error: " << strerror(errno);
+#ifndef NEW_HOST_WRAPPER
+            mDLSFile.readAt = Read;
+            mDLSFile.size = Size;
 #endif
-          EAS_RESULT result = EAS_Init(&mEASDataHandle);
-          ASSERT_EQ(result, EAS_SUCCESS) << "Failed to initialize synthesizer library";
+            result = EAS_LoadDLSCollection(mEASDataHandle, nullptr, &mDLSFile);
+            ASSERT_EQ(result, EAS_SUCCESS) << "Failed to load DLS file: " << soundfontpath;
+            fclose((FILE *) mDLSFile.handle);
+        }
 
-          ASSERT_NE(mEASDataHandle, nullptr) << "Failed to initialize EAS data handle";
+        mFd = open(mInputMediaFile.c_str(), O_RDONLY | OPEN_FLAG);
+        ASSERT_GE(mFd, 0) << "Failed to get the file descriptor for file: " << mInputMediaFile;
 
-          result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
-          ASSERT_EQ(result, EAS_SUCCESS) << "Failed to open file";
+        struct stat buf;
+        int8_t err = stat(mInputMediaFile.c_str(), &buf);
+        ASSERT_EQ(err, 0) << "Failed to get information for file: " << mInputMediaFile;
 
-          ASSERT_NE(mEASStreamHandle, nullptr) << "Failed to initialize EAS stream handle";
+        mBase = 0;
+        mLength = buf.st_size;
+        memset(&mEasFile, 0, sizeof(mEasFile));
 
-          result = EAS_Prepare(mEASDataHandle, mEASStreamHandle);
-          ASSERT_EQ(result, EAS_SUCCESS) << "Failed to prepare EAS data and stream handles";
+#ifdef NEW_HOST_WRAPPER
+        mEasFile.handle = fdopen(mFd, "rb");
+#else
+        mEasFile.handle = this;
+        mEasFile.readAt = ::readAt;
+        mEasFile.size = ::getSize;
+#endif
 
-          EAS_I32 playTimeMs;
-          result = EAS_ParseMetaData(mEASDataHandle, mEASStreamHandle, &playTimeMs);
-          ASSERT_EQ(result, EAS_SUCCESS) << "Failed to parse meta data";
+        result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
+        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to open file";
 
-          ASSERT_EQ(playTimeMs, mAudioplayTimeMs)
-              << "Invalid audio play time found for file: " << mInputMediaFile;
+        ASSERT_NE(mEASStreamHandle, nullptr) << "Failed to initialize EAS stream handle";
 
-          EAS_I32 locationMs = -1;
-          /* EAS_ParseMetaData resets the parser to the starting of file */
-          result = EAS_GetLocation(mEASDataHandle, mEASStreamHandle, &locationMs);
-          ASSERT_EQ(result, EAS_SUCCESS) << "Failed to get the location after parsing meta data";
+        result = EAS_Prepare(mEASDataHandle, mEASStreamHandle);
+        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to prepare EAS data and stream handles";
 
-          ASSERT_EQ(locationMs, 0) << "Expected position: 0, found: " << locationMs;
+        EAS_I32 playTimeMs;
+        result = EAS_ParseMetaData(mEASDataHandle, mEASStreamHandle, &playTimeMs);
+        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to parse meta data";
 
-          mEASConfig = EAS_Config();
-          ASSERT_NE(mEASConfig, nullptr) << "Failed to configure the library";
+        ASSERT_EQ(playTimeMs, mAudioplayTimeMs)
+            << "Invalid audio play time found for file: " << mInputMediaFile;
 
-          ASSERT_GT(mEASConfig->mixBufferSize, 0) << "Mix buffer size must be greater than 0";
+        EAS_I32 locationMs = -1;
+        /* EAS_ParseMetaData resets the parser to the starting of file */
+        result = EAS_GetLocation(mEASDataHandle, mEASStreamHandle, &locationMs);
+        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to get the location after parsing meta data";
 
-          ASSERT_GT(mEASConfig->numChannels, 0) << "Number of channels must be greater than 0";
+        ASSERT_EQ(locationMs, 0) << "Expected position: 0, found: " << locationMs;
 
-          mPCMBufferSize = sizeof(EAS_PCM) * mEASConfig->mixBufferSize * mEASConfig->numChannels
-                           * kNumBuffersToCombine;
+        mEASConfig = EAS_Config();
+        ASSERT_NE(mEASConfig, nullptr) << "Failed to configure the library";
 
-          mPCMBuffer = new (std::nothrow) EAS_PCM[mPCMBufferSize];
-          ASSERT_NE(mPCMBuffer, nullptr)
-              << "Failed to allocate a memory of size: " << mPCMBufferSize;
+        ASSERT_GT(mEASConfig->mixBufferSize, 0) << "Mix buffer size must be greater than 0";
 
-          mAudioBuffer = new (std::nothrow)
-              EAS_PCM[mEASConfig->mixBufferSize * mEASConfig->numChannels];
-          ASSERT_NE(mAudioBuffer, nullptr) << "Failed to allocate a memory of size: "
-                                           << mEASConfig->mixBufferSize * mEASConfig->numChannels;
-      }
+        ASSERT_GT(mEASConfig->numChannels, 0) << "Number of channels must be greater than 0";
+
+        mPCMBufferSize = sizeof(EAS_PCM) * mEASConfig->mixBufferSize * mEASConfig->numChannels
+                         * kNumBuffersToCombine;
+
+        mPCMBuffer = new (std::nothrow) EAS_PCM[mPCMBufferSize];
+        ASSERT_NE(mPCMBuffer, nullptr) << "Failed to allocate a memory of size: " << mPCMBufferSize;
+
+        mAudioBuffer = new (std::nothrow)
+            EAS_PCM[mEASConfig->mixBufferSize * mEASConfig->numChannels];
+        ASSERT_NE(mAudioBuffer, nullptr) << "Failed to allocate a memory of size: "
+                                         << mEASConfig->mixBufferSize * mEASConfig->numChannels;
+    }
 
       virtual void TearDown() override
       {
@@ -170,6 +191,7 @@ class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
 #endif
 
     string mInputMediaFile;
+    string mSoundFont;
     uint32_t mAudioplayTimeMs;
     uint32_t mTotalAudioChannels;
     uint32_t mAudioSampleRate;
@@ -181,6 +203,7 @@ class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
     EAS_DATA_HANDLE mEASDataHandle;
     EAS_HANDLE mEASStreamHandle;
     EAS_FILE mEasFile;
+    EAS_FILE mDLSFile;
     EAS_PCM *mPCMBuffer;
     EAS_PCM *mAudioBuffer;
     EAS_I32 mPCMBufferSize;
@@ -245,11 +268,11 @@ bool SonivoxTest::renderAudio() {
 TEST_P(SonivoxTest, DecodeTest) {
     EAS_I32 totalChannels = mEASConfig->numChannels;
     ASSERT_EQ(totalChannels, mTotalAudioChannels)
-            << "Expected: " << mTotalAudioChannels << " channels, Found: " << totalChannels;
+        << "Expected: " << mTotalAudioChannels << " channels, Found: " << totalChannels;
 
     EAS_I32 sampleRate = mEASConfig->sampleRate;
     ASSERT_EQ(sampleRate, mAudioSampleRate)
-            << "Expected: " << mAudioSampleRate << " sample rate, Found: " << sampleRate;
+        << "Expected: " << mAudioSampleRate << " sample rate, Found: " << sampleRate;
 
     // TODO(b/158231824): Check and verify the output with other parameters present at eas_reverb.h
     // select reverb preset and enable
@@ -371,12 +394,17 @@ TEST_P(SonivoxTest, DecodePauseResumeTest) {
 
 INSTANTIATE_TEST_SUITE_P(SonivoxTestAll,
                          SonivoxTest,
-                         ::testing::Values(make_tuple("midi_a.mid", 2000, 2, sampleRate),
-                                           make_tuple("midi8sec.mid", 8002, 2, sampleRate),
-                                           make_tuple("midi_cs.mid", 2000, 2, sampleRate),
-                                           make_tuple("midi_gs.mid", 2000, 2, sampleRate),
-                                           make_tuple("ants.mid", 17233, 2, sampleRate)));
-                                        // make_tuple("testmxmf.mxmf", 29095, 2, sampleRate)));
+                         ::testing::Values(make_tuple("midi_a.mid", 2000, ""),
+                                           make_tuple("midi8sec.mid", 8002, ""),
+                                           make_tuple("midi_cs.mid", 2000, ""),
+                                           make_tuple("midi_gs.mid", 2000, ""),
+                                           make_tuple("ants.mid", 17233, ""),
+                                           make_tuple("midi_a.mid", 2000, "soundfont.dls"),
+                                           make_tuple("midi8sec.mid", 8002, "soundfont.dls"),
+                                           make_tuple("midi_cs.mid", 2000, "soundfont.dls"),
+                                           make_tuple("midi_gs.mid", 2000, "soundfont.dls"),
+                                           make_tuple("ants.mid", 17233, "soundfont.dls"),
+                                           make_tuple("ants.mid", 17233, "soundfont.dls")));
 
 int main(int argc, char **argv) {
     gEnv = new SonivoxTestEnvironment();
