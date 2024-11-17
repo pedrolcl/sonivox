@@ -13,7 +13,7 @@
 #if defined(_WIN32)
 #include <io.h>
 #include <windows.h>
-#else // Unix, Linux or macOS
+#else // Linux or macOS
 #include <unistd.h>
 #endif
 
@@ -48,6 +48,28 @@ typedef struct eas_hw_file_tag {
     int (*readAt)(void *handle, void *buf, int offset, int size);
     int (*size)(void *handle);
 } EAS_HW_FILE;
+
+#if !defined(__linux__) && !defined(__APPLE__) && !defined(_WIN32)
+#define INTERNAL_READAT
+int ReadAt(void *handle, void *buf, int offset, int size)
+{
+    int ret;
+
+    ret = fseek((FILE *) handle, offset, SEEK_SET);
+    if (ret < 0) return 0;
+
+    return fread(buf, 1, size, (FILE *) handle);
+}
+
+int Size(void *handle) {
+    int ret;
+
+    ret = fseek((FILE *) handle, 0, SEEK_END);
+    if (ret < 0) return ret;
+
+    return ftell((FILE *) handle);
+}
+#endif
 
 EAS_RESULT EAS_HWInit(EAS_HW_DATA_HANDLE* pHWInstData)
 {
@@ -94,6 +116,14 @@ EAS_RESULT EAS_HWOpenFile(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_LOCATOR locato
     (*pFile)->own = EAS_FALSE;
     (*pFile)->readAt = locator->readAt;
     (*pFile)->size = locator->size;
+
+#if defined(INTERNAL_READAT)
+    if ((*pFile)->readAt == NULL){
+        (*pFile)->readAt = ReadAt;
+        (*pFile)->size = Size;
+    }
+#endif
+
     return EAS_SUCCESS;
 }
 
@@ -246,10 +276,11 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
         return EAS_SUCCESS;
     }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
     char filePath[PATH_MAX];
-    char linkPath[PATH_MAX];
 
+#if defined(__linux__)
+    char linkPath[PATH_MAX];
     snprintf(linkPath, PATH_MAX, "/proc/self/fd/%d", fileno(file->handle));
 
     ssize_t len = readlink(linkPath, filePath, PATH_MAX);
@@ -257,6 +288,11 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
         return EAS_ERROR_INVALID_HANDLE;
     }
     filePath[len] = '\0';
+#else // __APPLE__
+    if (fcntl(fileno(file->handle), F_GETPATH, filePath) == -1) {
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+#endif
 
     EAS_HW_FILE *new_file = malloc(sizeof(EAS_HW_FILE));
     memset(new_file, 0, sizeof(EAS_HW_FILE));
@@ -305,38 +341,6 @@ EAS_RESULT EAS_HWDupHandle(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file, 
         return EAS_ERROR_INVALID_HANDLE;
     }
     
-    long pos = ftell(file->handle);
-    if (pos == -1) {
-        fclose(new_file->handle);
-        free(new_file);
-        return EAS_ERROR_FILE_POS;
-    }
-    if (fseek(new_file->handle, pos, SEEK_SET) != 0) {
-        fclose(new_file->handle);
-        free(new_file);
-        return EAS_ERROR_FILE_SEEK;
-    }
-
-    *pDupFile = new_file;
-    return EAS_SUCCESS;
-#else // Unix or macOS
-    int fd = fileno((FILE *) file->handle);
-    if (fd == -1) {
-        return EAS_ERROR_INVALID_HANDLE;
-    }
-    int dupfd = dup(fd);
-    if (dupfd == -1) {
-        return EAS_ERROR_INVALID_HANDLE;
-    }
-    EAS_HW_FILE *new_file = malloc(sizeof(EAS_HW_FILE));
-    memset(new_file, 0, sizeof(EAS_HW_FILE));
-    new_file->handle = fdopen(dupfd, "rb");
-    new_file->own = EAS_TRUE;
-    if (new_file->handle == NULL) {
-        free(new_file);
-        return EAS_ERROR_INVALID_HANDLE;
-    }
-
     long pos = ftell(file->handle);
     if (pos == -1) {
         fclose(new_file->handle);
