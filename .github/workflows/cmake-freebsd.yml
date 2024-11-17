@@ -14,12 +14,12 @@ jobs:
     env:
       BUILD_TYPE: RelWithDebInfo
       INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
+      TEMP: ${{github.workspace}}/temp/
     steps:
     - uses: actions/checkout@v4
     - name: Temp Environment Variable
       run: |
         mkdir -p ${{github.workspace}}/temp
-        echo "TEMP=${{github.workspace}}/temp" >> "$GITHUB_ENV"
     - name: FreeBSD test
       id: test
       uses: vmactions/freebsd-vm@v1

@@ -10,6 +10,7 @@ on:
 env:
   BUILD_TYPE: RelWithDebInfo
   INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
+  TEMP: ${{github.workspace}}/temp/
 
 jobs:
   build:
@@ -25,7 +26,6 @@ jobs:
     - name: Temp Environment Variable
       run: |
         mkdir -p ${{github.workspace}}/temp
-        echo "TEMP=${{github.workspace}}/temp" >> "$GITHUB_ENV"
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
