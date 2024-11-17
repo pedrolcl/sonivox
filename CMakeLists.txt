@@ -311,6 +311,11 @@ if (BUILD_TESTING)
         file(DOWNLOAD "http://www.ronimusic.com/sf2/Airfont_340.dls" ${SOUNDFONT})
     endif()
 
+    file(SIZE ${SOUNDFONT} SOUNDFONTSIZE)
+    file(MD5 ${SOUNDFONT} SOUNDFONTHASH)
+    message(STATUS "DLS file ${SOUNDFONT} size: ${SOUNDFONTSIZE}")
+    message(STATUS "DLS file ${SOUNDFONT} MD5 hash: ${SOUNDFONTHASH}")
+
     include( GoogleTest )
     gtest_discover_tests( SonivoxTest EXTRA_ARGS "-P${CMAKE_CURRENT_SOURCE_DIR}/test/res/" DISCOVERY_TIMEOUT 300 )
 endif()
