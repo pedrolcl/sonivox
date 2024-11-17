@@ -52,7 +52,7 @@ jobs:
 
     - name: '${{ matrix.icon }} Test'
       working-directory: build
-      run: ctest -C ${{env.BUILD_TYPE}}
+      run: ctest -C ${{env.BUILD_TYPE}} --verbose
 
     - name: '${{ matrix.icon }} Install'
       run: cmake --install build
