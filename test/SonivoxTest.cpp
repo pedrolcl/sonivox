@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-//#define LOG_NDEBUG 0
 #define LOG_TAG "SonivoxTest"
 #include <utils/Log.h>
 
@@ -52,7 +51,6 @@ class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
 public:
     SonivoxTest()
         : mFd(-1)
-        , mInputFp(nullptr)
         , mEASDataHandle(nullptr)
         , mEASStreamHandle(nullptr)
         , mPCMBuffer(nullptr)
@@ -62,8 +60,6 @@ public:
 
     ~SonivoxTest()
     {
-        if (mInputFp)
-            fclose(mInputFp);
         if (mFd >= 0)
             close(mFd);
         if (mPCMBuffer) {
@@ -81,6 +77,7 @@ public:
     virtual void SetUp() override
     {
         EAS_RESULT result;
+        struct stat buf;
         tuple<string, uint32_t, string> params = GetParam();
         mInputMediaFile = gEnv->getRes() + get<0>(params);
         mAudioplayTimeMs = get<1>(params);
@@ -95,24 +92,35 @@ public:
 
         if (mSoundFont.length() > 0) {
             string soundfontpath = gEnv->getTmp() + mSoundFont;
-            memset(&mDLSFile, 0, sizeof(EAS_FILE));
+            mFd = open(soundfontpath.c_str(), O_RDONLY | OPEN_FLAG);
+            ASSERT_GE(mFd, 0) << "Failed to get the file descriptor for file: " << soundfontpath;
 
-            mDLSFile.handle = fopen(soundfontpath.c_str(), "rb");
+            int8_t err = stat(soundfontpath.c_str(), &buf);
+            ASSERT_EQ(err, 0) << "Failed to get information for file: " << soundfontpath;
+
+            mBase = 0;
+            mLength = buf.st_size;
+            memset(&mDLSFile, 0, sizeof(mDLSFile));
+
+#ifdef NEW_HOST_WRAPPER
+            mDLSFile.handle = fdopen(mFd, "rb");
             ASSERT_NE(mDLSFile.handle, nullptr)
                 << "Failed to open " << soundfontpath << " error: " << strerror(errno);
-#ifndef NEW_HOST_WRAPPER
-            mDLSFile.readAt = Read;
-            mDLSFile.size = Size;
+#else
+            mDLSFile.handle = this;
+            mDLSFile.readAt = ::readAt;
+            mDLSFile.size = ::getSize;
 #endif
             result = EAS_LoadDLSCollection(mEASDataHandle, nullptr, &mDLSFile);
             ASSERT_EQ(result, EAS_SUCCESS) << "Failed to load DLS file: " << soundfontpath;
-            fclose((FILE *) mDLSFile.handle);
+#ifdef NEW_HOST_WRAPPER
+            close(mFd);
+#endif
         }
 
         mFd = open(mInputMediaFile.c_str(), O_RDONLY | OPEN_FLAG);
         ASSERT_GE(mFd, 0) << "Failed to get the file descriptor for file: " << mInputMediaFile;
 
-        struct stat buf;
         int8_t err = stat(mInputMediaFile.c_str(), &buf);
         ASSERT_EQ(err, 0) << "Failed to get information for file: " << mInputMediaFile;
 
@@ -199,7 +207,6 @@ public:
     int64_t mLength;
     int mFd;
 
-    FILE *mInputFp;
     EAS_DATA_HANDLE mEASDataHandle;
     EAS_HANDLE mEASStreamHandle;
     EAS_FILE mEasFile;
