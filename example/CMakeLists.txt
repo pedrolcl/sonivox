@@ -1,5 +1,5 @@
 #[=========================================================================[
-  Copyright (c) 2022-2023 Pedro López-Cabanillas
+  Copyright (c) 2022-2024 Pedro López-Cabanillas
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,21 +14,46 @@
   limitations under the License.
 ]=========================================================================]
 
-cmake_minimum_required(VERSION 3.14)
-project( sonivoxrender LANGUAGES C )
-
-# Alternative 1: Using CMake only and sonivox installed:
-find_package ( sonivox CONFIG REQUIRED )
 add_executable ( sonivoxrender sonivoxrender.c )
-target_link_libraries ( sonivoxrender sonivox::sonivox-static )
 
-# Alternative 2: Using pkg-config and sonivox installed:
-#find_package ( PkgConfig REQUIRED )
-#pkg_check_modules ( sonivox REQUIRED IMPORTED_TARGET sonivox-static )
-#add_executable ( sonivoxrender sonivoxrender.c )
-#target_link_libraries( sonivoxrender PkgConfig::sonivox )
+if (BUILD_SONIVOX_STATIC)
+    target_link_libraries ( sonivoxrender sonivox::sonivox-static )
+elseif (BUILD_SONIVOX_SHARED)
+    target_link_libraries ( sonivoxrender sonivox::sonivox )
+endif()
 
-# Alternative 3: sonivox in a subdirectory (for instance: a git submodule )
-#add_subdirectory( sonivox )
-#add_executable ( sonivoxrender sonivoxrender.c )
-#target_link_libraries ( sonivoxrender sonivox::sonivox-static )
+if (BUILD_MANPAGE)
+    if(NOT EXISTS ${PANDOC_EXECUTABLE})
+        find_program(PANDOC_EXECUTABLE pandoc)
+        mark_as_advanced(PANDOC_EXECUTABLE)
+    endif()
+
+    if (EXISTS ${PANDOC_EXECUTABLE})
+        set(_src ${CMAKE_CURRENT_SOURCE_DIR}/sonivoxrender.1.md)
+        if (NOT PROJECT_RELEASE_DATE)
+            unset(_date)
+            execute_process (
+                COMMAND bash -c "LANG=en;date +'%B %d, %Y'"
+                OUTPUT_VARIABLE _date
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        else()
+            set(_date ${PROJECT_RELEASE_DATE})
+        endif()
+        set(_footer "${PROJECT_NAME} ${PROJECT_VERSION}")
+        add_custom_command (
+            OUTPUT sonivoxrender.1
+            COMMAND ${PANDOC_EXECUTABLE} -s -t man -Vdate=${_date} -Vfooter=${_footer} ${_src} -o sonivoxrender.1
+            DEPENDS ${_src}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            VERBATIM
+        )
+        add_custom_target(manpage ALL DEPENDS sonivoxrender.1)
+    endif()
+else()
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sonivoxrender.1 ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+endif()
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivoxrender.1
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+)

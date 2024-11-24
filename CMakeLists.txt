@@ -1,5 +1,5 @@
 #[=========================================================================[
-  Copyright (c) 2022-2023 Pedro López-Cabanillas
+  Copyright (c) 2022-2024 Pedro López-Cabanillas
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,29 +18,42 @@ cmake_minimum_required(VERSION 3.14)
 
 project( sonivox
     LANGUAGES C CXX
-    VERSION 3.6.12.0
+    VERSION 3.6.15.0
 )
 
 # GoogleTest requires at least C++14
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+option(USE_44KHZ "Output 44100 Hz audio sample rate (instead of 22050 Hz)" TRUE)
+option(USE_16BITS_SAMPLES "Use 16 bits samples (instead of 8 bit)" TRUE)
 option(BUILD_SONIVOX_STATIC "Build the static library" TRUE)
 option(BUILD_SONIVOX_SHARED "Build the shared library" TRUE)
+option(BUILD_EXAMPLE "Build and install the example program" TRUE)
 option(BUILD_TESTING "Build the unit tests" TRUE)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Whether to create position-independent targets" TRUE)
+option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
+set(MAX_VOICES 64 CACHE STRING "Maximum number of voices")
+
+include(CMakeDependentOption)
+cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the example program" FALSE "BUILD_EXAMPLE" FALSE)
 
 include(GNUInstallDirs)
 
+#set(PROJECT_RELEASE_DATE "October 6, 2024")
+
 if (BUILD_TESTING)
     find_package(GTest CONFIG)
-    if (NOT GTest_FOUND)
+    if (GTest_FOUND)
+        message( STATUS "Found GTest v${GTest_VERSION}")
+    else()
         message( STATUS "GTest not found. Fetching the git repository..." )
         set( INSTALL_GTEST OFF CACHE BOOL "Enable installation of gooogletest" FORCE )
         set( BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject" FORCE )
         include( FetchContent )
         FetchContent_Declare( googletest
-          GIT_REPOSITORY https://github.com/google/googletest.git
-          GIT_TAG release-1.12.1
+          GIT_REPOSITORY "https://github.com/google/googletest.git"
+          GIT_TAG "v1.15.2"
         )
         # For Windows: Prevent overriding the parent project's compiler/linker settings
         set( gtest_force_shared_crt ON CACHE BOOL "" FORCE )
@@ -50,14 +63,14 @@ endif()
 
 if (UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
     find_library(MATH_LIBRARY m)
-    message(STATUS "Math library: ${MATH_LIBRARY}")
+    message(STATUS "Found Math library: ${MATH_LIBRARY}")
 else()
     set(MATH_LIBRARY "")
 endif()
 
 list(APPEND SOURCES
   arm-wt-22k/host_src/eas_config.c
-  arm-wt-22k/host_src/eas_hostmm.c
+#arm-wt-22k/host_src/eas_hostmm.c
 #arm-wt-22k/host_src/eas_main.c
   arm-wt-22k/host_src/eas_report.c
 #arm-wt-22k/host_src/eas_wave.c
@@ -98,13 +111,19 @@ list(APPEND SOURCES
   arm-wt-22k/lib_src/eas_xmf.c
   arm-wt-22k/lib_src/eas_xmfdata.c
 #arm-wt-22k/lib_src/jet.c
-  arm-wt-22k/lib_src/wt_22khz.c
+  arm-wt-22k/lib_src/wt_200k_G.c
 )
+
+if (NEW_HOST_WRAPPER)
+    list(APPEND SOURCES arm-wt-22k/src/hostmm_ng.c)
+else()
+    list(APPEND SOURCES arm-wt-22k/host_src/eas_hostmm.c)
+endif()
 
 configure_file(arm-wt-22k/host_src/eas.cmake libsonivox/eas.h @ONLY)
 
 list(APPEND HEADERS
-    ${PROJECT_BINARY_DIR}/libsonivox/eas.h
+    ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas.h
     arm-wt-22k/host_src/eas_chorus.h
     arm-wt-22k/host_src/eas_reverb.h
     arm-wt-22k/host_src/eas_types.h
@@ -117,9 +136,7 @@ target_compile_definitions( sonivox-objects PRIVATE
   UNIFIED_DEBUG_MESSAGES
   EAS_WT_SYNTH
   NUM_OUTPUT_CHANNELS=2
-  _SAMPLE_RATE_22050
-  MAX_SYNTH_VOICES=64
-  _16_BIT_SAMPLES
+  MAX_SYNTH_VOICES=${MAX_VOICES}
   _FILTER_ENABLED
   DLS_SYNTHESIZER
   _REVERB_ENABLED
@@ -131,8 +148,27 @@ target_compile_definitions( sonivox-objects PRIVATE
   #JET_INTERFACE
 )
 
+include(TestBigEndian)
+test_big_endian(BIG_ENDIAN)
+
+if (BIG_ENDIAN)
+    target_compile_definitions( sonivox-objects PRIVATE EAS_BIG_ENDIAN )
+endif()
+
+if (USE_16BITS_SAMPLES)
+    target_compile_definitions( sonivox-objects PRIVATE _16_BIT_SAMPLES )
+else()
+    target_compile_definitions( sonivox-objects PRIVATE _8_BIT_SAMPLES )
+endif()
+
+if(USE_44KHZ)
+    target_compile_definitions( sonivox-objects PRIVATE _SAMPLE_RATE_44100 )
+else()
+    target_compile_definitions( sonivox-objects PRIVATE _SAMPLE_RATE_22050 )
+endif()
+
 target_include_directories( sonivox-objects PRIVATE
-    ${PROJECT_BINARY_DIR}/libsonivox
+    ${CMAKE_CURRENT_BINARY_DIR}/libsonivox
     arm-wt-22k/host_src
     arm-wt-22k/lib_src
     fakes
@@ -152,8 +188,9 @@ endif()
 if (BUILD_SONIVOX_STATIC)
     add_library( sonivox-static STATIC $<TARGET_OBJECTS:sonivox-objects> )
     target_include_directories( sonivox-static PUBLIC
-        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${PROJECT_BINARY_DIR}/libsonivox>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
+    set_target_properties( sonivox-static PROPERTIES VERSION ${PROJECT_VERSION} )
     set_target_properties( sonivox-static PROPERTIES PUBLIC_HEADER "${HEADERS}")
     target_link_libraries( sonivox-static PUBLIC ${MATH_LIBRARY} )
     add_library( sonivox::sonivox-static ALIAS sonivox-static)
@@ -163,7 +200,7 @@ endif()
 if (BUILD_SONIVOX_SHARED)
     add_library( sonivox SHARED $<TARGET_OBJECTS:sonivox-objects> )
     target_include_directories( sonivox PUBLIC
-        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${PROJECT_BINARY_DIR}/libsonivox>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
     set_target_properties( sonivox PROPERTIES VERSION ${PROJECT_VERSION} )
     set_target_properties( sonivox PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
@@ -186,12 +223,12 @@ else()
 endif()
 
 if (BUILD_SONIVOX_STATIC)
-    configure_file(sonivox-static.pc.in ${PROJECT_BINARY_DIR}/sonivox-static.pc @ONLY)
+    configure_file(sonivox-static.pc.in ${CMAKE_CURRENT_BINARY_DIR}/sonivox-static.pc @ONLY)
     install( FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivox-static.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
 endif()
 if (BUILD_SONIVOX_SHARED)
-    configure_file(sonivox.pc.in ${PROJECT_BINARY_DIR}/sonivox.pc @ONLY)
+    configure_file(sonivox.pc.in ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc @ONLY)
     install( FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
 endif()
@@ -240,17 +277,23 @@ if (BUILD_TESTING)
     enable_testing()
 
     add_executable( SonivoxTest
-      test/SonivoxTest.cpp
+        test/SonivoxTest.cpp
     )
 
+    if(USE_44KHZ)
+        target_compile_definitions( SonivoxTest PRIVATE _SAMPLE_RATE_44100 )
+    else()
+        target_compile_definitions( SonivoxTest PRIVATE _SAMPLE_RATE_22050 )
+    endif()
+
     target_include_directories( SonivoxTest PRIVATE
-        ${PROJECT_BINARY_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR}
         arm-wt-22k/include
         fakes
     )
 
     target_link_libraries( SonivoxTest PRIVATE
-      GTest::gtest_main
+        GTest::gtest_main
     )
 
     if (BUILD_SONIVOX_STATIC)
@@ -263,6 +306,25 @@ if (BUILD_TESTING)
         )
     endif()
 
+    set(SOUNDFONT "$ENV{TEMP}/soundfont.dls")
+    if (NOT EXISTS ${SOUNDFONT})
+        file(DOWNLOAD "http://www.ronimusic.com/sf2/Airfont_340.dls" ${SOUNDFONT})
+    endif()
+
+    file(SIZE ${SOUNDFONT} SOUNDFONTSIZE)
+    file(MD5 ${SOUNDFONT} SOUNDFONTHASH)
+    message(STATUS "DLS file ${SOUNDFONT} size: ${SOUNDFONTSIZE}")
+    message(STATUS "DLS file ${SOUNDFONT} MD5 hash: ${SOUNDFONTHASH}")
+
     include( GoogleTest )
-    gtest_discover_tests( SonivoxTest EXTRA_ARGS "-P${PROJECT_SOURCE_DIR}/test/res/" DISCOVERY_TIMEOUT 300 )
+    gtest_discover_tests( SonivoxTest EXTRA_ARGS "-P${CMAKE_CURRENT_SOURCE_DIR}/test/res/" DISCOVERY_TIMEOUT 300 )
+endif()
+
+# Example program
+if (BUILD_EXAMPLE)
+    set(sonivox_DIR ${CMAKE_CURRENT_BINARY_DIR})
+    add_subdirectory(example)
+    install( TARGETS sonivoxrender
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 endif()
