@@ -40,7 +40,7 @@ cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the example program" 
 
 include(GNUInstallDirs)
 
-#set(PROJECT_RELEASE_DATE "October 6, 2024")
+set(PROJECT_RELEASE_DATE "December 14, 2024")
 
 if (BUILD_TESTING)
     find_package(GTest CONFIG)
