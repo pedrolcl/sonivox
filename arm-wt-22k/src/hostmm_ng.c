@@ -22,8 +22,8 @@
 
 #if __has_include(<byteswap.h>)
 #include <byteswap.h>
-#define bswap16 __bswap_16
-#define bswap32 __bswap_32
+#define bswap16 bswap_16
+#define bswap32 bswap_32
 #elif defined(_MSC_VER)
 #define bswap16 _byteswap_ushort
 #define bswap32 _byteswap_ulong
