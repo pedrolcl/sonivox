@@ -20,16 +20,16 @@
 /* Only for debugging LED, vibrate, and backlight functions */
 #include "eas_report.h"
 
-#if __has_include(<byteswap.h>)
+#if defined(__GNUC__) || defined(__clang__)
+#define bswap16 __builtin_bswap16
+#define bswap32 __builtin_bswap32
+#elif __has_include(<byteswap.h>)
 #include <byteswap.h>
 #define bswap16 bswap_16
 #define bswap32 bswap_32
 #elif defined(_MSC_VER)
 #define bswap16 _byteswap_ushort
 #define bswap32 _byteswap_ulong
-#elif defined(__GNUC__) || defined(__clang__)
-#define bswap16 __builtin_bswap16
-#define bswap32 __builtin_bswap32
 #endif
 
 const EAS_BOOL O32_BIG_ENDIAN = 
