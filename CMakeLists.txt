@@ -306,8 +306,17 @@ if (BUILD_TESTING)
         )
     endif()
 
-    set(SOUNDFONT "$ENV{TEMP}/soundfont.dls")
+    if(DEFINED ENV{TEMP})
+        set(TEMPDIR "$ENV{TEMP}")
+    elseif(DEFINED ENV{XDG_RUNTIME_DIR})
+        set(TEMPDIR "$ENV{XDG_RUNTIME_DIR}")
+    else()
+        error("Cannot find a temporary directory. Define the TEMP environment variable.")
+    endif()
+
+    set(SOUNDFONT "${TEMPDIR}/soundfont.dls")
     if (NOT EXISTS ${SOUNDFONT})
+        message(STATUS "Downloading DLS file for testing to ${SOUNDFONT}")
         file(DOWNLOAD "http://www.ronimusic.com/sf2/Airfont_340.dls" ${SOUNDFONT})
     endif()
 
