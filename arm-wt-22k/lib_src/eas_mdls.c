@@ -1330,7 +1330,7 @@ static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     if (pWsmp->loopLength)
     {
         if (sampleLen < sizeof(EAS_SAMPLE)
-            || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen - sizeof(EAS_SAMPLE))
+            || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen)
         {
             return EAS_FAILURE;
         }
@@ -1404,7 +1404,8 @@ static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
             return EAS_SUCCESS;
         }
         if (sampleLen < sizeof(EAS_SAMPLE)
-            || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen - sizeof(EAS_SAMPLE)) {
+            || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen)
+        {
             return EAS_FAILURE;
         }
 
@@ -1896,7 +1897,7 @@ static EAS_RESULT Parse_rgn (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I
         {
             EAS_U32 sampleLen = pDLSData->pDLS->pDLSSampleLen[waveIndex];
             if (sampleLen < sizeof(EAS_SAMPLE)
-                || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen - sizeof(EAS_SAMPLE))
+                || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen)
             {
                 return EAS_FAILURE;
             }
