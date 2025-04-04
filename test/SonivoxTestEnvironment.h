@@ -28,11 +28,16 @@ class SonivoxTestEnvironment : public::testing::Environment {
 	SonivoxTestEnvironment() : deleteOutput(true) { 
 		if (getenv("TEMP") != nullptr) {
             tmp = getenv("TEMP");
-            if (tmp.at(tmp.length() - 1) != '/') {
-                tmp.push_back('/');
-            }
-            snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%s/output_midi.pcm", getenv("TEMP"));
+        } else if (getenv("XDG_RUNTIME_DIR") != nullptr) {
+            tmp = getenv("XDG_RUNTIME_DIR");
+        } else {
+            tmp = "/tmp/";
         }
+        if (tmp.at(tmp.length() - 1) != '/') {
+            tmp.push_back('/');
+        }
+        snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%s/output_midi.pcm", getenv("XDG_RUNTIME_DIR"));
+
         if (getenv("TEST_RESOURCES") != nullptr) {
             res = getenv("TEST_RESOURCES");
         }
