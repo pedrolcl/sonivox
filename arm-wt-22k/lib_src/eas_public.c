@@ -211,7 +211,7 @@ EAS_RESULT EAS_IntSetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_IN
             break;
 
         default:
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Invalid paramter %d in call to EAS_IntSetStrmParam", param); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "Invalid paramter %d in call to EAS_IntSetStrmParam", param);
             return EAS_ERROR_INVALID_PARAMETER;
     }
 
@@ -260,7 +260,7 @@ EAS_RESULT EAS_IntGetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_IN
             break;
 
         default:
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Invalid paramter %d in call to EAS_IntSetStrmParam", param); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "Invalid paramter %d in call to EAS_IntSetStrmParam", param);
             return EAS_ERROR_INVALID_PARAMETER;
     }
 
@@ -288,7 +288,7 @@ static EAS_INT EAS_AllocateStream (EAS_DATA_HANDLE pEASData)
     {
         if (pEASData->streams[0].handle != NULL)
         {
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Attempt to open multiple streams in static model\n"); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "Attempt to open multiple streams in static model\n");
             return -1;
         }
         return 0;
@@ -300,7 +300,7 @@ static EAS_INT EAS_AllocateStream (EAS_DATA_HANDLE pEASData)
             break;
     if (streamNum == MAX_NUMBER_STREAMS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Exceeded maximum number of open streams\n"); */ }
+        EAS_Report(_EAS_SEVERITY_ERROR, "Exceeded maximum number of open streams\n");
         return -1;
     }
     return streamNum;
@@ -383,7 +383,7 @@ EAS_PUBLIC EAS_RESULT EAS_Init (EAS_DATA_HANDLE *ppEASData)
         pEASData = EAS_HWMalloc(pHWInstData, sizeof(S_EAS_DATA));
     if (!pEASData)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_FATAL, "Failed to allocate EAS library memory\n"); */ }
+        EAS_Report(_EAS_SEVERITY_FATAL, "Failed to allocate EAS library memory\n");
         return EAS_ERROR_MALLOC_FAILED;
     }
 
@@ -408,7 +408,7 @@ EAS_PUBLIC EAS_RESULT EAS_Init (EAS_DATA_HANDLE *ppEASData)
     {
         if ((result = (*pEASData->pMetricsModule->pfInit)(pEASData, &pEASData->pMetricsData)) != EAS_SUCCESS)
         {
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Error %ld initializing metrics module\n", result); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "Error %ld initializing metrics module\n", result);
             return result;
         }
     }
@@ -421,7 +421,7 @@ EAS_PUBLIC EAS_RESULT EAS_Init (EAS_DATA_HANDLE *ppEASData)
     /* initialize mix engine */
     if ((result = EAS_MixEngineInit(pEASData)) != EAS_SUCCESS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Error %ld starting up mix engine\n", result); */ }
+        EAS_Report(_EAS_SEVERITY_ERROR, "Error %ld starting up mix engine\n", result);
         return result;
     }
 
@@ -433,7 +433,7 @@ EAS_PUBLIC EAS_RESULT EAS_Init (EAS_DATA_HANDLE *ppEASData)
         {
             if ((result = (*pEASData->effectsModules[module].effect->pfInit)(pEASData, &pEASData->effectsModules[module].effectData)) != EAS_SUCCESS)
             {
-                { /* dpp: EAS_ReportEx(_EAS_SEVERITY_FATAL, "Initialization of effects module %d returned %d\n", module, result); */ }
+                EAS_Report(_EAS_SEVERITY_FATAL, "Initialization of effects module %d returned %d\n", module, result);
                 return result;
             }
         }
@@ -442,7 +442,7 @@ EAS_PUBLIC EAS_RESULT EAS_Init (EAS_DATA_HANDLE *ppEASData)
     /* initialize PCM engine */
     if ((result = EAS_PEInit(pEASData)) != EAS_SUCCESS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_FATAL, "EAS_PEInit failed with error code %ld\n", result); */ }
+        EAS_Report(_EAS_SEVERITY_FATAL, "EAS_PEInit failed with error code %ld\n", result);
         return result;
     }
 
@@ -486,7 +486,7 @@ EAS_PUBLIC EAS_RESULT EAS_Shutdown (EAS_DATA_HANDLE pEASData)
         {
             if ((result = (*((S_FILE_PARSER_INTERFACE*)(pEASData->streams[i].pParserModule))->pfClose)(pEASData, pEASData->streams[i].handle)) != EAS_SUCCESS)
             {
-                { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Error %ld shutting down parser module\n", result); */ }
+                EAS_Report(_EAS_SEVERITY_ERROR, "Error %ld shutting down parser module\n", result);
                 reportResult = result;
             }
         }
@@ -495,7 +495,7 @@ EAS_PUBLIC EAS_RESULT EAS_Shutdown (EAS_DATA_HANDLE pEASData)
     /* shutdown PCM engine */
     if ((result = EAS_PEShutdown(pEASData)) != EAS_SUCCESS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Error %ld shutting down PCM engine\n", result); */ }
+        EAS_Report(_EAS_SEVERITY_ERROR, "Error %ld shutting down PCM engine\n", result);
         if (reportResult == EAS_SUCCESS)
             reportResult = result;
     }
@@ -503,7 +503,7 @@ EAS_PUBLIC EAS_RESULT EAS_Shutdown (EAS_DATA_HANDLE pEASData)
     /* shutdown mix engine */
     if ((result = EAS_MixEngineShutdown(pEASData)) != EAS_SUCCESS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Error %ld shutting down mix engine\n", result); */ }
+        EAS_Report(_EAS_SEVERITY_ERROR, "Error %ld shutting down mix engine\n", result);
         if (reportResult == EAS_SUCCESS)
             reportResult = result;
     }
@@ -515,7 +515,7 @@ EAS_PUBLIC EAS_RESULT EAS_Shutdown (EAS_DATA_HANDLE pEASData)
         {
             if ((result = (*pEASData->effectsModules[i].effect->pfShutdown)(pEASData, pEASData->effectsModules[i].effectData)) != EAS_SUCCESS)
             {
-                { /* dpp: EAS_ReportEx(_EAS_SEVERITY_FATAL, "Shutdown of effects module %d returned %d\n", i, result); */ }
+                EAS_Report(_EAS_SEVERITY_FATAL, "Shutdown of effects module %d returned %d\n", i, result);
                 if (reportResult == EAS_SUCCESS)
                     reportResult = result;
             }
@@ -531,7 +531,7 @@ EAS_PUBLIC EAS_RESULT EAS_Shutdown (EAS_DATA_HANDLE pEASData)
     {
         if ((result = (*pEASData->pMetricsModule->pfShutdown)(pEASData, pEASData->pMetricsData)) != EAS_SUCCESS)
         {
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Error %ld shutting down metrics module\n", result); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "Error %ld shutting down metrics module\n", result);
             if (reportResult == EAS_SUCCESS)
                 reportResult = result;
         }
@@ -547,7 +547,7 @@ EAS_PUBLIC EAS_RESULT EAS_Shutdown (EAS_DATA_HANDLE pEASData)
     {
         if ((result = EAS_HWShutdown(hwInstData)) != EAS_SUCCESS)
         {
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Error %ld shutting down host wrappers\n", result); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "Error %ld shutting down host wrappers\n", result);
             if (reportResult == EAS_SUCCESS)
                 reportResult = result;
         }
@@ -584,7 +584,7 @@ EAS_RESULT EAS_OpenJETStream (EAS_DATA_HANDLE pEASData, EAS_FILE_HANDLE fileHand
     /* see if SMF parser recognizes the file */
     if ((result = (*pParserModule->pfCheckFileType)(pEASData, fileHandle, &streamHandle, offset)) != EAS_SUCCESS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "CheckFileType returned error %ld\n", result); */ }
+        EAS_Report(_EAS_SEVERITY_ERROR, "CheckFileType returned error %ld\n", result);
         return result;
     }
 
@@ -653,7 +653,7 @@ EAS_PUBLIC EAS_RESULT EAS_OpenFile (EAS_DATA_HANDLE pEASData, EAS_FILE_LOCATOR l
             /* Closing the opened file as file type check failed */
             EAS_HWCloseFile(pEASData->hwInstData, fileHandle);
 
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "CheckFileType returned error %ld\n", result); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "CheckFileType returned error %ld\n", result);
             return result;
         }
 
@@ -674,12 +674,12 @@ EAS_PUBLIC EAS_RESULT EAS_OpenFile (EAS_DATA_HANDLE pEASData, EAS_FILE_LOCATOR l
             EAS_HWCloseFile(pEASData->hwInstData, fileHandle);
 
             return result;
-         }
+        }
     }
 
     /* no parser was able to recognize the file, close it and return an error */
     EAS_HWCloseFile(pEASData->hwInstData, fileHandle);
-    { /* dpp: EAS_ReportEx(_EAS_SEVERITY_WARNING, "No parser recognized the requested file\n"); */ }
+    EAS_Report(_EAS_SEVERITY_WARNING, "No parser recognized the requested file\n");
     return EAS_ERROR_UNRECOGNIZED_FORMAT;
 }
 
@@ -715,7 +715,7 @@ EAS_PUBLIC EAS_RESULT EAS_MMAPIToneControl (EAS_DATA_HANDLE pEASData, EAS_FILE_L
     pParserModule = EAS_CMEnumOptModules(EAS_MODULE_MMAPI_TONE_CONTROL);
     if (pParserModule == NULL)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "EAS_MMAPIToneControl: ToneControl parser not available\n"); */ }
+        /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "EAS_MMAPIToneControl: ToneControl parser not available\n"); */
         return EAS_ERROR_FEATURE_NOT_AVAILABLE;
     }
 
@@ -730,7 +730,7 @@ EAS_PUBLIC EAS_RESULT EAS_MMAPIToneControl (EAS_DATA_HANDLE pEASData, EAS_FILE_L
     /* see if ToneControl parser recognizes it */
     if ((result = (*pParserModule->pfCheckFileType)(pEASData, fileHandle, &streamHandle, 0L)) != EAS_SUCCESS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "CheckFileType returned error %ld\n", result); */ }
+        EAS_ReportEx(_EAS_SEVERITY_ERROR, "CheckFileType returned error %ld\n", result);
         return result;
     }
 
@@ -746,7 +746,7 @@ EAS_PUBLIC EAS_RESULT EAS_MMAPIToneControl (EAS_DATA_HANDLE pEASData, EAS_FILE_L
 
     /* parser did not recognize the file, close it and return an error */
     EAS_HWCloseFile(pEASData->hwInstData, fileHandle);
-    { /* dpp: EAS_ReportEx(_EAS_SEVERITY_WARNING, "No parser recognized the requested file\n"); */ }
+    EAS_ReportEx(_EAS_SEVERITY_WARNING, "No parser recognized the requested file\n");
     return EAS_ERROR_UNRECOGNIZED_FORMAT;
 }
 
@@ -871,8 +871,8 @@ EAS_PUBLIC EAS_RESULT EAS_Render (EAS_DATA_HANDLE pEASData, EAS_PCM *pOut, EAS_I
     /* no support for other buffer sizes yet */
     if (numRequested != BUFFER_SIZE_IN_MONO_SAMPLES)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "This library supports only %ld samples in buffer, host requested %ld samples\n",
-            (EAS_I32) BUFFER_SIZE_IN_MONO_SAMPLES, numRequested); */ }
+        { EAS_Report(_EAS_SEVERITY_ERROR, "This library supports only %ld samples in buffer, host requested %ld samples\n",
+            (EAS_I32) BUFFER_SIZE_IN_MONO_SAMPLES, numRequested); }
         return EAS_BUFFER_SIZE_MISMATCH;
     }
 
@@ -997,7 +997,7 @@ EAS_PUBLIC EAS_RESULT EAS_Render (EAS_DATA_HANDLE pEASData, EAS_PCM *pOut, EAS_I
     /* render audio */
     if ((result = VMRender(pEASData->pVoiceMgr, BUFFER_SIZE_IN_MONO_SAMPLES, pEASData->pMixBuffer, &voicesRendered)) != EAS_SUCCESS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "pfRender function returned error %ld\n", result); */ }
+        EAS_Report(_EAS_SEVERITY_ERROR, "pfRender function returned error %ld\n", result);
         return result;
     }
 
@@ -1026,7 +1026,7 @@ EAS_PUBLIC EAS_RESULT EAS_Render (EAS_DATA_HANDLE pEASData, EAS_PCM *pOut, EAS_I
     /* render PCM audio */
     if ((result = EAS_PERender(pEASData, numRequested)) != EAS_SUCCESS)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "EAS_PERender returned error %ld\n", result); */ }
+        EAS_Report(_EAS_SEVERITY_ERROR, "EAS_PERender returned error %ld\n", result);
         return result;
     }
 
@@ -1309,6 +1309,7 @@ static EAS_RESULT EAS_ParseEvents (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS
                 if (pParserModule->pfEvent) {
                     if ((result = (*pParserModule->pfEvent)(pEASData, pStream->handle, parseMode))
                             != EAS_SUCCESS) {
+                        EAS_Report(_EAS_SEVERITY_ERROR, "%s() pfEvent returned %ld\n", __func__, result);
                         ALOGE("%s() pfEvent returned %ld", __func__, result);
                         return result;
                     }
@@ -1320,6 +1321,8 @@ static EAS_RESULT EAS_ParseEvents (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS
                 // when scanning the entire file in a single call to this function.
                 // OTA files will only do infinite loops when in eParserModePlay.
                 if (++eventCount >= MAX_EVENT_COUNT && parseMode == eParserModePlay) {
+                    EAS_Report(_EAS_SEVERITY_ERROR, "%s() reached events limit, aborting, %d events. Infinite loop in song file?!\n",
+                            __func__, eventCount);
                     ALOGE("%s() aborting, %d events. Infinite loop in song file?!",
                             __func__, eventCount);
                     android_errorWriteLog(0x534e4554, "68664359");
@@ -1547,7 +1550,7 @@ EAS_PUBLIC EAS_RESULT EAS_OpenMIDIStream (EAS_DATA_HANDLE pEASData, EAS_HANDLE *
     /* allocate dynamic memory */
     if (!pMIDIStream)
     {
-        { /* dpp: EAS_ReportEx(_EAS_SEVERITY_FATAL, "Failed to allocate MIDI stream data\n"); */ }
+        EAS_Report(_EAS_SEVERITY_FATAL, "Failed to allocate MIDI stream data\n");
         return EAS_ERROR_MALLOC_FAILED;
     }
 

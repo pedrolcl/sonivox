@@ -584,7 +584,7 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
             return;
 
         default:
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "Envelope in invalid state %d\n", *pState); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "Envelope in invalid state %d\n", *pState);
             break;
     }
 }
