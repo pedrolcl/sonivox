@@ -36,7 +36,7 @@ class SonivoxTestEnvironment : public::testing::Environment {
         if (tmp.at(tmp.length() - 1) != '/') {
             tmp.push_back('/');
         }
-        snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%s/output_midi.pcm", getenv("XDG_RUNTIME_DIR"));
+        snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%soutput_midi.pcm", tmp.c_str());
 
         if (getenv("TEST_RESOURCES") != nullptr) {
             res = getenv("TEST_RESOURCES");
