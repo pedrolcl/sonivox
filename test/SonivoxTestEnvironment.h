@@ -25,23 +25,25 @@ using namespace std;
 
 class SonivoxTestEnvironment : public::testing::Environment {
   public:
-	SonivoxTestEnvironment() : deleteOutput(true) { 
-		if (getenv("TEMP") != nullptr) {
-            tmp = getenv("TEMP");
-        } else if (getenv("XDG_RUNTIME_DIR") != nullptr) {
-            tmp = getenv("XDG_RUNTIME_DIR");
-        } else {
-            tmp = "/tmp/";
-        }
-        if (tmp.at(tmp.length() - 1) != '/') {
-            tmp.push_back('/');
-        }
-        snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%soutput_midi.pcm", tmp.c_str());
+      SonivoxTestEnvironment()
+          : deleteOutput(true)
+      {
+          if (getenv("TEMP") != nullptr) {
+              tmp = getenv("TEMP");
+          } else if (getenv("XDG_RUNTIME_DIR") != nullptr) {
+              tmp = getenv("XDG_RUNTIME_DIR");
+          } else {
+              tmp = "/tmp/";
+          }
+          if (tmp.at(tmp.length() - 1) != '/') {
+              tmp.push_back('/');
+          }
+          snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%soutput_midi.pcm", tmp.c_str());
 
-        if (getenv("TEST_RESOURCES") != nullptr) {
-            res = getenv("TEST_RESOURCES");
-        }
-    }
+          if (getenv("TEST_RESOURCES") != nullptr) {
+              res = getenv("TEST_RESOURCES");
+          }
+      }
 
     // Parses the command line arguments
     int initFromOptions(int argc, char **argv);
