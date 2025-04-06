@@ -8,6 +8,8 @@
 
 [![FreeBSD CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-freebsd.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-freebsd.yml)
 
+[![Android CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-android.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-android.yml)
+
 This project is a fork of the Android Open Source Project 'platform_external_sonivox', including a CMake based build system to be used not on Android, but on any other computer Operating System.
 Google licensed this work originally named Sonivox EAS (Embedded Audio Synthesis) from the company Sonic Network Inc. under the terms of the Apache License 2.0.
 
