@@ -23,16 +23,24 @@
 
 using namespace std;
 
-class SonivoxTestEnvironment : public::testing::Environment {
-  public:
-	SonivoxTestEnvironment() : deleteOutput(true) { 
-		if (getenv("TEMP") != nullptr) {
+class SonivoxTestEnvironment : public testing::Environment
+{
+public:
+    SonivoxTestEnvironment()
+        : deleteOutput(true)
+    {
+        if (getenv("TEMP") != nullptr) {
             tmp = getenv("TEMP");
-            if (tmp.at(tmp.length() - 1) != '/') {
-                tmp.push_back('/');
-            }
-            snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%s/output_midi.pcm", getenv("TEMP"));
+        } else if (getenv("XDG_RUNTIME_DIR") != nullptr) {
+            tmp = getenv("XDG_RUNTIME_DIR");
+        } else {
+            tmp = "/tmp/";
         }
+        if (tmp.at(tmp.length() - 1) != '/') {
+            tmp.push_back('/');
+        }
+        snprintf(OUTPUT_FILE, sizeof(OUTPUT_FILE), "%soutput_midi.pcm", tmp.c_str());
+
         if (getenv("TEST_RESOURCES") != nullptr) {
             res = getenv("TEST_RESOURCES");
         }
@@ -49,9 +57,9 @@ class SonivoxTestEnvironment : public::testing::Environment {
 
     bool cleanUp() const { return deleteOutput; }
 
-	char OUTPUT_FILE[256]{"/tmp/output_midi.pcm"};
+    char OUTPUT_FILE[256]{"/tmp/output_midi.pcm"};
 
-  private:
+private:
     string res;
     string tmp;
     bool deleteOutput;

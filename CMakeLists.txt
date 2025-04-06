@@ -40,7 +40,7 @@ cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the example program" 
 
 include(GNUInstallDirs)
 
-#set(PROJECT_RELEASE_DATE "October 6, 2024")
+set(PROJECT_RELEASE_DATE "December 14, 2024")
 
 if (BUILD_TESTING)
     find_package(GTest CONFIG)
@@ -306,8 +306,17 @@ if (BUILD_TESTING)
         )
     endif()
 
-    set(SOUNDFONT "$ENV{TEMP}/soundfont.dls")
+    if(DEFINED ENV{TEMP})
+        set(TEMPDIR "$ENV{TEMP}")
+    elseif(DEFINED ENV{XDG_RUNTIME_DIR})
+        set(TEMPDIR "$ENV{XDG_RUNTIME_DIR}")
+    else()
+        message(FATAL_ERROR "Cannot find a temporary directory. Define the TEMP environment variable.")
+    endif()
+
+    set(SOUNDFONT "${TEMPDIR}/soundfont.dls")
     if (NOT EXISTS ${SOUNDFONT})
+        message(STATUS "Downloading DLS file for testing to ${SOUNDFONT}")
         file(DOWNLOAD "http://www.ronimusic.com/sf2/Airfont_340.dls" ${SOUNDFONT})
     endif()
 
@@ -315,6 +324,9 @@ if (BUILD_TESTING)
     file(MD5 ${SOUNDFONT} SOUNDFONTHASH)
     message(STATUS "DLS file ${SOUNDFONT} size: ${SOUNDFONTSIZE}")
     message(STATUS "DLS file ${SOUNDFONT} MD5 hash: ${SOUNDFONTHASH}")
+    if (NOT (SOUNDFONTSIZE EQUAL 81362584 AND SOUNDFONTHASH STREQUAL "40c0cd4ad29ae411a8fc3d6681002a2b"))
+        message(FATAL_ERROR "The downloaded DLS file is corrupted.")
+    endif()
 
     include( GoogleTest )
     gtest_discover_tests( SonivoxTest EXTRA_ARGS "-P${CMAKE_CURRENT_SOURCE_DIR}/test/res/" DISCOVERY_TIMEOUT 300 )

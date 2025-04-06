@@ -99,19 +99,20 @@ const S_BANK eas_banks[] =
  *----------------------------------------------------------------------------
 */
 
+// Can't be a 'const EAS_U32' before GCC 8.1
 #ifdef _SAMPLE_RATE_44100
-const EAS_U32 sampleRate = 0xAC44;
+#define SAMPLE_RATE	0xAC44
 #else
-const EAS_U32 sampleRate = 0x5622;
+#define SAMPLE_RATE	0x5622
 #endif
 
 const S_EAS easSoundLib = {
     0x01534145,
 
 #if defined (_8_BIT_SAMPLES)
-    0x00100000 | sampleRate,
+    0x00100000 | SAMPLE_RATE,
 #else //_16_BIT_SAMPLES
-    0x00200000 | sampleRate,
+    0x00200000 | SAMPLE_RATE,
 #endif
 
     eas_banks,
