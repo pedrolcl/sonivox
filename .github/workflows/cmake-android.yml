@@ -22,6 +22,10 @@ jobs:
       run: |
         cmake -B ${{github.workspace}}/build \
             -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+            -DBUILD_TESTING=No \
+            -DUSE_44KHZ=Yes \
+            -DUSE_16BITS_SAMPLES=Yes \
+            -DNEW_HOST_WRAPPER=Yes \
             -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=x86_64 \
             -DANDROID_PLATFORM=android-35
