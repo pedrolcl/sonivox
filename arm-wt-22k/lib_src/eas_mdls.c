@@ -125,6 +125,11 @@
 #include "eas_report.h"
 #include <string.h>
 
+// for mp3 decoding
+#define MINIMP3_IMPLEMENTATION
+#define MINIMP3_ONLY_MP3
+#include "minimp3.h"
+
 // for a-law/u-law decoding
 #include "pcm_aulaw.h"
 
@@ -426,6 +431,7 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
 static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSMP_DATA *p);
 static EAS_RESULT Parse_fmt (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSMP_DATA *p);
 static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, S_WSMP_DATA *p, EAS_SAMPLE *pSample, EAS_U32 sampleLen);
+static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, EAS_SAMPLE *pSample, EAS_I32 *sampleLen);
 static EAS_RESULT Parse_lins(SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size);
 static EAS_RESULT Parse_ins (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size);
 static EAS_RESULT Parse_insh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_U32 *pRgnCount, EAS_U32 *pLocale);
@@ -1039,8 +1045,6 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
         else
             /*lint -e{704} use shift for performance */
             size = dataSize >> 1;
-        if (p->loopLength)
-            size++;
     }
 
     else
@@ -1050,9 +1054,18 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
         else
             /*lint -e{703} use shift for performance */
             size = dataSize << 1;
-        if (p->loopLength)
-            size += 2;
     }
+
+    switch (p->fmtTag)
+    {
+        case WAVE_FORMAT_MPEGLAYER3:
+            if ((result = Parse_mp3_data(pDLSData, dataPos, dataSize, NULL, &size)) != EAS_SUCCESS)
+                return result;
+            break;
+    }
+
+    if (p->loopLength)
+        size += bitDepth / 8;
 
     /* for first pass, add size to wave pool size and return */
     if (pDLSData->pDLS == NULL)
@@ -1210,6 +1223,7 @@ static EAS_RESULT Parse_fmt (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSM
         case WAVE_FORMAT_PCM:
         case WAVE_FORMAT_ALAW:
         case WAVE_FORMAT_MULAW:
+        case WAVE_FORMAT_MPEGLAYER3:
             p->fmtTag = wtemp;
             break;
         default:
@@ -1349,6 +1363,13 @@ static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     EAS_I32 i;
     EAS_I16 *p;
 
+    if (pWsmp->fmtTag == WAVE_FORMAT_MPEGLAYER3)
+    {
+        if ((result = Parse_mp3_data(pDLSData, pos, size, pSample, NULL)) != EAS_SUCCESS)
+            return result;
+        goto handle_loop;
+    }
+
     /* seek to start of chunk */
     if ((result = EAS_HWFileSeek(pDLSData->hwInstData, pDLSData->fileHandle, pos)) != EAS_SUCCESS)
         return result;
@@ -1396,6 +1417,7 @@ static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
 
     }
 
+handle_loop:
     /* for looped samples, copy the last sample to the end */
     if (pWsmp->loopLength)
     {
@@ -1417,6 +1439,92 @@ static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
 #else
 #error "Must specifiy _8_BIT_SAMPLES or _16_BIT_SAMPLES"
 #endif
+
+/*----------------------------------------------------------------------------
+ * Parse_mp3_data ()
+ *----------------------------------------------------------------------------
+ * Purpose:
+ * Decoding mp3 data or return sample length for wave pool memory allocation
+ *
+ * Inputs:
+ * pEASData - pointer for accessing mp3 data in file
+ * pos - position of mp3 data
+ * size - size of mp3 data
+ * pSample - pointer to store decoded sample data
+ * sampleLen - pointer to store sample length (for wave pool memory allocation)
+ *
+ * Outputs:
+ * EAS_RESULT
+ *
+ *----------------------------------------------------------------------------
+*/
+static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, EAS_SAMPLE *pSample, EAS_I32 *sampleLen)
+{
+    EAS_RESULT result;
+    EAS_U8 convBuf[MAX_FREE_FORMAT_FRAME_SIZE];
+
+    EAS_SAMPLE *p;
+    EAS_I32 readCount;
+    EAS_I32 bytesInBuffer;
+    EAS_I32 sampleSize = 0;
+    EAS_I32 remainingSize = 0;
+
+    mp3dec_t mp3d;
+    mp3dec_frame_info_t info;
+
+    /* check if pcm types are equal */
+    if (sizeof(*p) != sizeof(mp3d_sample_t))
+        return EAS_ERROR_INVALID_PCM_TYPE;
+
+    /* seek to start of chunk */
+    if ((result = EAS_HWFileSeek(pDLSData->hwInstData, pDLSData->fileHandle, pos)) != EAS_SUCCESS)
+        return result;
+
+    p = pSample;
+
+    /* init mp3dec */
+    mp3dec_init(&mp3d);
+
+    while (size > 0)
+    {
+        if (remainingSize)
+        {
+            if (remainingSize < 0)
+                return EAS_BUFFER_SIZE_MISMATCH;
+            /* put the remaining data at the end into the beginning of the buffer */
+            EAS_HWMemCpy(convBuf, convBuf + bytesInBuffer - remainingSize, remainingSize);
+        }
+        readCount = (size < sizeof(convBuf) ? size : sizeof(convBuf));
+        readCount -= remainingSize;
+
+        if ((result = EAS_HWReadFile(pDLSData->hwInstData, pDLSData->fileHandle, convBuf + remainingSize, readCount, &readCount)) != EAS_SUCCESS)
+            return result;
+        remainingSize += readCount;
+        bytesInBuffer = remainingSize;
+
+        int samples = mp3dec_decode_frame(&mp3d, convBuf, remainingSize, p, &info);
+        if (samples == 0)
+            return EAS_FAILURE;
+
+        if (p != NULL)
+            p += samples * info.channels;
+        else
+            sampleSize += samples * info.channels;
+
+        size -= info.frame_bytes;
+        remainingSize -= info.frame_bytes;
+    }
+
+    /* i think there are no garbage in mp3 data */
+    if (size)
+        return EAS_ERROR_DATA_INCONSISTENCY;
+
+    /* for first pass, add size to wave pool size and return */
+    if (pSample == NULL)
+        *sampleLen = sampleSize * sizeof(mp3d_sample_t);
+
+    return EAS_SUCCESS;
+}
 
 /*----------------------------------------------------------------------------
  * Parse_lins ()
