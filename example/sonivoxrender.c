@@ -95,7 +95,11 @@ int initializeLibrary(void)
 #endif
 
     EAS_SetDebugFile(stderr, 1);
+#ifdef NDEBUG
     EAS_SetDebugLevel(_EAS_SEVERITY_WARNING);
+#else
+    EAS_SetDebugLevel(_EAS_SEVERITY_INFO);
+#endif
 
     EAS_RESULT result = EAS_Init(&mEASDataHandle);
     if (result != EAS_SUCCESS) {
