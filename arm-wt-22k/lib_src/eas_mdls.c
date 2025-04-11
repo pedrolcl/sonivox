@@ -1128,7 +1128,7 @@ static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WS
         return result;
     if (p->gain > 0)
     {
-        EAS_Report(_EAS_SEVERITY_WARNING, "Positive gain [%ld] in DLS wsmp ignored, set to 0dB\n", p->gain);
+        EAS_Report(_EAS_SEVERITY_DETAIL, "Positive gain [%ld] in DLS wsmp ignored, set to 0dB\n", p->gain);
         p->gain = 0;
     }
 
