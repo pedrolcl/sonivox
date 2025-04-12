@@ -370,7 +370,8 @@ int main (int argc, char **argv)
                 stderr,
                 "Usage: %s [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] "
                 "[-w|--wet 0..32767] [-n|--dry 0..32767] "
-                "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..100] file.mid ...\n"
+                "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..100] [-V|--Verbosity "
+                "0..5] file.mid ...\n"
                 "Render standard MIDI files into raw PCM audio.\n"
                 "Options:\n"
                 "\t-h, --help\t\tthis help message.\n"

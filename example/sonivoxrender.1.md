@@ -7,7 +7,7 @@
 
 # SYNOPSIS
 
-| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _file.dls_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..100_]  _midi_file_
+| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _file.dls_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..100_] [**-V|-\-Verbosity** _0..5_]  _midi_file_
 
 # DESCRIPTION
 
@@ -51,6 +51,10 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 -g, -\-gain _master_gain_
 
 :   Master gain between 0 and 100, default is 90 (10 dB below maximum).
+
+-V, -\-Verbosity _verbosity_
+
+:   Verbosity level between 0 and 5, where 0=no, 1..5=severity levels.
 
 ## Arguments
 
