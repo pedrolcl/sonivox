@@ -207,7 +207,7 @@ EAS_RESULT EAS_ParseMIDIStream (S_EAS_DATA *pEASData, S_SYNTH *pSynth, S_MIDI_ST
     }
 
     /* no status byte received, provide a warning, but we should be able to recover */
-    { /* dpp: EAS_ReportEx(_EAS_SEVERITY_WARNING, "Received MIDI data without a valid status byte: %d\n",c); */ }
+    EAS_Report(_EAS_SEVERITY_WARNING, "Received MIDI data without a valid status byte: %d\n",c);
     pMIDIStream->pending = EAS_FALSE;
     return EAS_SUCCESS;
 }
