@@ -26,6 +26,7 @@
 #include <eas.h>
 #include <eas_reverb.h>
 #include <eas_chorus.h>
+#include <eas_report.h>
 
 const char *dls_path = NULL;
 EAS_I32 playback_gain = 90;
@@ -91,6 +92,13 @@ int initializeLibrary(void)
 
 #ifdef __WIN32__
 	setmode(fileno(stdout), O_BINARY);
+#endif
+
+    EAS_SetDebugFile(stderr, 1);
+#ifdef NDEBUG
+    EAS_SetDebugLevel(_EAS_SEVERITY_WARNING);
+#else
+    EAS_SetDebugLevel(_EAS_SEVERITY_INFO);
 #endif
 
     EAS_RESULT result = EAS_Init(&mEASDataHandle);

@@ -22,6 +22,7 @@
 #include <fstream>
 
 #include <libsonivox/eas.h>
+#include <libsonivox/eas_report.h>
 #include <libsonivox/eas_reverb.h>
 
 #include "SonivoxTestEnvironment.h"
@@ -419,8 +420,12 @@ int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     int status = gEnv->initFromOptions(argc, argv);
     if (status == 0) {
+        // Initalize EAS logging
+        EAS_SetDebugFile(stderr, 1);
+        EAS_SetDebugLevel(_EAS_SEVERITY_DETAIL); // print all messages
         status = RUN_ALL_TESTS();
         ALOGV("Test result = %d\n", status);
+        EAS_Report(_EAS_SEVERITY_INFO, "Test result = %d\n", status);
     }
     return status;
 }

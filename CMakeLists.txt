@@ -127,6 +127,7 @@ list(APPEND HEADERS
     arm-wt-22k/host_src/eas_chorus.h
     arm-wt-22k/host_src/eas_reverb.h
     arm-wt-22k/host_src/eas_types.h
+    arm-wt-22k/host_src/eas_report.h
 #arm-wt-22k/host_src/jet.h
 )
 

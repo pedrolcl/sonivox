@@ -44,8 +44,6 @@ static int severityLevel = 9999;
 static FILE *debugFile = NULL;
 int flush = 0;
 
-#ifndef _NO_DEBUG_PREPROCESSOR
-
 /* structure should have an #include for each error message header file */
 S_DEBUG_MESSAGES debugMessages[] =
 {
@@ -176,7 +174,6 @@ void EAS_ReportEx (int severity, unsigned long hashCode, int serialNum, ...)
     printf("Unrecognized error: Severity=%d; HashCode=%lu; SerialNum=%d\n", severity, hashCode, serialNum);
 } /* end EAS_ReportEx */
 
-#else
 /*----------------------------------------------------------------------------
  * EAS_Report()
  *
@@ -236,7 +233,6 @@ void EAS_ReportX (int severity, const char *fmt, ...)
     }
     va_end(vargs);
 } /* end EAS_ReportX */
-#endif
 
 /*----------------------------------------------------------------------------
  * EAS_SetDebugLevel()
