@@ -7,7 +7,7 @@
 
 # SYNOPSIS
 
-| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _file.dls_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..100_]  _midi_file_
+| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _file.dls_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..100_] [**-V|-\-Verbosity** _0..5_]  _midi_file_
 
 # DESCRIPTION
 
@@ -52,6 +52,10 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 
 :   Master gain between 0 and 100, default is 90 (10 dB below maximum).
 
+-V, -\-Verbosity _verbosity_
+
+:   Verbosity level between 0 and 5, where 0=no, 1..5=severity levels.
+
 ## Arguments
 
 _midi_file_
@@ -94,4 +98,4 @@ See Tickets at GitHub <https://github.com/pedrolcl/sonivox/issues/>
 
 Licensed under the Apache License, Version 2.0
 
-Copyright (c) 2022-2024 Pedro López-Cabanillas and contributors
+Copyright (c) 2022-2025 Pedro López-Cabanillas and contributors

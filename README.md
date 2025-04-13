@@ -57,7 +57,7 @@ You can use the program to listen MIDI files or to create audio files (like MP3 
 
 ~~~
 $ ./sonivoxrender -h
-Usage: ./sonivoxrender [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] [-w|--wet 0..32767] [-n|--dry 0..32767] [-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..100] file.mid ...
+Usage: ./sonivoxrender [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] [-w|--wet 0..32767] [-n|--dry 0..32767] [-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..100] [-V|--Verbosity 0..5] file.mid ...
 Render standard MIDI files into raw PCM audio.
 Options:
     -h, --help          this help message.
@@ -69,6 +69,7 @@ Options:
     -c, --chorus n      chorus preset: 0=no, 1..4=presets.
     -l, --level n       chorus level: 0..32767.
     -g, --gain n        master gain: 0..100.
+    -V, --Verbosity n   Verbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, 5=details.
 ~~~
 
 The following examples assume the default option USE_44KHZ=ON:
@@ -120,7 +121,7 @@ There are two environment variables that you may set before running the tests (m
 
 ## License
 
-Copyright (c) 2022-2024 Pedro López-Cabanillas.
+Copyright (c) 2022-2025 Pedro López-Cabanillas.
 
 Copyright (c) 2008-2024, The Android Open Source Project.
 
