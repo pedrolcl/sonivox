@@ -22,5 +22,5 @@ We do not allow merge requests into the `master` branch directly. Please follow 
 
 When opening a pull request, please:
 - Describe the changes you've made.
-- Link to the issue describing your contributions.
+- [Link to the issue](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/using-keywords-in-issues-and-pull-requests#linking-a-pull-request-to-an-issue) describing your contributions.
 - Ensure your code follows the contribution guidelines.
