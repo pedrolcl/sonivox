@@ -1,5 +1,5 @@
 #[=========================================================================[
-  Copyright (c) 2022-2024 Pedro López-Cabanillas
+  Copyright (c) 2022-2025 Pedro López-Cabanillas
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project( sonivox
     LANGUAGES C CXX
-    VERSION 3.6.15.0
+    VERSION 3.6.16.0
 )
 
 # GoogleTest requires at least C++14
@@ -40,7 +40,7 @@ cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the example program" 
 
 include(GNUInstallDirs)
 
-set(PROJECT_RELEASE_DATE "December 14, 2024")
+set(PROJECT_RELEASE_DATE "April 13, 2025")
 
 if (BUILD_TESTING)
     find_package(GTest CONFIG)

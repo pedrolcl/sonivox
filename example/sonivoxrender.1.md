@@ -98,4 +98,4 @@ See Tickets at GitHub <https://github.com/pedrolcl/sonivox/issues/>
 
 Licensed under the Apache License, Version 2.0
 
-Copyright (c) 2022-2024 Pedro López-Cabanillas and contributors
+Copyright (c) 2022-2025 Pedro López-Cabanillas and contributors

@@ -119,7 +119,7 @@ There are two environment variables that you may set before running the tests (m
 
 ## License
 
-Copyright (c) 2022-2024 Pedro López-Cabanillas.
+Copyright (c) 2022-2025 Pedro López-Cabanillas.
 
 Copyright (c) 2008-2024, The Android Open Source Project.
 
