@@ -439,7 +439,7 @@ int main (int argc, char **argv)
         case 'V':
             verbosity = atoi(optarg);
             if ((verbosity < 0) || (verbosity > 5)) {
-                fprintf(stderr, "invalid verbosity level: %ld\n", verbosity);
+                fprintf(stderr, "invalid verbosity level: %d\n", verbosity);
                 return EXIT_FAILURE;
             }
             break;
