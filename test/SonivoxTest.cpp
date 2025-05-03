@@ -24,6 +24,10 @@
 #include <libsonivox/eas_report.h>
 #include <libsonivox/eas_reverb.h>
 
+#if defined(_MSC_VER)
+#define off64_t fpos_t
+#endif
+
 #include "SonivoxTestEnvironment.h"
 
 // number of Sonivox output buffers to aggregate into one MediaBuffer
@@ -137,7 +141,7 @@ public:
 #endif
 
         result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
-        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to open file";
+        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to open file: " << mInputMediaFile;
 
         ASSERT_NE(mEASStreamHandle, nullptr) << "Failed to initialize EAS stream handle";
 

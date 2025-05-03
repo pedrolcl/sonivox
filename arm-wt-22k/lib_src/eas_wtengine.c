@@ -63,7 +63,11 @@ extern void WT_VoiceFilter (S_FILTER_CONTROL*pFilter, S_WT_INT_FRAME *pWTIntFram
 
 // The PRNG in WT_NoiseGenerator relies on modulo math
 #undef  NO_INT_OVERFLOW_CHECKS
+#if defined(_MSC_VER)
+#define NO_INT_OVERFLOW_CHECKS
+#else
 #define NO_INT_OVERFLOW_CHECKS __attribute__((no_sanitize("integer")))
+#endif
 
 #if defined(_OPTIMIZED_MONO) || !defined(NATIVE_EAS_KERNEL) || defined(_16_BIT_SAMPLES)
 /*----------------------------------------------------------------------------

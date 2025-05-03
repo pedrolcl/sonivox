@@ -27,6 +27,11 @@
 #include <eas_chorus.h>
 #include <eas_report.h>
 
+#if defined(_MSC_VER)
+#include <malloc.h>
+#define alloca _alloca
+#endif
+
 const char *dls_path = NULL;
 EAS_I32 playback_gain = 90;
 EAS_I32 reverb_type = 0;

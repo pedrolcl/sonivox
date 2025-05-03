@@ -47,6 +47,8 @@
 #include "jet_data.h"
 #endif
 
+#include "compute_tick_conv.c"
+
 //3 dls: The timebase for this module is adequate to keep MIDI and
 //3 digital audio synchronized for only a few minutes. It should be
 //3 sufficient for most mobile applications. If better accuracy is
@@ -880,7 +882,7 @@ static EAS_RESULT SMF_ParseMetaEvent (S_EAS_DATA *pEASData, S_SMF_DATA *pSMFData
                 return result;
             temp = (temp << 8) | c;
         }
-        {
+        /*{
             // pSMFData->tickConv = (EAS_U16) (((temp * 1024) / pSMFData->ppqn + 500) / 1000);
             uint64_t temp64;
             if (__builtin_mul_overflow(temp, 1024u, &temp64) ||
@@ -893,7 +895,8 @@ static EAS_RESULT SMF_ParseMetaEvent (S_EAS_DATA *pEASData, S_SMF_DATA *pSMFData
             } else {
                 pSMFData->tickConv = (EAS_U16) temp64;
             }
-        }
+        }*/
+        compute_tick_conv(temp, pSMFData->ppqn, & pSMFData->tickConv);
         pSMFData->flags |= SMF_FLAGS_HAS_TEMPO;
     }
 
