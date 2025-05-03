@@ -18,7 +18,6 @@
 #include <utils/Log.h>
 
 #include <fcntl.h>
-#include <unistd.h>
 #include <fstream>
 
 #include <libsonivox/eas.h>

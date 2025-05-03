@@ -4,7 +4,6 @@
 #include "eas_host.h"
 #include <fcntl.h>
 #include <limits.h>
-#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +12,7 @@
 #if defined(_WIN32)
 #include <io.h>
 #include <windows.h>
-#else // Linux or macOS
+#else // Unix like
 #include <unistd.h>
 #endif
 
