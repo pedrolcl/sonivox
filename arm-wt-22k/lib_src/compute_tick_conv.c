@@ -6,11 +6,13 @@
 
 #define MAX_TICK_CONV USHRT_MAX // Use USHRT_MAX for 16-bit unsigned max value
 
-void compute_tick_conv(uint32_t temp, uint32_t ppqn, uint16_t *tickConv) {
+// pSMFData->tickConv = (EAS_U16) (((temp * 1024) / pSMFData->ppqn + 500) / 1000);
+
+uint16_t compute_tick_conv(uint32_t temp, uint32_t ppqn)
+{
+    // Guard against division by zero
     if (ppqn == 0) {
-        // Guard against division by zero
-        *tickConv = MAX_TICK_CONV;
-        return;
+        return MAX_TICK_CONV;
     }
 
     uint64_t temp64;
@@ -36,20 +38,26 @@ void compute_tick_conv(uint32_t temp, uint32_t ppqn, uint16_t *tickConv) {
 #ifdef _MSC_VER
         // MSVC-specific overflow-safe addition
         uint8_t carry = _addcarry_u64(0, temp64, 500, &temp64);
-        if (carry || temp64 > MAX_TICK_CONV) {
+        if (carry) {
             overflow = 1;
         }
 #else
         // GCC/Clang-specific overflow-safe addition
-        if (__builtin_add_overflow(temp64, 500, &temp64) || temp64 > MAX_TICK_CONV) {
+        if (__builtin_add_overflow(temp64, 500, &temp64)) {
             overflow = 1;
         }
 #endif
     }
 
-    if (overflow) {
-        *tickConv = MAX_TICK_CONV;
-    } else {
-        *tickConv = (uint16_t)(temp64 / 1000);
+    if (!overflow) {
+        temp64 /= 1000;
+        if (temp64 > MAX_TICK_CONV) {
+            overflow = 1;
+        }
     }
+
+    if (overflow) {
+        return MAX_TICK_CONV;
+    }
+    return (uint16_t) temp64;
 }

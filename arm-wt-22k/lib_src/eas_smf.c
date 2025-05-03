@@ -882,7 +882,8 @@ static EAS_RESULT SMF_ParseMetaEvent (S_EAS_DATA *pEASData, S_SMF_DATA *pSMFData
                 return result;
             temp = (temp << 8) | c;
         }
-        /*{
+        /* Replaced this horrible obfuscated code:
+        {
             // pSMFData->tickConv = (EAS_U16) (((temp * 1024) / pSMFData->ppqn + 500) / 1000);
             uint64_t temp64;
             if (__builtin_mul_overflow(temp, 1024u, &temp64) ||
@@ -896,7 +897,7 @@ static EAS_RESULT SMF_ParseMetaEvent (S_EAS_DATA *pEASData, S_SMF_DATA *pSMFData
                 pSMFData->tickConv = (EAS_U16) temp64;
             }
         }*/
-        compute_tick_conv(temp, pSMFData->ppqn, & pSMFData->tickConv);
+        pSMFData->tickConv = compute_tick_conv(temp, pSMFData->ppqn);
         pSMFData->flags |= SMF_FLAGS_HAS_TEMPO;
     }
 
