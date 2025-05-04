@@ -18,19 +18,22 @@ jobs:
         fail-fast: false
         matrix:
           include:
-            - { icon: '⬛', sys: mingw32 }
-            - { icon: '🟦', sys: mingw64 }
-            - { icon: '🟨', sys: ucrt64  }
-            - { icon: '🟧', sys: clang64 }
+            - { icon: '⬛', sys: mingw32, shell: "msys2 {0}" }
+            - { icon: '🟦', sys: mingw64, shell: "msys2 {0}" }
+            - { icon: '🟨', sys: ucrt64, shell: "msys2 {0}"  }
+            - { icon: '🟧', sys: clang64, shell: "msys2 {0}" }
+            - { icon: '🟪', sys: msvc, shell: "powershell" }
+
     name: 🚧${{ matrix.icon }} ${{ matrix.sys }}
     defaults:
       run:
-        shell: msys2 {0}
+        shell: ${{ matrix.shell }}
 
     steps:
     - uses: actions/checkout@v4
 
     - name: '${{ matrix.icon }} Setup MSYS2'
+      if : matrix.sys != 'msvc'
       uses: msys2/setup-msys2@v2
       with:
         release: false
@@ -43,6 +46,10 @@ jobs:
           cmake:p
           ninja:p
           gtest:p
+    
+    - name: '${{ matrix.icon }} Setup MSVC'
+      if : matrix.sys == 'msvc'
+      uses: ilammy/msvc-dev-cmd@v1
 
     - name: '${{ matrix.icon }} Configure CMake'
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
