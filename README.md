@@ -1,14 +1,16 @@
 # Fork of the AOSP 'platform_external_sonivox' project to use it outside of Android 
 
-[![Linux CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-linux.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-linux.yml)
+[![Linux CI](https://github.com/pedrolcl/sonivox/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/linux-ci.yml)
 
-[![Windows CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-win.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-win.yml)
+[![Windows MSYS2 CI](https://github.com/pedrolcl/sonivox/actions/workflows/win-msys2.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/win-msys2.yml)
 
-[![macOS CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-mac.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-mac.yml)
+[![Windows MSVC CI](https://github.com/pedrolcl/sonivox/actions/workflows/win-msvc.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/win-msvc.yml)
 
-[![FreeBSD CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-freebsd.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-freebsd.yml)
+[![macOS CI](https://github.com/pedrolcl/sonivox/actions/workflows/mac-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/mac-ci.yml)
 
-[![Android CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-android.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-android.yml)
+[![FreeBSD CI](https://github.com/pedrolcl/sonivox/actions/workflows/freebsd-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/freebsd-ci.yml)
+
+[![Android CI](https://github.com/pedrolcl/sonivox/actions/workflows/android-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/android-ci.yml)
 
 This project is a fork of the Android Open Source Project 'platform_external_sonivox', including a CMake based build system to be used not on Android, but on any other computer Operating System.
 Google licensed this work originally named Sonivox EAS (Embedded Audio Synthesis) from the company Sonic Network Inc. under the terms of the Apache License 2.0.
@@ -21,6 +23,10 @@ You may find several projects already using this library as a git submodule:
 * [Drumstick::RT](https://github.com/pedrolcl/drumstick) multiplatform realtime MIDI library. It has a Sonivox output backend.
 * [Linux-SonivoxEas](https://github.com/pedrolcl/Linux-SonivoxEas) with ALSA Sequencer MIDI input and Pulseaudio output.
 * [multiplatform-sonivoxeas](https://github.com/pedrolcl/multiplatform-sonivoxeas) with Drumstick::RT MIDI input and Qt Multimedia audio output.
+
+Projects using it as an optional dependency:
+
+* [ScummVM](https://github.com/scummvm/scummvm)
 
 ## Build options
 
