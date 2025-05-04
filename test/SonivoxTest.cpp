@@ -24,10 +24,6 @@
 #include <libsonivox/eas_report.h>
 #include <libsonivox/eas_reverb.h>
 
-#if defined(_MSC_VER)
-#define off64_t fpos_t
-#endif
-
 #include "SonivoxTestEnvironment.h"
 
 // number of Sonivox output buffers to aggregate into one MediaBuffer
