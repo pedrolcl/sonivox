@@ -99,7 +99,7 @@ int SonivoxTestEnvironment::initFromOptions(int argc, char **argv) {
                 "test options are:\n\n"
                 "-P, --path: Resource files directory location\n"
                 "-C, default:true. Delete output file after test completes\n",
-                argv[optind ?: 1], argv[0]);
+                argv[optind ? optind : 1], argv[0]);
         return 2;
     }
     return 0;

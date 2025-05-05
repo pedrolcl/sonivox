@@ -1,4 +1,4 @@
-name: Windows CI
+name: Windows MSYS2 CI
 
 on:
   workflow_dispatch:
@@ -18,11 +18,12 @@ jobs:
         fail-fast: false
         matrix:
           include:
-            - { icon: '⬛', sys: mingw32 }
+            - { icon: '🟫', sys: mingw32 }
             - { icon: '🟦', sys: mingw64 }
-            - { icon: '🟨', sys: ucrt64  }
+            - { icon: '🟨', sys: ucrt64 }
             - { icon: '🟧', sys: clang64 }
-    name: 🚧${{ matrix.icon }} ${{ matrix.sys }}
+
+    name: 🚧${{ matrix.icon }} msys2 ${{ matrix.sys }}
     defaults:
       run:
         shell: msys2 {0}
@@ -45,7 +46,7 @@ jobs:
           gtest:p
 
     - name: '${{ matrix.icon }} Configure CMake'
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} -G Ninja
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build build --config ${{env.BUILD_TYPE}}
@@ -55,7 +56,7 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}} --verbose
 
     - name: '${{ matrix.icon }} Install'
-      run: cmake --install build
+      run: cmake --install build --config ${{env.BUILD_TYPE}}
 
     - name: '${{ matrix.icon }} Create Archive'
       run: tar cvf ${{env.INSTALL_LOCATION}}.tar ${{env.INSTALL_LOCATION}}
@@ -63,7 +64,7 @@ jobs:
     - name: '${{ matrix.icon }} Upload Artifacts'
       uses: actions/upload-artifact@v4
       with:
-        name: ${{env.INSTALL_LOCATION}}-${{matrix.sys}}
+        name: ${{env.INSTALL_LOCATION}}-msys2-${{matrix.sys}}
         path: ${{env.INSTALL_LOCATION}}.tar
         retention-days: 90
         overwrite: true
