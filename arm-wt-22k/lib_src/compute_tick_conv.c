@@ -2,6 +2,19 @@
 #include <limits.h> // For USHRT_MAX
 #ifdef _MSC_VER
 #include <intrin.h> // For _umul128 and _addcarry_u64
+#if defined(_M_ARM64) //!(defined(_M_AMD64) || defined(_M_X64))
+#pragma intrinsic(__umulh)
+
+uint64_t _umul128(uint64_t a, uint64_t b, uint64_t *high) {
+    *high = __umulh(a, b);
+    return a * b;
+}
+
+uint8_t _addcarry_u64(uint64_t carry_in, uint64_t x, uint64_t y, uint64_t *sum) {
+    *sum =  x + y + (carry_in !=0 ? 1 : 0);
+    return x > UINT32_MAX - y;
+}
+#endif
 #endif
 
 #define MAX_TICK_CONV USHRT_MAX // Use USHRT_MAX for 16-bit unsigned max value
