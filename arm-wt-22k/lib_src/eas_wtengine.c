@@ -196,7 +196,7 @@ void WT_Interpolate (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
     EAS_I32 phaseFrac;
     EAS_I32 acc0;
     const EAS_SAMPLE *pSamples;
-    const EAS_SAMPLE *loopEnd;
+    const EAS_SAMPLE *loopEnd; // point to the 1 sample beyond
     EAS_I32 samp1;
     EAS_I32 samp2;
     EAS_I32 numSamples;
@@ -216,8 +216,8 @@ void WT_Interpolate (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
     }
     pOutputBuffer = pWTIntFrame->pAudioBuffer;
 
-    loopEnd = (const EAS_SAMPLE*) pWTVoice->loopEnd + 1;
-    pSamples = (const EAS_SAMPLE*) pWTVoice->phaseAccum;
+    loopEnd = pWTVoice->loopEnd + 1;
+    pSamples = pWTVoice->phaseAccum;
     /*lint -e{713} truncation is OK */
     phaseFrac = pWTVoice->phaseFrac & PHASE_FRAC_MASK;
     phaseInc = pWTIntFrame->frame.phaseIncrement;
@@ -261,7 +261,7 @@ void WT_Interpolate (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
             /* decrementing pSamples by entire buffer length until second pSample is within */
             /* loopEnd                                                                      */
             while (&pSamples[1] >= loopEnd) {
-                pSamples -= (loopEnd - (const EAS_SAMPLE*)pWTVoice->loopStart);
+                pSamples -= (loopEnd - pWTVoice->loopStart);
             }
 
             /* fetch new samples */
@@ -278,7 +278,7 @@ void WT_Interpolate (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
     }
 
     /* save pointer and phase */
-    pWTVoice->phaseAccum = (EAS_U32) pSamples;
+    pWTVoice->phaseAccum = pSamples;
     pWTVoice->phaseFrac = (EAS_U32) phaseFrac;
 }
 #endif
@@ -324,8 +324,8 @@ void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
     pOutputBuffer = pWTIntFrame->pAudioBuffer;
 
     phaseInc = pWTIntFrame->frame.phaseIncrement;
-    bufferEndP1 = (const EAS_SAMPLE*) pWTVoice->loopEnd + 1;
-    pSamples = (const EAS_SAMPLE*) pWTVoice->phaseAccum;
+    bufferEndP1 = pWTVoice->loopEnd + 1;
+    pSamples = pWTVoice->phaseAccum;
     phaseFrac = (EAS_I32)(pWTVoice->phaseFrac & PHASE_FRAC_MASK);
 
     /* fetch adjacent samples */
@@ -384,8 +384,8 @@ void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
     }
 
     /* save pointer and phase */
-    pWTVoice->phaseAccum = (EAS_U32) pSamples;
-    pWTVoice->phaseFrac = (EAS_U32) phaseFrac;
+    pWTVoice->phaseAccum = pSamples;
+    pWTVoice->phaseFrac = phaseFrac;
 }
 #endif
 
@@ -506,9 +506,9 @@ void WT_VoiceFilter (S_FILTER_CONTROL *pFilter, S_WT_INT_FRAME *pWTIntFrame)
 
     /* get last two samples generated */
     /*lint -e{704} <avoid divide for performance>*/
-    tmp0 = (EAS_I32) (pWTVoice->phaseAccum) >> 18;
+    tmp0 = pWTVoice->prngTmp0 >> 18;
     /*lint -e{704} <avoid divide for performance>*/
-    tmp1 = (EAS_I32) (pWTVoice->loopEnd) >> 18;
+    tmp1 = pWTVoice->prngTmp1 >> 18;
 
     /* generate a buffer of noise */
     while (numSamples--) {
@@ -520,9 +520,9 @@ void WT_VoiceFilter (S_FILTER_CONTROL *pFilter, S_WT_INT_FRAME *pWTIntFrame)
         pWTVoice->phaseFrac += (EAS_U32) phaseInc;
         if (GET_PHASE_INT_PART(pWTVoice->phaseFrac))    {
             tmp0 = tmp1;
-            pWTVoice->phaseAccum = pWTVoice->loopEnd;
-            pWTVoice->loopEnd = (5 * pWTVoice->loopEnd + 1);
-            tmp1 = (EAS_I32) (pWTVoice->loopEnd) >> 18;
+            pWTVoice->prngTmp0 = pWTVoice->prngTmp1;
+            pWTVoice->prngTmp1 = (5 * pWTVoice->prngTmp1 + 1);
+            tmp1 = pWTVoice->prngTmp1 >> 18;
             pWTVoice->phaseFrac = GET_PHASE_FRAC_PART(pWTVoice->phaseFrac);
         }
 

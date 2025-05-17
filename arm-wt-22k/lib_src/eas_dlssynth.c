@@ -345,16 +345,15 @@ EAS_RESULT DLS_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOIC
     pWTVoice->filter.z2 = 0;
 
     /* initialize the oscillator */
-    pWTVoice->phaseAccum = (EAS_U32) pSynth->pDLS->pDLSSamples + pSynth->pDLS->pDLSSampleOffsets[pDLSRegion->wtRegion.waveIndex];
+#if defined (_8_BIT_SAMPLES)
+    pWTVoice->phaseAccum = pSynth->pDLS->pDLSSamples + pSynth->pDLS->pDLSSampleOffsets[pDLSRegion->wtRegion.waveIndex];
+#else //_16_BIT_SAMPLES
+    pWTVoice->phaseAccum = pSynth->pDLS->pDLSSamples + pSynth->pDLS->pDLSSampleOffsets[pDLSRegion->wtRegion.waveIndex] / 2;
+#endif
     if (pDLSRegion->wtRegion.region.keyGroupAndFlags & REGION_FLAG_IS_LOOPED)
     {
-#if defined (_8_BIT_SAMPLES)
         pWTVoice->loopStart = pWTVoice->phaseAccum + pDLSRegion->wtRegion.loopStart;
         pWTVoice->loopEnd = pWTVoice->phaseAccum + pDLSRegion->wtRegion.loopEnd - 1;
-#else //_16_BIT_SAMPLES
-        pWTVoice->loopStart = pWTVoice->phaseAccum + (pDLSRegion->wtRegion.loopStart<<1);
-        pWTVoice->loopEnd = pWTVoice->phaseAccum + (pDLSRegion->wtRegion.loopEnd<<1) - 2;
-#endif
     }
     else
     {
@@ -363,7 +362,7 @@ EAS_RESULT DLS_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOIC
                 + pSynth->pDLS->pDLSSampleLen[pDLSRegion->wtRegion.waveIndex] - 1;
 #else //_16_BIT_SAMPLES
         pWTVoice->loopStart = pWTVoice->loopEnd = pWTVoice->phaseAccum
-                + pSynth->pDLS->pDLSSampleLen[pDLSRegion->wtRegion.waveIndex] - 2;
+                + pSynth->pDLS->pDLSSampleLen[pDLSRegion->wtRegion.waveIndex] / 2 - 1;
 #endif
     }
 
@@ -505,7 +504,7 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
             {
                 /*lint -e{702} use shift for performance */
                 temp = pEnvParams->attackTime + ((pEnvParams->velToAttack * pVoice->velocity) >> 7);
-                *pIncrement = ConvertRate(temp);
+                *pIncrement = DLSConvertRate(temp);
                 return;
             }
 
@@ -526,7 +525,7 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
             {
                 /*lint -e{702} use shift for performance */
                 temp = pEnvParams->holdTime + ((pEnvParams->keyNumToHold * pVoice->note) >> 7);
-                *pIncrement = ConvertDelay(temp);
+                *pIncrement = DLSConvertDelay(temp);
                 return;
             }
             else
@@ -546,7 +545,7 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
             {
                 /*lint -e{702} use shift for performance */
                 temp = pEnvParams->decayTime + ((pEnvParams->keyNumToDecay * pVoice->note) >> 7);
-                *pIncrement = ConvertRate(temp);
+                *pIncrement = DLSConvertRate(temp);
                 return;
             }
 

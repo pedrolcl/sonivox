@@ -30,6 +30,7 @@
 #ifndef _EAS_SYNTH_H
 #define _EAS_SYNTH_H
 
+#include "eas_audioconst.h"
 #include "eas_types.h"
 #include "eas_sndlib.h"
 
@@ -98,8 +99,8 @@
 #define UNASSIGNED_SYNTH_VOICE      MAX_SYNTH_VOICES
 
 
-/* synth parameters are updated every SYNTH_UPDATE_PERIOD_IN_SAMPLES */
-#define SYNTH_UPDATE_PERIOD_IN_SAMPLES  (EAS_I32)(0x1L << SYNTH_UPDATE_PERIOD_IN_BITS)
+// /* synth parameters are updated every SYNTH_UPDATE_PERIOD_IN_SAMPLES */
+// #define SYNTH_UPDATE_PERIOD_IN_SAMPLES  (EAS_I32)(0x1L << SYNTH_UPDATE_PERIOD_IN_BITS)
 
 /* stealing weighting factors */
 #define NOTE_AGE_STEAL_WEIGHT           1
@@ -341,7 +342,7 @@ typedef struct s_synth_tag
 typedef struct s_voice_mgr_tag
 {
     S_SYNTH                 *pSynth[MAX_VIRTUAL_SYNTHESIZERS];
-    EAS_PCM                 voiceBuffer[SYNTH_UPDATE_PERIOD_IN_SAMPLES];
+    EAS_PCM                 voiceBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
 
 #ifdef _FM_SYNTH
     EAS_PCM                 operMixBuffer[SYNTH_UPDATE_PERIOD_IN_SAMPLES];
