@@ -125,10 +125,12 @@
 #include "eas_report.h"
 #include <string.h>
 
+#if defined(_16_BIT_SAMPLES)
 // for mp3 decoding
 #define MINIMP3_IMPLEMENTATION
 #define MINIMP3_ONLY_MP3
 #include "minimp3.h"
+#endif
 
 // for a-law/u-law decoding
 #include "pcm_aulaw.h"
@@ -431,7 +433,9 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
 static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSMP_DATA *p);
 static EAS_RESULT Parse_fmt (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSMP_DATA *p);
 static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, S_WSMP_DATA *p, EAS_SAMPLE *pSample, EAS_U32 sampleLen);
+#if defined(_16_BIT_SAMPLES)
 static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, EAS_SAMPLE *pSample, EAS_I32 *sampleLen);
+#endif
 static EAS_RESULT Parse_lins(SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size);
 static EAS_RESULT Parse_ins (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size);
 static EAS_RESULT Parse_insh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_U32 *pRgnCount, EAS_U32 *pLocale);
@@ -1060,36 +1064,39 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     switch (p->fmtTag)
     {
         case WAVE_FORMAT_MPEGLAYER3:
+#if defined(_16_BIT_SAMPLES)
             if ((result = Parse_mp3_data(pDLSData, dataPos, dataSize, NULL, &size)) != EAS_SUCCESS)
                 return result;
             break;
-    }
+#else
+            return EAS_ERROR_UNRECOGNIZED_FORMAT;
+#endif
+        }
 
-    if (p->loopLength)
-        size += bitDepth / 8;
+        if (p->loopLength)
+            size += bitDepth / 8;
 
-    /* for first pass, add size to wave pool size and return */
-    if (pDLSData->pDLS == NULL)
-    {
-        pDLSData->wavePoolSize += (EAS_U32) size;
+        /* for first pass, add size to wave pool size and return */
+        if (pDLSData->pDLS == NULL) {
+            pDLSData->wavePoolSize += (EAS_U32) size;
+            return EAS_SUCCESS;
+        }
+
+        /* allocate memory and read in the sample data */
+        pSample = (EAS_U8 *) pDLSData->pDLS->pDLSSamples + pDLSData->wavePoolOffset;
+        pDLSData->pDLS->pDLSSampleOffsets[waveIndex] = pDLSData->wavePoolOffset;
+        pDLSData->pDLS->pDLSSampleLen[waveIndex] = (EAS_U32) size;
+        pDLSData->wavePoolOffset += (EAS_U32) size;
+        if (pDLSData->wavePoolOffset > pDLSData->wavePoolSize) {
+            EAS_Report(_EAS_SEVERITY_ERROR, "Wave pool exceeded allocation\n");
+            return EAS_ERROR_SOUND_LIBRARY;
+        }
+
+        if ((result = Parse_data(pDLSData, dataPos, dataSize, p, pSample, (EAS_U32) size))
+            != EAS_SUCCESS)
+            return result;
+
         return EAS_SUCCESS;
-    }
-
-    /* allocate memory and read in the sample data */
-    pSample = (EAS_U8*)pDLSData->pDLS->pDLSSamples + pDLSData->wavePoolOffset;
-    pDLSData->pDLS->pDLSSampleOffsets[waveIndex] = pDLSData->wavePoolOffset;
-    pDLSData->pDLS->pDLSSampleLen[waveIndex] = (EAS_U32) size;
-    pDLSData->wavePoolOffset += (EAS_U32) size;
-    if (pDLSData->wavePoolOffset > pDLSData->wavePoolSize)
-    {
-        EAS_Report(_EAS_SEVERITY_ERROR, "Wave pool exceeded allocation\n");
-        return EAS_ERROR_SOUND_LIBRARY;
-    }
-
-    if ((result = Parse_data(pDLSData, dataPos, dataSize, p, pSample, (EAS_U32)size)) != EAS_SUCCESS)
-        return result;
-
-    return EAS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------
@@ -1459,6 +1466,7 @@ handle_loop:
  *
  *----------------------------------------------------------------------------
 */
+#if defined(_16_BIT_SAMPLES)
 static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, EAS_SAMPLE *pSample, EAS_I32 *sampleLen)
 {
     EAS_RESULT result;
@@ -1526,6 +1534,7 @@ static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, 
 
     return EAS_SUCCESS;
 }
+#endif
 
 /*----------------------------------------------------------------------------
  * Parse_lins ()
