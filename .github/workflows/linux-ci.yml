@@ -19,6 +19,7 @@ jobs:
       matrix:
         USE_44KHZ: [ON, OFF]
         USE_16BITS_SAMPLES: [ON, OFF]
+        arch: ["x64", "arm64"]
         include:
           - { icon: '🟥', arch: "x64", os: "ubuntu-24.04" }
           - { icon: '🟩', arch: "arm64", os: "ubuntu-24.04-arm" }
