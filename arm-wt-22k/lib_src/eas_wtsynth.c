@@ -385,9 +385,9 @@ static EAS_RESULT WT_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNT
     /* if this wave is to be generated using noise generator */
     if (pRegion->region.keyGroupAndFlags & REGION_FLAG_USE_WAVE_GENERATOR)
     {
-        pWTVoice->phaseAccum = 4574296;
+        pWTVoice->prngTmp0 = 4574296;
         pWTVoice->loopStart = WT_NOISE_GENERATOR;
-        pWTVoice->loopEnd = 4574295;
+        pWTVoice->prngTmp1 = 4574295;
     }
 
     /* normal sample */
@@ -400,24 +400,19 @@ static EAS_RESULT WT_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNT
         else
             pWTVoice->phaseAccum = pSynth->pEAS->pSampleOffsets[pRegion->waveIndex];
 #else
-        pWTVoice->phaseAccum = (EAS_U32) pSynth->pEAS->pSamples + pSynth->pEAS->pSampleOffsets[pRegion->waveIndex];
+        pWTVoice->phaseAccum = pSynth->pEAS->pSamples + pSynth->pEAS->pSampleOffsets[pRegion->waveIndex]/2;
 #endif
 
         if (pRegion->region.keyGroupAndFlags & REGION_FLAG_IS_LOOPED)
         {
-#if defined (_8_BIT_SAMPLES)
             pWTVoice->loopStart = pWTVoice->phaseAccum + pRegion->loopStart;
             pWTVoice->loopEnd = pWTVoice->phaseAccum + pRegion->loopEnd - 1;
-#else //_16_BIT_SAMPLES
-            pWTVoice->loopStart = pWTVoice->phaseAccum + (pRegion->loopStart<<1);
-            pWTVoice->loopEnd = pWTVoice->phaseAccum + (pRegion->loopEnd<<1) - 2;
-#endif
         }
         else {
 #if defined (_8_BIT_SAMPLES)
             pWTVoice->loopStart = pWTVoice->loopEnd = pWTVoice->phaseAccum + pSynth->pEAS->pSampleLen[pRegion->waveIndex] - 1;
 #else //_16_BIT_SAMPLES
-            pWTVoice->loopStart = pWTVoice->loopEnd = pWTVoice->phaseAccum + pSynth->pEAS->pSampleLen[pRegion->waveIndex] - 2;
+            pWTVoice->loopStart = pWTVoice->loopEnd = pWTVoice->phaseAccum + pSynth->pEAS->pSampleLen[pRegion->waveIndex] / 2 - 1;
 #endif
         }
     }
@@ -459,27 +454,19 @@ static EAS_RESULT WT_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNT
 */
 EAS_BOOL WT_CheckSampleEnd (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame, EAS_BOOL update)
 {
-    EAS_U32 endPhaseAccum;
+    const EAS_SAMPLE* endPhaseAccum;
     EAS_U32 endPhaseFrac;
     EAS_I32 numSamples;
     EAS_BOOL done = EAS_FALSE;
 
     /* check to see if we hit the end of the waveform this time */
     /*lint -e{703} use shift for performance */
-    endPhaseFrac = pWTVoice->phaseFrac + (pWTIntFrame->frame.phaseIncrement << SYNTH_UPDATE_PERIOD_IN_BITS);
-#if defined (_8_BIT_SAMPLES)
+    endPhaseFrac = pWTVoice->phaseFrac + pWTIntFrame->frame.phaseIncrement;
     endPhaseAccum = pWTVoice->phaseAccum + GET_PHASE_INT_PART(endPhaseFrac);
-#else //_16_BIT_SAMPLES
-    // Multiply by 2 for 16 bit processing module implementation
-    endPhaseAccum = pWTVoice->phaseAccum + (EAS_U32)(endPhaseFrac >> 14);
-#endif
     if (endPhaseAccum >= pWTVoice->loopEnd)
     {
         /* calculate how far current ptr is from end */
-        numSamples = (EAS_I32) (pWTVoice->loopEnd - pWTVoice->phaseAccum);
-#if defined (_16_BIT_SAMPLES)
-        numSamples >>= 1;        // Divide by 2 for 16 bit processing module implementation
-#endif
+        numSamples = pWTVoice->loopEnd - pWTVoice->phaseAccum;
         /* now account for the fractional portion */
         /*lint -e{703} use shift for performance */
         numSamples = (numSamples << NUM_PHASE_FRAC_BITS) - (EAS_I32) pWTVoice->phaseFrac;
@@ -591,13 +578,11 @@ static EAS_BOOL WT_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH
     } else {
         temp = pWTVoice->loopEnd - pWTVoice->loopStart;
     }
-#ifdef _16_BIT_SAMPLES
-    temp >>= 1;
-#endif
     if (temp != 0) {
         temp = temp << NUM_PHASE_FRAC_BITS;
         if (intFrame.frame.phaseIncrement > temp) {
             ALOGW("%p phaseIncrement=%d", pWTVoice, (int)intFrame.frame.phaseIncrement);
+            EAS_Report(_EAS_SEVERITY_WARNING, "WT_UpdateVoice: phase increment larger than loop region, rounded (%d>%d)", (int)intFrame.frame.phaseIncrement, (int)temp);
             intFrame.frame.phaseIncrement %= temp;
         }
     }
@@ -1011,9 +996,12 @@ static void WT_UpdateEG2 (S_WT_VOICE *pWTVoice, const S_ENVELOPE *pEnv)
  * - updates LFO values for the given voice
  *----------------------------------------------------------------------------
 */
+// triangle wave LFO
+// (0, 0) (8192, 32767) (16384, -1) (24576, -32768) (32767, -4)
+// x is added by phaseInc per BUFFER_SIZE_IN_MONO_SAMPLES
+// phaseinc = (32768*f)/(srate/bufsize)
 void WT_UpdateLFO (S_LFO_CONTROL *pLFO, EAS_I16 phaseInc)
 {
-
     /* To save memory, if m_nPhaseValue is negative, we are in the
      * delay phase, and m_nPhaseValue represents the time left
      * in the delay.

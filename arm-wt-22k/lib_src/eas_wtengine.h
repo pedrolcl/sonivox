@@ -39,13 +39,14 @@
 #error "Incompatible build settings: _OPTIMIZED_MONO can only be used with NUM_OUTPUT_CHANNELS = 1"
 #endif
 
+#include "eas_sndlib.h"
 #include "eas_wt_IPC_frame.h"
 
 /*----------------------------------------------------------------------------
  * defines
  *----------------------------------------------------------------------------
 */
-#define WT_NOISE_GENERATOR                  0xffffffff
+#define WT_NOISE_GENERATOR                  (void*)0xffffffff
 
 /*----------------------------------------------------------------------------
  * typedefs
@@ -84,10 +85,11 @@ typedef struct s_filter_control_tag
  * S_LFO_CONTROL data structure
  *------------------------------------
 */
+// See eas_wtsynth.c WT_UpdateLFO()
 typedef struct s_lfo_control_tag
 {
-    EAS_I16     lfoValue;           /* LFO current output value */
-    EAS_I16     lfoPhase;           /* LFO current phase */
+    EAS_I16     lfoValue;           /* LFO current output value [-32768, 32767] */
+    EAS_I16     lfoPhase;           /* LFO current phase [0, 32767] OR remaining LFO delay time in frames */
 } S_LFO_CONTROL;
 
 /* bit definitions for S_WT_VOICE:flags */
@@ -124,9 +126,15 @@ typedef enum {
 */
 typedef struct s_wt_voice_tag
 {
-    EAS_U32             loopEnd;                /* points to last PCM sample (not 1 beyond last) */
-    EAS_U32             loopStart;              /* points to first sample at start of loop */
-    EAS_U32             phaseAccum;             /* current sample, integer portion of phase */
+    union {
+        const EAS_SAMPLE*   loopEnd;                /* points to exactly last PCM sample (1 sample beyond is valid, equals to *loopStart) */
+        EAS_I32 prngTmp1;
+    };
+    const EAS_SAMPLE*   loopStart;              /* points to first sample at start of loop */
+    union {
+        const EAS_SAMPLE*   phaseAccum;             /* current sample, integer portion of phase */
+        EAS_I32 prngTmp0;
+    };
     EAS_U32             phaseFrac;              /* fractional portion of phase */
 
 #if (NUM_OUTPUT_CHANNELS == 2)
