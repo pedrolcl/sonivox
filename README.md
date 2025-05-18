@@ -80,7 +80,7 @@ Options:
 
 The following examples assume the default option USE_44KHZ=ON:
 
-Example 1: Render a MIDI file and save the rendered audio as a raw audio file:
+Example 1: Render a MIDI file and save the rendered audio as a raw audio file (PCM format: little endian signed 16 bits samples, 2 channels, sample rate = 44100 Hz)
 
     $ sonivoxrender ants.mid > ants.pcm
 
@@ -104,6 +104,18 @@ Example 5: pipe the rendered audio thru the PulseAudio's 'pacat' utility:
 
     $ sonivoxrender ants.mid | pacat
 
+Example 6: pipe the rendered audio thru the PipeWire's 'pw-play' utility:
+
+    $ sonivoxrender ants.mid | pw-play --rate 44100 -
+
+Example 7: pipe the rendered audio thru the [FFmpeg](https://ffmpeg.org/)'s 'ffplay' utility:
+
+    $ sonivoxrender ants.mid | ffplay -i - -f s16le -ar 44.1k -ac 2 -nodisp -autoexit -loglevel quiet
+
+This has the advantage of being multiplatform. Depending on the FFmpeg installed version, you may need instead:
+
+    $ sonivoxrender ants.mid | ffplay -i - -f s16le -ar 44.1k -ch_layout stereo -nodisp -autoexit -loglevel quiet
+
 ## Unit tests
 
 The Android unit tests have been integrated in the CMake build system, with little modifications. A requirement is GoogleTest, either installed system wide or it will be downloaded from the git repository. 
@@ -125,7 +137,7 @@ There are two environment variables that you may set before running the tests (m
 
 ## License
 
-Copyright (c) 2022-2025 Pedro López-Cabanillas.
+Copyright (c) 2022-2025 Pedro López-Cabanillas and others.
 
 Copyright (c) 2008-2024, The Android Open Source Project.
 
