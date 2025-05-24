@@ -23,8 +23,12 @@ jobs:
         include:
           - { icon: '🟥', arch: "x64", os: "ubuntu-24.04" }
           - { icon: '🟩', arch: "arm64", os: "ubuntu-24.04-arm" }
+          - { format: "r22s8", USE_44KHZ: OFF, USE_16BITS_SAMPLES: OFF }
+          - { format: "r22s16", USE_44KHZ: OFF, USE_16BITS_SAMPLES: ON }
+          - { format: "r44s8", USE_44KHZ: ON, USE_16BITS_SAMPLES: OFF }
+          - { format: "r44s16", USE_44KHZ: ON, USE_16BITS_SAMPLES: ON }
     runs-on: ${{ matrix.os }}
-    name: 🚧${{ matrix.icon }} Linux CI ${{ matrix.arch }}
+    name: 🚧${{ matrix.icon }} Linux CI ${{ matrix.arch }} format ${{ matrix.format }}
 
     steps:
     - uses: actions/checkout@v4
@@ -36,7 +40,7 @@ jobs:
       run: |
         mkdir -p ${{github.workspace}}/temp
 
-    - name: '${{ matrix.icon }} Configure CMake with USE_44KHZ = ${{ matrix.USE_44KHZ }} and USE_16BITS_SAMPLES = ${{ matrix.USE_16BITS_SAMPLES }}'
+    - name: '${{ matrix.icon }} Configure CMake with USE_44KHZ=${{ matrix.USE_44KHZ }} and USE_16BITS_SAMPLES=${{ matrix.USE_16BITS_SAMPLES }}'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} -DUSE_44KHZ=${{ matrix.USE_44KHZ }} -DUSE_16BITS_SAMPLES=${{ matrix.USE_16BITS_SAMPLES }}
 
     - name: '${{ matrix.icon }} Build'
@@ -57,7 +61,7 @@ jobs:
     - name: '${{ matrix.icon }} Upload Artifacts'
       uses: actions/upload-artifact@v4
       with:
-        name: SonivoxV3-Linux-${{matrix.arch}}
+        name: SonivoxV3-Linux-${{matrix.arch}}-${{matrix.format}}
         path: SonivoxV3.tar
         retention-days: 90
         overwrite: true
