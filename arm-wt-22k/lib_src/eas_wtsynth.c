@@ -461,7 +461,7 @@ EAS_BOOL WT_CheckSampleEnd (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame, E
 
     /* check to see if we hit the end of the waveform this time */
     /*lint -e{703} use shift for performance */
-    endPhaseFrac = pWTVoice->phaseFrac + pWTIntFrame->frame.phaseIncrement;
+    endPhaseFrac = pWTVoice->phaseFrac + pWTIntFrame->frame.phaseIncrement * BUFFER_SIZE_IN_MONO_SAMPLES;
     endPhaseAccum = pWTVoice->phaseAccum + GET_PHASE_INT_PART(endPhaseFrac);
     if (endPhaseAccum >= pWTVoice->loopEnd)
     {
@@ -476,6 +476,7 @@ EAS_BOOL WT_CheckSampleEnd (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame, E
                 (numSamples + pWTIntFrame->frame.phaseIncrement - 1) / pWTIntFrame->frame.phaseIncrement;
             if (oldMethod != pWTIntFrame->numSamples) {
                 ALOGE("b/317780080 old %ld new %ld", oldMethod, pWTIntFrame->numSamples);
+                EAS_Report(_EAS_SEVERITY_DETAIL, "%s: old %ld new %ld\n", __func__, oldMethod, pWTIntFrame->numSamples);
             }
         } else {
             pWTIntFrame->numSamples = numSamples;
