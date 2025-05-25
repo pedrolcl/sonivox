@@ -18,7 +18,6 @@
 #include <utils/Log.h>
 
 #include <fcntl.h>
-#include <unistd.h>
 #include <fstream>
 
 #include <libsonivox/eas.h>
@@ -138,7 +137,7 @@ public:
 #endif
 
         result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
-        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to open file";
+        ASSERT_EQ(result, EAS_SUCCESS) << "Failed to open file: " << mInputMediaFile;
 
         ASSERT_NE(mEASStreamHandle, nullptr) << "Failed to initialize EAS stream handle";
 

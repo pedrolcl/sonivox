@@ -131,6 +131,9 @@ list(APPEND HEADERS
 #arm-wt-22k/host_src/jet.h
 )
 
+include ( CheckIncludeFile )
+check_include_file ( getopt.h HAVE_GETOPT_H )
+
 add_library( sonivox-objects OBJECT ${SOURCES} ${HEADERS} )
 
 target_compile_definitions( sonivox-objects PRIVATE
@@ -293,6 +296,11 @@ if (BUILD_TESTING)
         fakes
     )
 
+    if (NOT HAVE_GETOPT_H)
+        target_sources( SonivoxTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/getopt_port/getopt.c )
+        target_include_directories( SonivoxTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/getopt_port )
+    endif()
+  
     target_link_libraries( SonivoxTest PRIVATE
         GTest::gtest_main
     )

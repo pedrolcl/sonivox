@@ -1,14 +1,16 @@
 # Fork of the AOSP 'platform_external_sonivox' project to use it outside of Android 
 
-[![Linux CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-linux.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-linux.yml)
+[![Linux CI](https://github.com/pedrolcl/sonivox/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/linux-ci.yml)
 
-[![Windows CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-win.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-win.yml)
+[![Windows MSYS2 CI](https://github.com/pedrolcl/sonivox/actions/workflows/win-msys2.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/win-msys2.yml)
 
-[![macOS CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-mac.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-mac.yml)
+[![Windows MSVC CI](https://github.com/pedrolcl/sonivox/actions/workflows/win-msvc.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/win-msvc.yml)
 
-[![FreeBSD CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-freebsd.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-freebsd.yml)
+[![macOS CI](https://github.com/pedrolcl/sonivox/actions/workflows/mac-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/mac-ci.yml)
 
-[![Android CI](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-android.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/cmake-android.yml)
+[![FreeBSD CI](https://github.com/pedrolcl/sonivox/actions/workflows/freebsd-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/freebsd-ci.yml)
+
+[![Android CI](https://github.com/pedrolcl/sonivox/actions/workflows/android-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/android-ci.yml)
 
 This project is a fork of the Android Open Source Project 'platform_external_sonivox', including a CMake based build system to be used not on Android, but on any other computer Operating System.
 Google licensed this work originally named Sonivox EAS (Embedded Audio Synthesis) from the company Sonic Network Inc. under the terms of the Apache License 2.0.
@@ -21,6 +23,10 @@ You may find several projects already using this library as a git submodule:
 * [Drumstick::RT](https://github.com/pedrolcl/drumstick) multiplatform realtime MIDI library. It has a Sonivox output backend.
 * [Linux-SonivoxEas](https://github.com/pedrolcl/Linux-SonivoxEas) with ALSA Sequencer MIDI input and Pulseaudio output.
 * [multiplatform-sonivoxeas](https://github.com/pedrolcl/multiplatform-sonivoxeas) with Drumstick::RT MIDI input and Qt Multimedia audio output.
+
+Projects using it as an optional dependency:
+
+* [ScummVM](https://github.com/scummvm/scummvm)
 
 ## Build options
 
@@ -74,7 +80,7 @@ Options:
 
 The following examples assume the default option USE_44KHZ=ON:
 
-Example 1: Render a MIDI file and save the rendered audio as a raw audio file:
+Example 1: Render a MIDI file and save the rendered audio as a raw audio file (PCM format: little endian signed 16 bits samples, 2 channels, sample rate = 44100 Hz)
 
     $ sonivoxrender ants.mid > ants.pcm
 
@@ -97,6 +103,18 @@ Example 4: pipe the rendered audio thru the ['sox'](https://sourceforge.net/proj
 Example 5: pipe the rendered audio thru the PulseAudio's 'pacat' utility:
 
     $ sonivoxrender ants.mid | pacat
+
+Example 6: pipe the rendered audio thru the PipeWire's 'pw-play' utility:
+
+    $ sonivoxrender ants.mid | pw-play --rate 44100 -
+
+Example 7: pipe the rendered audio thru the [FFmpeg](https://ffmpeg.org/)'s 'ffplay' utility:
+
+    $ sonivoxrender ants.mid | ffplay -i - -f s16le -ar 44.1k -ac 2 -nodisp -autoexit -loglevel quiet
+
+This has the advantage of being multiplatform. Depending on the FFmpeg installed version, you may need instead:
+
+    $ sonivoxrender ants.mid | ffplay -i - -f s16le -ar 44.1k -ch_layout stereo -nodisp -autoexit -loglevel quiet
 
 You may replace "ants.mid" by another MIDI or XMF file, like "test/res/testmxmf.mxmf"
 
@@ -121,7 +139,7 @@ There are two environment variables that you may set before running the tests (m
 
 ## License
 
-Copyright (c) 2022-2025 Pedro López-Cabanillas.
+Copyright (c) 2022-2025 Pedro López-Cabanillas and others.
 
 Copyright (c) 2008-2024, The Android Open Source Project.
 

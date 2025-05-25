@@ -33,10 +33,6 @@
 #include "eas_types.h"
 #include "eas_synthcfg.h"
 
-#ifdef _WT_SYNTH
-#include "eas_wtengine.h"
-#endif
-
 /*----------------------------------------------------------------------------
  * This is bit of a hack to allow us to keep the same structure
  * declarations for the DLS parser. Normally, the data is located
@@ -226,8 +222,8 @@ typedef struct s_wt_region_tag
     S_REGION    region;
     EAS_I16     tuning;
     EAS_I16     gain;
-    EAS_U32     loopStart;
-    EAS_U32     loopEnd;
+    EAS_U32     loopStart; // in samples
+    EAS_U32     loopEnd; // in samples, past end
     EAS_U16     waveIndex;
     EAS_U16     artIndex;
 } S_WT_REGION;
@@ -348,8 +344,8 @@ typedef struct s_eas_dls_tag
     S_PROGRAM           *pDLSPrograms;
     S_DLS_REGION        *pDLSRegions;
     S_DLS_ARTICULATION  *pDLSArticulations;
-    EAS_U32             *pDLSSampleLen;
-    EAS_U32             *pDLSSampleOffsets;
+    EAS_U32             *pDLSSampleLen; // in bytes // TODO: in samples may be better?
+    EAS_U32             *pDLSSampleOffsets; // in bytes
     EAS_SAMPLE          *pDLSSamples;
     EAS_U16             numDLSPrograms;
     EAS_U16             numDLSRegions;
@@ -386,8 +382,8 @@ typedef struct s_eas_sndlib_tag
 
     SCNST S_WT_REGION           *pWTRegions;
     SCNST S_ARTICULATION        *pArticulations;
-    SCNST EAS_U32               *pSampleLen;
-    SCNST EAS_U32               *pSampleOffsets;
+    SCNST EAS_U32               *pSampleLen; // in bytes // TODO: in samples may be better?
+    SCNST EAS_U32               *pSampleOffsets; // in bytes
     SCNST EAS_SAMPLE            *pSamples;
 
     SCNST S_FM_REGION           *pFMRegions;

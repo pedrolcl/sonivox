@@ -94,6 +94,7 @@ typedef struct
 #define SUSTAIN_LOG_CONVERSION_SHIFT    15
 
 /* conversion factor sustain level from percent to EG full scale */
+// equals to (SYNTH_FULL_SCALE_EG1_GAIN << 15) / 1000
 #define SUSTAIN_LINEAR_CONVERSION_FACTOR    1073709
 
 /* conversion factor to convert frame period to decay rate */
@@ -286,9 +287,8 @@ typedef struct s_dls_params
 EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle, EAS_I32 offset, S_DLS **pDLS);
 EAS_RESULT DLSCleanup (EAS_HW_DATA_HANDLE hwInstData, S_DLS *pDLS);
 void DLSAddRef (S_DLS *pDLS);
-EAS_I16 ConvertDelay (EAS_I32 timeCents);
-EAS_I16 ConvertRate (EAS_I32 timeCents);
-
+EAS_I16 DLSConvertDelay (EAS_I32 timeCents);
+EAS_I16 DLSConvertRate (EAS_I32 timeCents);
 
 #ifdef _STANDALONE_CONVERTER
 void DLSConvParams (S_DLS_PARAMS *pParams, EAS_BOOL set);

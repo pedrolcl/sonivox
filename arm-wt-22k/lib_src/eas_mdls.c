@@ -125,17 +125,21 @@
 #include "eas_report.h"
 #include <string.h>
 
+#if defined(_16_BIT_SAMPLES)
 // for mp3 decoding
 #define MINIMP3_IMPLEMENTATION
 #define MINIMP3_ONLY_MP3
 #include "minimp3.h"
+#endif
 
 // for a-law/u-law decoding
 #include "pcm_aulaw.h"
 
-//2 we should replace log10() function with fixed point routine in ConvertSampleRate()
-/* lint is choking on the ARM math.h file, so we declare the log10 function here */
-extern double log10(double x);
+// //2 we should replace log10() function with fixed point routine in ConvertSampleRate()
+// /* lint is choking on the ARM math.h file, so we declare the log10 function here */
+// extern double log10(double x);
+
+#include <math.h>
 
 /*------------------------------------
  * defines
@@ -408,10 +412,6 @@ static const EAS_INT bitDepth = 16;
 #error "Must define _8_BIT_SAMPLES or _16_BIT_SAMPLES"
 #endif
 
-static const EAS_U32 outputSampleRate = _OUTPUT_SAMPLE_RATE;
-static const EAS_I32 dlsRateConvert = DLS_RATE_CONVERT;
-static const EAS_I32 dlsLFOFrequencyConvert = DLS_LFO_FREQUENCY_CONVERT;
-
 /*------------------------------------
  * inline functions
  *------------------------------------
@@ -431,7 +431,9 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
 static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSMP_DATA *p);
 static EAS_RESULT Parse_fmt (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSMP_DATA *p);
 static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, S_WSMP_DATA *p, EAS_SAMPLE *pSample, EAS_U32 sampleLen);
+#if defined(_16_BIT_SAMPLES)
 static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, EAS_SAMPLE *pSample, EAS_I32 *sampleLen);
+#endif
 static EAS_RESULT Parse_lins(SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size);
 static EAS_RESULT Parse_ins (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size);
 static EAS_RESULT Parse_insh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_U32 *pRgnCount, EAS_U32 *pLocale);
@@ -446,12 +448,12 @@ static void Convert_rgn (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_U16 regionIndex, E
 static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES *pDLSArt,  EAS_U16 artIndex);
 static EAS_I16 ConvertSampleRate (EAS_U32 sampleRate);
 static EAS_I16 ConvertSustain (EAS_I32 sustain);
-static EAS_I16 ConvertLFOPhaseIncrement (EAS_I32 pitchCents);
+static EAS_I16 ConvertPitchToPhaseInc (EAS_I32 pitchCents);
 static EAS_I8 ConvertPan (EAS_I32 pan);
 static EAS_U8 ConvertQ (EAS_I32 q);
 
 #ifdef _DEBUG_DLS
-static void DumpDLS (S_EAS *pEAS);
+void DumpDLS (S_DLS *pEAS);
 #endif
 
 
@@ -1060,36 +1062,39 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     switch (p->fmtTag)
     {
         case WAVE_FORMAT_MPEGLAYER3:
+#if defined(_16_BIT_SAMPLES)
             if ((result = Parse_mp3_data(pDLSData, dataPos, dataSize, NULL, &size)) != EAS_SUCCESS)
                 return result;
             break;
-    }
+#else
+            return EAS_ERROR_UNRECOGNIZED_FORMAT;
+#endif
+        }
 
     if (p->loopLength)
-        size += bitDepth / 8;
+        size += bitDepth / 8; // reserved for copying *loopStart to 1 beyond loopEnd, see WT_Interpolate
 
-    /* for first pass, add size to wave pool size and return */
-    if (pDLSData->pDLS == NULL)
-    {
-        pDLSData->wavePoolSize += (EAS_U32) size;
+        /* for first pass, add size to wave pool size and return */
+        if (pDLSData->pDLS == NULL) {
+            pDLSData->wavePoolSize += (EAS_U32) size;
+            return EAS_SUCCESS;
+        }
+
+        /* allocate memory and read in the sample data */
+        pSample = (EAS_U8 *) pDLSData->pDLS->pDLSSamples + pDLSData->wavePoolOffset;
+        pDLSData->pDLS->pDLSSampleOffsets[waveIndex] = pDLSData->wavePoolOffset;
+        pDLSData->pDLS->pDLSSampleLen[waveIndex] = (EAS_U32) size;
+        pDLSData->wavePoolOffset += (EAS_U32) size;
+        if (pDLSData->wavePoolOffset > pDLSData->wavePoolSize) {
+            EAS_Report(_EAS_SEVERITY_ERROR, "Wave pool exceeded allocation\n");
+            return EAS_ERROR_SOUND_LIBRARY;
+        }
+
+        if ((result = Parse_data(pDLSData, dataPos, dataSize, p, pSample, (EAS_U32) size))
+            != EAS_SUCCESS)
+            return result;
+
         return EAS_SUCCESS;
-    }
-
-    /* allocate memory and read in the sample data */
-    pSample = (EAS_U8*)pDLSData->pDLS->pDLSSamples + pDLSData->wavePoolOffset;
-    pDLSData->pDLS->pDLSSampleOffsets[waveIndex] = pDLSData->wavePoolOffset;
-    pDLSData->pDLS->pDLSSampleLen[waveIndex] = (EAS_U32) size;
-    pDLSData->wavePoolOffset += (EAS_U32) size;
-    if (pDLSData->wavePoolOffset > pDLSData->wavePoolSize)
-    {
-        EAS_Report(_EAS_SEVERITY_ERROR, "Wave pool exceeded allocation\n");
-        return EAS_ERROR_SOUND_LIBRARY;
-    }
-
-    if ((result = Parse_data(pDLSData, dataPos, dataSize, p, pSample, (EAS_U32)size)) != EAS_SUCCESS)
-        return result;
-
-    return EAS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------
@@ -1422,17 +1427,14 @@ handle_loop:
     /* for looped samples, copy the last sample to the end */
     if (pWsmp->loopLength)
     {
-        if( (pDLSData->wavePoolOffset + pWsmp->loopLength) >= pDLSData->wavePoolSize )
-        {
-            return EAS_SUCCESS;
-        }
         if (sampleLen < sizeof(EAS_SAMPLE)
             || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen)
         {
+            EAS_Report(_EAS_SEVERITY_ERROR, "wsmp contains invalid loop region\n");
             return EAS_FAILURE;
         }
 
-        pSample[(pWsmp->loopStart + pWsmp->loopLength)>>1] = pSample[(pWsmp->loopStart)>>1];
+        pSample[pWsmp->loopStart + pWsmp->loopLength] = pSample[pWsmp->loopStart];
     }
 
     return EAS_SUCCESS;
@@ -1459,6 +1461,7 @@ handle_loop:
  *
  *----------------------------------------------------------------------------
 */
+#if defined(_16_BIT_SAMPLES)
 static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, EAS_SAMPLE *pSample, EAS_I32 *sampleLen)
 {
     EAS_RESULT result;
@@ -1526,6 +1529,7 @@ static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, 
 
     return EAS_SUCCESS;
 }
+#endif
 
 /*----------------------------------------------------------------------------
  * Parse_lins ()
@@ -2411,7 +2415,7 @@ static EAS_BOOL QueryGUID (const DLSID *pGUID, EAS_U32 *pValue)
 
     if (EAS_HWMemCmp(&DLSID_SamplePlaybackRate, pGUID, sizeof(DLSID)) == 0)
     {
-        *pValue = (EAS_U32) outputSampleRate;
+        *pValue = (EAS_U32) _OUTPUT_SAMPLE_RATE;
         return EAS_TRUE;
     }
 
@@ -2632,31 +2636,33 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
     /* setup pointers to data structures */
     pArt = &pDLSData->pDLS->pDLSArticulations[artIndex];
 
+    // Be aware, these values have been RSHIFTED by 16 bits
+
     /* LFO parameters */
-    pArt->modLFO.lfoFreq = ConvertLFOPhaseIncrement(pDLSArt->values[PARAM_MOD_LFO_FREQ]);
-    pArt->modLFO.lfoDelay = -ConvertDelay(pDLSArt->values[PARAM_MOD_LFO_DELAY]);
-    pArt->vibLFO.lfoFreq = ConvertLFOPhaseIncrement(pDLSArt->values[PARAM_VIB_LFO_FREQ]);
-    pArt->vibLFO.lfoDelay = -ConvertDelay(pDLSArt->values[PARAM_VIB_LFO_DELAY]);
+    pArt->modLFO.lfoFreq = ConvertPitchToPhaseInc(pDLSArt->values[PARAM_MOD_LFO_FREQ]);
+    pArt->modLFO.lfoDelay = -DLSConvertDelay(pDLSArt->values[PARAM_MOD_LFO_DELAY]);
+    pArt->vibLFO.lfoFreq = ConvertPitchToPhaseInc(pDLSArt->values[PARAM_VIB_LFO_FREQ]);
+    pArt->vibLFO.lfoDelay = -DLSConvertDelay(pDLSArt->values[PARAM_VIB_LFO_DELAY]);
 
     /* EG1 parameters */
-    pArt->eg1.delayTime = ConvertDelay(pDLSArt->values[PARAM_VOL_EG_DELAY]);
+    pArt->eg1.delayTime = DLSConvertDelay(pDLSArt->values[PARAM_VOL_EG_DELAY]);
     pArt->eg1.attackTime = pDLSArt->values[PARAM_VOL_EG_ATTACK];
     pArt->eg1.holdTime = pDLSArt->values[PARAM_VOL_EG_HOLD];
     pArt->eg1.decayTime = pDLSArt->values[PARAM_VOL_EG_DECAY];
     pArt->eg1.sustainLevel = ConvertSustain(pDLSArt->values[PARAM_VOL_EG_SUSTAIN]);
-    pArt->eg1.releaseTime = ConvertRate(pDLSArt->values[PARAM_VOL_EG_RELEASE]);
+    pArt->eg1.releaseTime = DLSConvertRate(pDLSArt->values[PARAM_VOL_EG_RELEASE]);
     pArt->eg1.velToAttack = pDLSArt->values[PARAM_VOL_EG_VEL_TO_ATTACK];
     pArt->eg1.keyNumToDecay = pDLSArt->values[PARAM_VOL_EG_KEY_TO_DECAY];
     pArt->eg1.keyNumToHold = pDLSArt->values[PARAM_VOL_EG_KEY_TO_HOLD];
-    pArt->eg1ShutdownTime = ConvertRate(pDLSArt->values[PARAM_VOL_EG_SHUTDOWN]);
+    pArt->eg1ShutdownTime = DLSConvertRate(pDLSArt->values[PARAM_VOL_EG_SHUTDOWN]);
 
     /* EG2 parameters */
-    pArt->eg2.delayTime = ConvertDelay(pDLSArt->values[PARAM_MOD_EG_DELAY]);
+    pArt->eg2.delayTime = DLSConvertDelay(pDLSArt->values[PARAM_MOD_EG_DELAY]);
     pArt->eg2.attackTime = pDLSArt->values[PARAM_MOD_EG_ATTACK];
     pArt->eg2.holdTime = pDLSArt->values[PARAM_MOD_EG_HOLD];
     pArt->eg2.decayTime = pDLSArt->values[PARAM_MOD_EG_DECAY];
     pArt->eg2.sustainLevel = ConvertSustain(pDLSArt->values[PARAM_MOD_EG_SUSTAIN]);
-    pArt->eg2.releaseTime = ConvertRate(pDLSArt->values[PARAM_MOD_EG_RELEASE]);
+    pArt->eg2.releaseTime = DLSConvertRate(pDLSArt->values[PARAM_MOD_EG_RELEASE]);
     pArt->eg2.velToAttack = pDLSArt->values[PARAM_MOD_EG_VEL_TO_ATTACK];
     pArt->eg2.keyNumToDecay = pDLSArt->values[PARAM_MOD_EG_KEY_TO_DECAY];
     pArt->eg2.keyNumToHold = pDLSArt->values[PARAM_MOD_EG_KEY_TO_HOLD];
@@ -2718,13 +2724,13 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
 */
 static EAS_I16 ConvertSampleRate (EAS_U32 sampleRate)
 {
-    return (EAS_I16) (1200.0 * log10((double) sampleRate / (double) outputSampleRate) / log10(2.0));
+    return (EAS_I16) (1200.0 * log10((double) sampleRate / (double) _OUTPUT_SAMPLE_RATE) / log10(2.0));
 }
 
 /*----------------------------------------------------------------------------
  * ConvertSustainEG2()
  *----------------------------------------------------------------------------
- * Convert sustain level to pitch/Fc multipler for EG2
+ * Convert sustain level [0, 1000] to pitch/Fc multipler for EG2
  *----------------------------------------------------------------------------
 */
 static EAS_I16 ConvertSustain (EAS_I32 sustain)
@@ -2749,7 +2755,7 @@ static EAS_I16 ConvertSustain (EAS_I32 sustain)
  * delay times.
  *----------------------------------------------------------------------------
 */
-EAS_I16 ConvertDelay (EAS_I32 timeCents)
+EAS_I16 DLSConvertDelay (EAS_I32 timeCents)
 {
     EAS_I32 temp;
 
@@ -2757,7 +2763,7 @@ EAS_I16 ConvertDelay (EAS_I32 timeCents)
         return 0;
 
     /* divide time by secs per frame to get number of frames */
-    temp = timeCents - dlsRateConvert;
+    temp = timeCents - DLS_RATE_CONVERT;
 
     /* convert from time cents to 10-bit fraction */
     temp = FMUL_15x15(temp, TIME_CENTS_TO_LOG2);
@@ -2768,6 +2774,8 @@ EAS_I16 ConvertDelay (EAS_I32 timeCents)
     if (temp < SYNTH_FULL_SCALE_EG1_GAIN)
         return (EAS_I16) temp;
     return SYNTH_FULL_SCALE_EG1_GAIN;
+
+    // powf(2, (float)timeCents / 1200) * ((float)_OUTPUT_SAMPLE_RATE / BUFFER_SIZE_IN_MONO_SAMPLES);
 }
 
 /*----------------------------------------------------------------------------
@@ -2776,7 +2784,7 @@ EAS_I16 ConvertDelay (EAS_I32 timeCents)
  * Convert timecents to rate
  *----------------------------------------------------------------------------
 */
-EAS_I16 ConvertRate (EAS_I32 timeCents)
+EAS_I16 DLSConvertRate (EAS_I32 timeCents)
 {
     EAS_I32 temp;
 
@@ -2784,7 +2792,7 @@ EAS_I16 ConvertRate (EAS_I32 timeCents)
         return SYNTH_FULL_SCALE_EG1_GAIN;
 
     /* divide frame rate by time in log domain to get rate */
-    temp = dlsRateConvert - timeCents;
+    temp = DLS_RATE_CONVERT - timeCents;
 
 #if 1
     temp = EAS_Calculate2toX(temp);
@@ -2799,6 +2807,8 @@ EAS_I16 ConvertRate (EAS_I32 timeCents)
     if (temp < SYNTH_FULL_SCALE_EG1_GAIN)
         return (EAS_I16) temp;
     return SYNTH_FULL_SCALE_EG1_GAIN;
+
+    // SYNTH_FULL_SCALE_EG1_GAIN / DLSConvertDelay
 }
 
 
@@ -2814,7 +2824,7 @@ EAS_I16 ConvertRate (EAS_I32 timeCents)
  * Side Effects:
  *----------------------------------------------------------------------------
 */
-static EAS_I16 ConvertLFOPhaseIncrement (EAS_I32 pitchCents)
+static EAS_I16 ConvertPitchToPhaseInc (EAS_I32 pitchCents)
 {
 
     /* check range */
@@ -2824,10 +2834,13 @@ static EAS_I16 ConvertLFOPhaseIncrement (EAS_I32 pitchCents)
         pitchCents = MIN_LFO_FREQUENCY_IN_PITCHCENTS;
 
     /* double the rate and divide by frame rate by subtracting in log domain */
-    pitchCents = pitchCents - dlsLFOFrequencyConvert;
+    pitchCents = pitchCents - DLS_LFO_FREQUENCY_CONVERT;
 
     /* convert to phase increment */
     return (EAS_I16) EAS_Calculate2toX(pitchCents);
+
+    // (440 * powf(2, (float)(pitchCents - 6900) / 1200) // frequency
+    //     * 32768) / (outputSampleRate / BUFFER_SIZE_IN_MONO_SAMPLES); // to phase increment
 }
 
 /*----------------------------------------------------------------------------
@@ -2883,44 +2896,44 @@ static EAS_U8 ConvertQ (EAS_I32 q)
  * DumpDLS()
  *----------------------------------------------------------------------------
 */
-static void DumpDLS (S_EAS *pEAS)
+void DumpDLS (S_DLS *pEAS)
 {
     S_DLS_ARTICULATION *pArt;
     S_DLS_REGION *pRegion;
     EAS_INT i;
     EAS_INT j;
 
-    EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000022 , pEAS->numPrograms);
-    EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000023 , pEAS->numWTRegions);
+    EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000022 , pEAS->numDLSPrograms);
+    EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000023 , pEAS->numDLSRegions);
     EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000024 , pEAS->numDLSArticulations);
-    EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000025 , pEAS->numSamples);
+    EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000025 , pEAS->numDLSSamples);
 
-    /* dump the instruments */
-    for (i = 0; i < pEAS->numPrograms; i++)
-    {
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000026 ,
-                pEAS->pPrograms[i].locale >> 16,
-                (pEAS->pPrograms[i].locale >> 8) & 0x7f,
-                pEAS->pPrograms[i].locale & 0x7f);
+    // /* dump the instruments */
+    // for (i = 0; i < pEAS->numDLSPrograms; i++)
+    // {
+    //     EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000026 ,
+    //             pEAS->pDLSPrograms[i].locale >> 16,
+    //             (pEAS->pDLSPrograms[i].locale >> 8) & 0x7f,
+    //             pEAS->pDLSPrograms[i].locale & 0x7f);
 
-        for (j = pEAS->pPrograms[i].regionIndex; ; j++)
-        {
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000027 , j);
-            pRegion = &pEAS->pWTRegions[j];
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000028 , pRegion->gain);
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000029 , pRegion->region.rangeLow, pRegion->region.rangeHigh);
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002a , pRegion->region.keyGroupAndFlags);
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002b , pRegion->loopStart);
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002c , pRegion->loopEnd);
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002d , pRegion->tuning);
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002e , pRegion->artIndex);
-            EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002f , pRegion->waveIndex);
+    //     for (j = pEAS->pDLSPrograms[i].regionIndex; ; j++)
+    //     {
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000027 , j);
+    //         pRegion = &pEAS->pDLSRegions[j];
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000028 , pRegion->wtRegion.gain);
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000029 , pRegion->wtRegion.region.rangeLow, pRegion->wtRegion.region.rangeHigh);
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002a , pRegion->wtRegion.region.keyGroupAndFlags);
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002b , pRegion->wtRegion.loopStart);
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002c , pRegion->wtRegion.loopEnd);
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002d , pRegion->wtRegion.tuning);
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002e , pRegion->wtRegion.artIndex);
+    //         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000002f , pRegion->wtRegion.waveIndex);
 
-            if (pRegion->region.keyGroupAndFlags & REGION_FLAG_LAST_REGION)
-                break;
-        }
+    //         if (pRegion->wtRegion.region.keyGroupAndFlags & REGION_FLAG_LAST_REGION)
+    //             break;
+    //     }
 
-    }
+    // }
 
     /* dump the articulation data */
     for (i = 0; i < pEAS->numDLSArticulations; i++)
@@ -2928,37 +2941,37 @@ static void DumpDLS (S_EAS *pEAS)
         /* articulation data */
         EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000030 , i);
         pArt = &pEAS->pDLSArticulations[i];
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000031 , pArt->m_nEG2toFilterDepth);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000032 , pArt->m_nEG2toPitchDepth);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000033 , pArt->m_nFilterCutoffFrequency);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000034 , pArt->m_nFilterResonance);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000035 , pArt->m_nLFOAmplitudeDepth);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000036 , pArt->m_nLFODelayTime);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000037 , pArt->m_nLFOFrequency);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000038 , pArt->m_nLFOPitchDepth);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000039 , pArt->m_nPan);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000031 , pArt->eg2ToFc);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000032 , pArt->eg2ToPitch);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000033 , pArt->filterCutoff);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000034 , pArt->filterQandFlags);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000035 , pArt->modLFOToGain);
+        //EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000036 , pArt->m_nLFODelayTime);
+        //EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000037 , pArt->m_nLFOFrequency);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000038 , pArt->modLFOToPitch);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000039 , pArt->pan);
 
         /* EG1 data */
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003a , pArt->m_sEG1.m_nAttack);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003b , pArt->m_sEG1.m_nDecay);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003c , pArt->m_sEG1.m_nSustain);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003d , pArt->m_sEG1.m_nRelease);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003a , pArt->eg1.attackTime);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003b , pArt->eg1.decayTime);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003c , pArt->eg1.sustainLevel);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003d , pArt->eg1.releaseTime);
 
         /* EG2 data */
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003e , pArt->m_sEG2.m_nAttack);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003f , pArt->m_sEG2.m_nDecay);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000040 , pArt->m_sEG2.m_nSustain);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000041 , pArt->m_sEG2.m_nRelease);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003e , pArt->eg2.attackTime);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x0000003f , pArt->eg2.decayTime);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000040 , pArt->eg2.sustainLevel);
+        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000041 , pArt->eg2.releaseTime);
 
     }
 
-    /* dump the waves */
-    for (i = 0; i < pEAS->numSamples; i++)
-    {
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000042 , i);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000043 , pEAS->pSampleLen[i]);
-        EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000044 , pEAS->ppSamples[i]);
-    }
+    // /* dump the waves */
+    // for (i = 0; i < pEAS->numDLSSamples; i++)
+    // {
+    //     EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000042 , i);
+    //     EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000043 , pEAS->pDLSSampleLen[i]);
+    //     EAS_ReportEx(_EAS_SEVERITY_NOFILTER, 0x19299ed4, 0x00000044 , pEAS->pDLSSamples[i]);
+    // }
 
 }
 #endif
