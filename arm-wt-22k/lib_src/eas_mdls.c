@@ -623,7 +623,7 @@ EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle,
         }
 
         /* limit check  */
-        if ((dls.artCount == 0) || (dls.artCount > DLS_MAX_ART_COUNT))
+        if (dls.artCount > DLS_MAX_ART_COUNT)
         {
             EAS_Report(_EAS_SEVERITY_ERROR, "DLS file contains invalid #articulations [%u]\n", dls.artCount);
             EAS_HWFree(dls.hwInstData, dls.wsmpData);
