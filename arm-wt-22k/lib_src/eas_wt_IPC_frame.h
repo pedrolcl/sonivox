@@ -49,7 +49,7 @@
 typedef struct s_wt_frame_tag
 {
     EAS_I32         gainTarget;
-    EAS_I32         phaseIncrement;
+    EAS_I32         phaseIncrement; // phase increment per sample
 
 #if defined(_FILTER_ENABLED)
     EAS_I32         k;
