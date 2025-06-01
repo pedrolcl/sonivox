@@ -8,5 +8,5 @@ Description: Sonivox EAS Software Synthesizer
 URL: https://github.com/pedrolcl/sonivox
 Version: @PROJECT_VERSION@
 Libs: -L${libdir} -lsonivox
-Libs.private: -lm
+Libs.private: @PRIVATE_LIBS@
 Cflags: -I${includedir}
