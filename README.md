@@ -116,6 +116,8 @@ This has the advantage of being multiplatform. Depending on the FFmpeg installed
 
     $ sonivoxrender ants.mid | ffplay -i - -f s16le -ar 44.1k -ch_layout stereo -nodisp -autoexit -loglevel quiet
 
+You may replace "ants.mid" by another MIDI or XMF file, like "test/res/testmxmf.mxmf"
+
 ## Unit tests
 
 The Android unit tests have been integrated in the CMake build system, with little modifications. A requirement is GoogleTest, either installed system wide or it will be downloaded from the git repository. 

@@ -25,6 +25,14 @@ project( sonivox
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+set(LUCKYOS Android Darwin Linux Windows)
+if (${CMAKE_SYSTEM_NAME} IN_LIST LUCKYOS)
+  message(STATUS "Enabling by default the NEW_HOST_WRAPPER option for ${CMAKE_SYSTEM_NAME}")
+  set(IS_LUCKY TRUE)
+else()
+  set(IS_LUCKY FALSE)
+endif()
+
 option(USE_44KHZ "Output 44100 Hz audio sample rate (instead of 22050 Hz)" TRUE)
 option(USE_16BITS_SAMPLES "Use 16 bits samples (instead of 8 bit)" TRUE)
 option(BUILD_SONIVOX_STATIC "Build the static library" TRUE)
@@ -32,7 +40,7 @@ option(BUILD_SONIVOX_SHARED "Build the shared library" TRUE)
 option(BUILD_EXAMPLE "Build and install the example program" TRUE)
 option(BUILD_TESTING "Build the unit tests" TRUE)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Whether to create position-independent targets" TRUE)
-option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
+option(NEW_HOST_WRAPPER "Use the new host wrapper" ${IS_LUCKY})
 set(MAX_VOICES 64 CACHE STRING "Maximum number of voices")
 
 include(CMakeDependentOption)
@@ -61,11 +69,22 @@ if (BUILD_TESTING)
     endif()
 endif()
 
-if (UNIX AND NOT APPLE)
+if (UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
     find_library(MATH_LIBRARY m)
-    message(STATUS "Found Math library: ${MATH_LIBRARY}")
+    if(MATH_LIBRARY)
+        message(STATUS "Found Math library: ${MATH_LIBRARY}")
+        list(APPEND DEPLIBS ${MATH_LIBRARY})
+        list(APPEND PRIVATE_LIST "-lm")
+    endif()
+endif()
+
+find_package(ZLIB)
+if (ZLIB_FOUND)
+    message(STATUS "Enabling XMF ZLIB Unpacker support.")
+    list(APPEND DEPLIBS ZLIB::ZLIB)
+    list(APPEND PRIVATE_LIST "-lz")
 else()
-    set(MATH_LIBRARY "")
+    message(STATUS "ZLIB not found. Disabling XMF ZLIB Unpacker support.")
 endif()
 
 list(APPEND SOURCES
@@ -108,8 +127,8 @@ list(APPEND SOURCES
 #arm-wt-22k/lib_src/eas_wavefiledata.c
   arm-wt-22k/lib_src/eas_wtengine.c
   arm-wt-22k/lib_src/eas_wtsynth.c
-#arm-wt-22k/lib_src/eas_xmf.c
-#arm-wt-22k/lib_src/eas_xmfdata.c
+  arm-wt-22k/lib_src/eas_xmf.c
+  arm-wt-22k/lib_src/eas_xmfdata.c
 #arm-wt-22k/lib_src/jet.c
   arm-wt-22k/lib_src/wt_200k_G.c
 )
@@ -148,7 +167,7 @@ target_compile_definitions( sonivox-objects PRIVATE
   #_IMELODY_PARSER
   #_RTTTL_PARSER
   #_OTA_PARSER
-  #_XMF_PARSER
+  _XMF_PARSER
   #JET_INTERFACE
 )
 
@@ -169,6 +188,10 @@ if(USE_44KHZ)
     target_compile_definitions( sonivox-objects PRIVATE _SAMPLE_RATE_44100 )
 else()
     target_compile_definitions( sonivox-objects PRIVATE _SAMPLE_RATE_22050 )
+endif()
+
+if(ZLIB_FOUND)
+    target_compile_definitions( sonivox-objects PRIVATE _ZLIB_UNPACKER )
 endif()
 
 target_include_directories( sonivox-objects PRIVATE
@@ -196,7 +219,7 @@ if (BUILD_SONIVOX_STATIC)
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
     set_target_properties( sonivox-static PROPERTIES VERSION ${PROJECT_VERSION} )
     set_target_properties( sonivox-static PROPERTIES PUBLIC_HEADER "${HEADERS}")
-    target_link_libraries( sonivox-static PUBLIC ${MATH_LIBRARY} )
+    target_link_libraries( sonivox-static ${DEPLIBS} )
     add_library( sonivox::sonivox-static ALIAS sonivox-static)
     list( APPEND SONIVOX_TARGETS sonivox-static )
 endif()
@@ -209,7 +232,7 @@ if (BUILD_SONIVOX_SHARED)
     set_target_properties( sonivox PROPERTIES VERSION ${PROJECT_VERSION} )
     set_target_properties( sonivox PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
     set_target_properties( sonivox PROPERTIES PUBLIC_HEADER "${HEADERS}" )
-    target_link_libraries( sonivox PRIVATE ${MATH_LIBRARY} )
+    target_link_libraries( sonivox PRIVATE ${DEPLIBS} )
     #target_link_options( sonivox PRIVATE "LINKER:-z,defs" )
     add_library( sonivox::sonivox ALIAS sonivox )
     list( APPEND SONIVOX_TARGETS sonivox )
@@ -226,6 +249,7 @@ else()
     set(sonivox_includedir "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
 endif()
 
+list(JOIN PRIVATE_LIST " " PRIVATE_LIBS)
 if (BUILD_SONIVOX_STATIC)
     configure_file(sonivox-static.pc.in ${CMAKE_CURRENT_BINARY_DIR}/sonivox-static.pc @ONLY)
     install( FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivox-static.pc
@@ -300,7 +324,7 @@ if (BUILD_TESTING)
         target_sources( SonivoxTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/getopt_port/getopt.c )
         target_include_directories( SonivoxTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/getopt_port )
     endif()
-  
+
     target_link_libraries( SonivoxTest PRIVATE
         GTest::gtest_main
     )
