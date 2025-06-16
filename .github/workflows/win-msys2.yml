@@ -50,7 +50,7 @@ jobs:
       uses: actions/cache/restore@v4
       id: cache
       with:
-        key: soundfont.dls
+        key: ${{ runner.os }}-soundfont.dls
         path: ${{env.TEMP}}
         enableCrossOsArchive: true
 
@@ -61,7 +61,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
-        key: soundfont.dls
+        key: ${{ runner.os }}-soundfont.dls
         path: ${{env.TEMP}}
         enableCrossOsArchive: true
 
