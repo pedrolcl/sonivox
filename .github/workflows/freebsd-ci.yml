@@ -15,11 +15,21 @@ jobs:
       BUILD_TYPE: RelWithDebInfo
       INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
       TEMP: ${{github.workspace}}/temp/
+
     steps:
     - uses: actions/checkout@v4
     - name: Temp Environment Variable
       run: |
         mkdir -p ${{github.workspace}}/temp
+
+    - name: Restore DLS Cache
+      uses: actions/cache/restore@v4
+      id: cache
+      with:
+        key: soundfont.dls
+        path: ${{env.TEMP}}
+        enableCrossOsArchive: true
+
     - name: FreeBSD test
       id: test
       uses: vmactions/freebsd-vm@v1
@@ -41,6 +51,14 @@ jobs:
           cd ${{github.workspace}}
           cmake --install ${{github.workspace}}/build
           tar cvf SonivoxV3.tar SonivoxV3
+
+    - name: Store DLS Cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: soundfont.dls
+        path: ${{env.TEMP}}
+        enableCrossOsArchive: true
 
     - uses: actions/upload-artifact@v4
       with:
