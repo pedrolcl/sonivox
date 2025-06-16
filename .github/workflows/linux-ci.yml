@@ -40,8 +40,24 @@ jobs:
       run: |
         mkdir -p ${{github.workspace}}/temp
 
+    - name: '${{ matrix.icon }} Restore DLS Cache'
+      uses: actions/cache/restore@v4
+      id: cache
+      with:
+        key: soundfont.dls
+        path: ${{env.TEMP}}
+        enableCrossOsArchive: true
+
     - name: '${{ matrix.icon }} Configure CMake with USE_44KHZ=${{ matrix.USE_44KHZ }} and USE_16BITS_SAMPLES=${{ matrix.USE_16BITS_SAMPLES }}'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} -DUSE_44KHZ=${{ matrix.USE_44KHZ }} -DUSE_16BITS_SAMPLES=${{ matrix.USE_16BITS_SAMPLES }}
+
+    - name: '${{ matrix.icon }} Store DLS Cache'
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: soundfont.dls
+        path: ${{env.TEMP}}
+        enableCrossOsArchive: true
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
