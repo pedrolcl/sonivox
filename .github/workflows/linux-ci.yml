@@ -44,7 +44,7 @@ jobs:
       uses: ethanjli/cached-download-action@v0.1.2
       with:
         url: http://www.ronimusic.com/sf2/Airfont_340.dls
-        destination: ${{ env.TEMP }}/soundfont.dls
+        destination: temp/soundfont.dls
         cache-key: soundfont-${{ runner.os }}
 
     - name: '${{ matrix.icon }} Configure CMake with USE_44KHZ=${{ matrix.USE_44KHZ }} and USE_16BITS_SAMPLES=${{ matrix.USE_16BITS_SAMPLES }}'

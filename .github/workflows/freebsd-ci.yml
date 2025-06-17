@@ -25,7 +25,7 @@ jobs:
       uses: ethanjli/cached-download-action@v0.1.2
       with:
         url: http://www.ronimusic.com/sf2/Airfont_340.dls
-        destination: ${{ env.TEMP }}/soundfont.dls
+        destination: temp/soundfont.dls
         cache-key: soundfont-${{ runner.os }}
     - name: FreeBSD test
       id: test
