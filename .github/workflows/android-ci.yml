@@ -9,7 +9,7 @@ on:
 
 env:
   BUILD_TYPE: Release
-  TEMP: ${{github.workspace}}/temp/
+  TEMP: ${{github.workspace}}/temp
 
 jobs:
   build:
@@ -20,16 +20,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Temp Environment Variable
-      run: |
-        mkdir -p ${{github.workspace}}/temp
-
-    - name: Restore DLS Cache
-      uses: actions/cache/restore@v4
-      id: cache
-      with:
-        key: ${{ runner.os }}-soundfont.dls
-        path: ${{env.TEMP}}
-        enableCrossOsArchive: true
+      run: mkdir temp
 
     - name: Configure CMake
       run: |
@@ -42,14 +33,6 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake \
             -DANDROID_ABI=x86_64 \
             -DANDROID_PLATFORM=android-35
-
-    - name: Store DLS Cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-soundfont.dls
-        path: ${{env.TEMP}}
-        enableCrossOsArchive: true
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}

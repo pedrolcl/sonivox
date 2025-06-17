@@ -46,12 +46,15 @@ jobs:
           ninja:p
           gtest:p
 
+    - name: '${{ matrix.icon }} Temp Environment Variable'
+      run: mkdir temp
+
     - name: '${{ matrix.icon }} Restore DLS Cache'
       uses: actions/cache/restore@v4
       id: cache
       with:
-        key: ${{ runner.os }}-soundfont.dls
-        path: ${{env.TEMP}}
+        key: soundfont.dls
+        path: temp
         enableCrossOsArchive: true
 
     - name: '${{ matrix.icon }} Configure CMake'
@@ -61,8 +64,8 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
-        key: ${{ runner.os }}-soundfont.dls
-        path: ${{env.TEMP}}
+        key: soundfont.dls
+        path: temp
         enableCrossOsArchive: true
 
     - name: '${{ matrix.icon }} Build'
