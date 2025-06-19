@@ -10,7 +10,7 @@ on:
 env:
   BUILD_TYPE: RelWithDebInfo
   INSTALL_LOCATION: SonivoxV3
-  TEMP: ${{github.workspace}}/temp
+  TEMP: temp
 
 jobs:
   build:
@@ -46,15 +46,17 @@ jobs:
           ninja:p
           gtest:p
 
-    - name: '${{ matrix.icon }} Temp Environment Variable'
-      run: mkdir temp
+    - name: '${{ matrix.icon }} TEMP Environment Variable'
+      run: |
+        mkdir temp
 
     - name: '${{ matrix.icon }} Downloading a DLS file for testing'
-      uses: ethanjli/cached-download-action@v0.1.2
+      uses: ethanjli/cached-download-action@6bee1d546f48427140e81ed759b343229c93b7c5
       with:
         url: http://www.ronimusic.com/sf2/Airfont_340.dls
         destination: temp/soundfont.dls
-        cache-key: soundfont-${{ runner.os }}
+        cache-key: cached.soundfont.dls
+        enable-cross-os-archive: true
 
     - name: '${{ matrix.icon }} Configure CMake'
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} -G Ninja
