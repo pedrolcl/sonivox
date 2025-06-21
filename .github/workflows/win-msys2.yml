@@ -10,6 +10,7 @@ on:
 env:
   BUILD_TYPE: RelWithDebInfo
   INSTALL_LOCATION: SonivoxV3
+  TEMP: ${{github.workspace}}/temp/
 
 jobs:
   build:
@@ -45,8 +46,27 @@ jobs:
           ninja:p
           gtest:p
 
+    - name: '${{ matrix.icon }} Temp Environment Variable'
+      run: mkdir temp
+
+    - name: '${{ matrix.icon }} Restore DLS Cache'
+      uses: actions/cache/restore@v4
+      id: cache
+      with:
+        key: soundfont.dls
+        path: temp
+        enableCrossOsArchive: true
+
     - name: '${{ matrix.icon }} Configure CMake'
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} -G Ninja
+
+    - name: '${{ matrix.icon }} Store DLS Cache'
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: soundfont.dls
+        path: temp
+        enableCrossOsArchive: true
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build build --config ${{env.BUILD_TYPE}}

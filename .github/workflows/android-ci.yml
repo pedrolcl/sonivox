@@ -9,6 +9,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  TEMP: ${{github.workspace}}/temp
 
 jobs:
   build:
@@ -17,6 +18,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Temp Environment Variable
+      run: mkdir temp
 
     - name: Configure CMake
       run: |
