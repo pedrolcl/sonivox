@@ -2650,11 +2650,11 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
     pArt->eg1.holdTime = pDLSArt->values[PARAM_VOL_EG_HOLD];
     pArt->eg1.decayTime = pDLSArt->values[PARAM_VOL_EG_DECAY];
     pArt->eg1.sustainLevel = ConvertSustain(pDLSArt->values[PARAM_VOL_EG_SUSTAIN]);
-    pArt->eg1.releaseTime = DLSConvertRate(pDLSArt->values[PARAM_VOL_EG_RELEASE]);
+    pArt->eg1.releaseTime = DLSConvertDelay(pDLSArt->values[PARAM_VOL_EG_RELEASE]);
     pArt->eg1.velToAttack = pDLSArt->values[PARAM_VOL_EG_VEL_TO_ATTACK];
     pArt->eg1.keyNumToDecay = pDLSArt->values[PARAM_VOL_EG_KEY_TO_DECAY];
     pArt->eg1.keyNumToHold = pDLSArt->values[PARAM_VOL_EG_KEY_TO_HOLD];
-    pArt->eg1ShutdownTime = DLSConvertRate(pDLSArt->values[PARAM_VOL_EG_SHUTDOWN]);
+    pArt->eg1ShutdownTime = DLSConvertDelay(pDLSArt->values[PARAM_VOL_EG_SHUTDOWN]);
 
     /* EG2 parameters */
     pArt->eg2.delayTime = DLSConvertDelay(pDLSArt->values[PARAM_MOD_EG_DELAY]);
@@ -2662,7 +2662,7 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
     pArt->eg2.holdTime = pDLSArt->values[PARAM_MOD_EG_HOLD];
     pArt->eg2.decayTime = pDLSArt->values[PARAM_MOD_EG_DECAY];
     pArt->eg2.sustainLevel = ConvertSustain(pDLSArt->values[PARAM_MOD_EG_SUSTAIN]);
-    pArt->eg2.releaseTime = DLSConvertRate(pDLSArt->values[PARAM_MOD_EG_RELEASE]);
+    pArt->eg2.releaseTime = DLSConvertDelay(pDLSArt->values[PARAM_MOD_EG_RELEASE]);
     pArt->eg2.velToAttack = pDLSArt->values[PARAM_MOD_EG_VEL_TO_ATTACK];
     pArt->eg2.keyNumToDecay = pDLSArt->values[PARAM_MOD_EG_KEY_TO_DECAY];
     pArt->eg2.keyNumToHold = pDLSArt->values[PARAM_MOD_EG_KEY_TO_HOLD];
@@ -2757,22 +2757,17 @@ static EAS_I16 ConvertSustain (EAS_I32 sustain)
 */
 EAS_I16 DLSConvertDelay (EAS_I32 timeCents)
 {
-    EAS_I32 temp;
-
     if (timeCents == ZERO_TIME_IN_CENTS)
         return 0;
 
     /* divide time by secs per frame to get number of frames */
-    temp = timeCents - DLS_RATE_CONVERT;
-
-    /* convert from time cents to 10-bit fraction */
-    temp = FMUL_15x15(temp, TIME_CENTS_TO_LOG2);
+    timeCents -= DLS_RATE_CONVERT;
 
     /* convert to frame count */
-    temp = EAS_LogToLinear16(temp - (15 << 10));
+    timeCents = EAS_Calculate2toX(timeCents - 15 * 1200);
 
-    if (temp < SYNTH_FULL_SCALE_EG1_GAIN)
-        return (EAS_I16) temp;
+    if (timeCents < SYNTH_FULL_SCALE_EG1_GAIN)
+        return (EAS_I16) timeCents;
     return SYNTH_FULL_SCALE_EG1_GAIN;
 
     // powf(2, (float)timeCents / 1200) * ((float)_OUTPUT_SAMPLE_RATE / BUFFER_SIZE_IN_MONO_SAMPLES);
@@ -2794,15 +2789,7 @@ EAS_I16 DLSConvertRate (EAS_I32 timeCents)
     /* divide frame rate by time in log domain to get rate */
     temp = DLS_RATE_CONVERT - timeCents;
 
-#if 1
     temp = EAS_Calculate2toX(temp);
-#else
-    /* convert from time cents to 10-bit fraction */
-    temp = FMUL_15x15(temp, TIME_CENTS_TO_LOG2);
-
-    /* convert to rate */
-    temp = EAS_LogToLinear16(temp);
-#endif
 
     if (temp < SYNTH_FULL_SCALE_EG1_GAIN)
         return (EAS_I16) temp;

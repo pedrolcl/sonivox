@@ -1719,8 +1719,6 @@ void VMStartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U8 channel, EAS_
             channel, note, velocity); */ }
     }
 #endif
-
-    return;
 }
 
 /*----------------------------------------------------------------------------
@@ -2895,6 +2893,7 @@ EAS_I32 VMAddSamples (S_VOICE_MGR *pVoiceMgr, EAS_I32 *pMixBuffer, EAS_I32 numSa
     {
 
         /* retarget stolen voices */
+        // TODO: do we really need gain <= 0
         if ((pVoiceMgr->voices[voiceNum].voiceState == eVoiceStateStolen) && (pVoiceMgr->voices[voiceNum].gain <= 0))
             VMRetargetStolenVoice(pVoiceMgr, voiceNum);
 
