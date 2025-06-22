@@ -27,7 +27,7 @@ jobs:
       id: cache
       with:
         key: soundfont.dls
-        path: temp
+        path: temp/soundfont.dls
         enableCrossOsArchive: true
 
     - name: FreeBSD test
@@ -57,7 +57,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         key: soundfont.dls
-        path: temp
+        path: temp/soundfont.dls
         enableCrossOsArchive: true
 
     - uses: actions/upload-artifact@v4

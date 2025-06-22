@@ -29,7 +29,7 @@ jobs:
       id: cache
       with:
         key: soundfont.dls
-        path: temp
+        path: temp/soundfont.dls
         enableCrossOsArchive: true
 
     - name: Configure CMake
@@ -40,7 +40,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         key: soundfont.dls
-        path: temp
+        path: temp/soundfont.dls
         enableCrossOsArchive: true
 
     - name: Build

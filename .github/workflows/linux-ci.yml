@@ -45,7 +45,7 @@ jobs:
       id: cache
       with:
         key: soundfont.dls
-        path: temp
+        path: temp/soundfont.dls
         enableCrossOsArchive: true
 
     - name: '${{ matrix.icon }} Configure CMake with USE_44KHZ=${{ matrix.USE_44KHZ }} and USE_16BITS_SAMPLES=${{ matrix.USE_16BITS_SAMPLES }}'
@@ -56,7 +56,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         key: soundfont.dls
-        path: temp
+        path: temp/soundfont.dls
         enableCrossOsArchive: true
 
     - name: '${{ matrix.icon }} Build'
