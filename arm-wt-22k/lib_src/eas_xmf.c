@@ -92,8 +92,8 @@ static EAS_RESULT XMF_Close (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData);
 static EAS_RESULT XMF_Reset (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData);
 static EAS_RESULT XMF_Pause (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData);
 static EAS_RESULT XMF_Resume (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData);
-static EAS_RESULT XMF_SetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_ISIZE value);
-static EAS_RESULT XMF_GetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_ISIZE *pValue);
+static EAS_RESULT XMF_SetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_IPTR value);
+static EAS_RESULT XMF_GetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_IPTR *pValue);
 static EAS_RESULT XMF_FindFileContents (EAS_HW_DATA_HANDLE hwInstData, S_XMF_DATA *pXMFData);
 static EAS_RESULT XMF_ReadNode (EAS_HW_DATA_HANDLE hwInstData, S_XMF_DATA *pXMFData, EAS_I32 nodeOffset, EAS_I32 endOffset, EAS_I32 *pLength, EAS_I32 depth);
 static EAS_RESULT XMF_ReadVLQ (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle, EAS_U32 *remainingBytes, EAS_I32 *value);
@@ -496,7 +496,7 @@ static EAS_RESULT XMF_Resume (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData)
  *
  *----------------------------------------------------------------------------
 */
-static EAS_RESULT XMF_SetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_ISIZE value)
+static EAS_RESULT XMF_SetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_IPTR value)
 {
     return SMF_SetData(pEASData, ((S_XMF_DATA*) pInstData)->pSMFData, param, value);
 }
@@ -519,7 +519,7 @@ static EAS_RESULT XMF_SetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS
  *
  *----------------------------------------------------------------------------
 */
-static EAS_RESULT XMF_GetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_ISIZE *pValue)
+static EAS_RESULT XMF_GetData (S_EAS_DATA *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_IPTR *pValue)
 {
     EAS_RESULT result;
 

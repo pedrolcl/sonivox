@@ -131,8 +131,7 @@ typedef unsigned EAS_UINT;
 typedef int EAS_INT;
 typedef long EAS_LONG;
 
-typedef intptr_t EAS_ISIZE;
-typedef uintptr_t EAS_USIZE;
+typedef intptr_t EAS_IPTR;
 
 /* audio output type */
 typedef short EAS_PCM;
