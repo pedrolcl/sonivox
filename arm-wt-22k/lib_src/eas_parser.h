@@ -58,8 +58,8 @@ typedef struct
     EAS_RESULT (* EAS_CONST pfPause)(struct s_eas_data_tag *pEASData, EAS_VOID_PTR pInstData);
     EAS_RESULT (* EAS_CONST pfResume)(struct s_eas_data_tag *pEASData, EAS_VOID_PTR pInstData);
     EAS_RESULT (* EAS_CONST pfLocate)(struct s_eas_data_tag *pEASData, EAS_VOID_PTR pInstData, EAS_I32 time, EAS_BOOL *pParserLocate);
-    EAS_RESULT (* EAS_CONST pfSetData)(struct s_eas_data_tag *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_I32 value);
-    EAS_RESULT (* EAS_CONST pfGetData)(struct s_eas_data_tag *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_I32 *pValue);
+    EAS_RESULT (* EAS_CONST pfSetData)(struct s_eas_data_tag *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_IPTR value);
+    EAS_RESULT (* EAS_CONST pfGetData)(struct s_eas_data_tag *pEASData, EAS_VOID_PTR pInstData, EAS_I32 param, EAS_IPTR *pValue);
     EAS_RESULT (* EAS_CONST pfGetMetaData)(struct s_eas_data_tag *pEASData, EAS_VOID_PTR pInstData, EAS_I32 *pMediaLength);
 } S_FILE_PARSER_INTERFACE;
 

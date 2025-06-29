@@ -520,7 +520,7 @@ EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle,
         return result;
     if (temp != CHUNK_DLS)
     {
-        EAS_Report(_EAS_SEVERITY_ERROR, "Expected DLS chunk, got %08lx\n", temp);
+        EAS_Report(_EAS_SEVERITY_ERROR, "Expected DLS chunk, got %08x\n", temp);
         return EAS_ERROR_FILE_FORMAT;
     }
 
@@ -663,7 +663,7 @@ EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle,
         dls.pDLS = EAS_HWMalloc(dls.hwInstData, size);
         if (dls.pDLS == NULL)
         {
-            EAS_Report(_EAS_SEVERITY_ERROR, "EAS_HWMalloc failed for DLS memory allocation size %ld\n", size);
+            EAS_Report(_EAS_SEVERITY_ERROR, "EAS_HWMalloc failed for DLS memory allocation size %d\n", size);
             EAS_HWFree(dls.hwInstData, dls.wsmpData);
             return EAS_ERROR_MALLOC_FAILED;
         }
@@ -1146,7 +1146,7 @@ static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WS
         return result;
     if (p->gain > 0)
     {
-        EAS_Report(_EAS_SEVERITY_DETAIL, "Positive gain [%ld] in DLS wsmp ignored, set to 0dB\n", p->gain);
+        EAS_Report(_EAS_SEVERITY_DETAIL, "Positive gain [%d] in DLS wsmp ignored, set to 0dB\n", p->gain);
         p->gain = 0;
     }
 
@@ -1163,7 +1163,7 @@ static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WS
     {
 
         if (ltemp > 1)
-            EAS_Report(_EAS_SEVERITY_WARNING, "DLS sample with %lu loops, ignoring extra loops\n", ltemp);
+            EAS_Report(_EAS_SEVERITY_WARNING, "DLS sample with %u loops, ignoring extra loops\n", ltemp);
 
         /* skip ahead to loop data */
         if ((result = EAS_HWFileSeek(pDLSData->hwInstData, pDLSData->fileHandle, pos + (EAS_I32) cbSize)) != EAS_SUCCESS)
@@ -1756,7 +1756,7 @@ static EAS_RESULT Parse_insh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     /* verify the parameters are valid */
     if (bank & 0x7fff8080)
     {
-        EAS_Report(_EAS_SEVERITY_WARNING, "DLS bank number is out of range: %08lx\n", bank);
+        EAS_Report(_EAS_SEVERITY_WARNING, "DLS bank number is out of range: %08x\n", bank);
     }
     if (bank & 0x80000000u)
     {
@@ -1771,7 +1771,7 @@ static EAS_RESULT Parse_insh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     }
     if (program > 127)
     {
-        EAS_Report(_EAS_SEVERITY_WARNING, "DLS program number is out of range: %08lx\n", program);
+        EAS_Report(_EAS_SEVERITY_WARNING, "DLS program number is out of range: %08x\n", program);
         program &= 0x7f;
     }
 
