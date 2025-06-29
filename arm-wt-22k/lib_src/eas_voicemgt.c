@@ -3524,7 +3524,7 @@ EAS_RESULT VMGetPriority (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_I32 *pPri
  *
  *----------------------------------------------------------------------------
 */
-void VMSetVolume (S_SYNTH *pSynth, EAS_U16 masterVolume)
+void VMSetVolume (S_SYNTH *pSynth, EAS_U32 masterVolume)
 {
     pSynth->masterVolume = masterVolume;
     pSynth->synthFlags |= SYNTH_FLAG_UPDATE_ALL_CHANNEL_PARAMETERS;

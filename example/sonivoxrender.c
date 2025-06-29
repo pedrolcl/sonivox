@@ -435,7 +435,7 @@ int main (int argc, char **argv)
             break;
         case 'g':
             playback_gain = atoi(optarg);
-            if ((playback_gain < 0) || (playback_gain > 100)) {
+            if ((playback_gain < 0) || (playback_gain > EAS_MAX_VOLUME)) {
                 fprintf (stderr, "invalid playback gain: %d\n", playback_gain);
                 return EXIT_FAILURE;
             }
