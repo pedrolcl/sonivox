@@ -333,7 +333,7 @@ the constant by NUM_EG1_FRAC_BITS
  * nCents -     measured in cents
  *
  * Outputs:
- * nResult - int.frac result (where frac has NUM_DENTS_FRAC_BITS)
+ * nResult - int.frac result (where frac has NUM_EG1_FRAC_BITS), equal to 2^(nCents/1200)
  *
  * Side Effects:
  *

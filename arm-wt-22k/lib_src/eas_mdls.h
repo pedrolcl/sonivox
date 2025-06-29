@@ -103,7 +103,7 @@ typedef struct
 /*----------------------------------------------------------------------------
  * These macros define the various characteristics of the defined sample rates
  *----------------------------------------------------------------------------
- * DLS_ATTACK_TIME_CONVERT      log offset for conversion from time cents to attack rate
+ * DLS_RATE_CONVERT      log2(BUFFER_SIZE / SAMPLE_RATE) * 1200, secs per frame in 10-frac log2
  * DLS_LFO_FREQUENCY_CONVERT    pitch-cents offset for LFO frequency conversion
  *----------------------------------------------------------------------------
 */
