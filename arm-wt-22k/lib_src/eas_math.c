@@ -155,7 +155,7 @@ EAS_U16 EAS_LogToLinear16 (EAS_I32 nGain)
  * Transform volume control in 1dB increments to gain multiplier
  *
  * Inputs:
- * volume - 100 = 0dB, 99 = -1dB, 0 = -inf
+ * volume - 128 = +28dB, 100 = 0dB, 99 = -1dB, 0 = -inf
  *
  * Outputs:
  * Linear gain in EG1 frac, i.e. 1.0 for +0dB
@@ -167,7 +167,7 @@ EAS_I32 EAS_VolumeToGain (EAS_INT volume)
     if (volume <= 0)
         return 0;
 
-    // 9864 >> 15 is log10(2)
-    return EAS_Calculate2toX((volume - EAS_REF_VOLUME) * 1200 / 20 * 9864 / (1 << 15));
+    // 108852 >> 15 is log2(10)
+    return EAS_Calculate2toX((volume - EAS_REF_VOLUME) * 1200 / 20 * 108852 / (1 << 15));
 }
 
