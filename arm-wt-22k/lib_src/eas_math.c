@@ -170,6 +170,7 @@ EAS_I32 EAS_VolumeToGain (EAS_INT volume)
     // 108852 >> 15 is log2(10)
     // 1200 is 1 cent, which is unit of EAS_Calculate2toX
     // dB = 20*log10(linear ratio)
+    // placing `/ 20` before `* 108852` avoids overflow
     return EAS_Calculate2toX((volume - EAS_REF_VOLUME) * 1200 / 20 * 108852 / (1 << 15));
 }
 
