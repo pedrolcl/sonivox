@@ -50,7 +50,9 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 
 -g, -\-gain _master_gain_
 
-:   Master gain between 0 and 196, default is 100 (+0dB). The number is relative to 100, in 1dB increments, e.g. 120 = +20dB, 80 = -20dB.
+:   Master gain between 0 and 196, default is 120 (+20dB). The number is relative to 100, in 1dB increments, e.g. 100 = +0dB, 80 = -20dB.
+
+    In v3, the +0dB master gain delivers a much higher level than v4 (around 20dB). To keep the same level, the default value is changed from 90 to 120 in v4.
 
 -V, -\-Verbosity _verbosity_
 
