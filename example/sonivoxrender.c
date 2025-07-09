@@ -33,7 +33,7 @@
 #endif
 
 const char *dls_path = NULL;
-EAS_I32 playback_gain = 120;
+EAS_I32 playback_gain = 100;
 EAS_I32 reverb_type = 0;
 EAS_I32 reverb_wet = 32767;
 EAS_I32 reverb_dry = 0;

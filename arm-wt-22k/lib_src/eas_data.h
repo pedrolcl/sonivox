@@ -78,8 +78,8 @@ typedef struct s_eas_stream_tag
     EAS_BOOL8                       streamFlags;
 } S_EAS_STREAM;
 
-/* default master volume is +20dB */
-#define DEFAULT_VOLUME              120
+/* default master volume is -10dB */
+#define DEFAULT_VOLUME              90
 #define DEFAULT_STREAM_VOLUME       100
 #define DEFAULT_STREAM_GAIN         14622
 
