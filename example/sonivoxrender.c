@@ -33,7 +33,7 @@
 #endif
 
 const char *dls_path = NULL;
-EAS_I32 playback_gain = 90;
+EAS_I32 playback_gain = 100;
 EAS_I32 reverb_type = 0;
 EAS_I32 reverb_wet = 32767;
 EAS_I32 reverb_dry = 0;
@@ -374,7 +374,7 @@ int main (int argc, char **argv)
                 stderr,
                 "Usage: %s [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] "
                 "[-w|--wet 0..32767] [-n|--dry 0..32767] "
-                "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..100] [-V|--Verbosity "
+                "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..196] [-V|--Verbosity "
                 "0..5] file.mid ...\n"
                 "Render standard MIDI files into raw PCM audio.\n"
                 "Options:\n"
@@ -387,7 +387,7 @@ int main (int argc, char **argv)
                 "\t-n, --dry n\t\treverb dry: 0..32767.\n"
                 "\t-c, --chorus n\t\tchorus preset: 0=no, 1..4=presets.\n"
                 "\t-l, --level n\t\tchorus level: 0..32767.\n"
-                "\t-g, --gain n\t\tmaster gain: 0..100.\n"
+                "\t-g, --gain n\t\tmaster gain: 0..196. 100 = +0dB.\n"
                 "\t-V, --Verbosity n\tVerbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, "
                 "5=details\n",
                 argv[0]);
@@ -435,7 +435,7 @@ int main (int argc, char **argv)
             break;
         case 'g':
             playback_gain = atoi(optarg);
-            if ((playback_gain < 0) || (playback_gain > 100)) {
+            if ((playback_gain < 0) || (playback_gain > EAS_MAX_VOLUME)) {
                 fprintf (stderr, "invalid playback gain: %d\n", playback_gain);
                 return EXIT_FAILURE;
             }

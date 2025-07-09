@@ -207,7 +207,7 @@ EAS_RESULT EAS_IntSetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_IN
             break;
 
         case PARSER_DATA_VOLUME:
-            VMSetVolume(pSynth, (EAS_U16) value);
+            VMSetVolume(pSynth, value);
             break;
 
         default:
@@ -1902,13 +1902,14 @@ EAS_PUBLIC EAS_RESULT EAS_GetPriority (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStr
 */
 EAS_PUBLIC EAS_RESULT EAS_SetVolume (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStream, EAS_I32 volume)
 {
-    EAS_I16 gain;
+    EAS_I32 gain;
 
     /* check range */
     if ((volume < 0) || (volume > EAS_MAX_VOLUME))
         return EAS_ERROR_PARAMETER_RANGE;
 
     /* stream volume */
+    // TODO: I did not find any code uses stream volume
     if (pStream != NULL)
     {
         EAS_IPTR gainOffset;
@@ -1932,10 +1933,6 @@ EAS_PUBLIC EAS_RESULT EAS_SetVolume (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStrea
 
     /* master volume */
     pEASData->masterVolume = (EAS_U8) volume;
-#if (NUM_OUTPUT_CHANNELS == 1)
-    /* leave 3dB headroom for mono output */
-    volume -= 3;
-#endif
 
     gain = EAS_VolumeToGain(volume - STREAM_VOLUME_HEADROOM);
     pEASData->masterGain = gain;
