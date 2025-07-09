@@ -1933,10 +1933,6 @@ EAS_PUBLIC EAS_RESULT EAS_SetVolume (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStrea
 
     /* master volume */
     pEASData->masterVolume = (EAS_U8) volume;
-#if (NUM_OUTPUT_CHANNELS == 1)
-    /* leave 3dB headroom for mono output */
-    volume -= 3;
-#endif
 
     gain = EAS_VolumeToGain(volume - STREAM_VOLUME_HEADROOM);
     pEASData->masterGain = gain;

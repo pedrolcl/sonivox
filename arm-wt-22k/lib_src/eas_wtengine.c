@@ -138,9 +138,7 @@ void WT_VoiceGain (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
         *pMixBuffer++ += MULT_EG1_EG1(smp, gainRight);
 #else
         /* mono output */
-        /*lint -e{704} <avoid divide>*/
-        tmp2 = tmp2 >> (NUM_MIXER_GUARD_BITS - 1);
-        *pMixBuffer++ = tmp2;
+        *pMixBuffer++ += smp;
 #endif
 
     }
@@ -216,7 +214,7 @@ void WT_Interpolate (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
 
         /* save new output sample in buffer */
         /*lint -e{704} <avoid divide>*/
-        *pOutputBuffer++ = (EAS_I16)(acc0 >> 2);
+        *pOutputBuffer++ = (EAS_I16)acc0;
 
         /* increment phase */
         phaseFrac += phaseInc;
@@ -322,7 +320,7 @@ void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
 
         /* save new output sample in buffer */
         /*lint -e{704} <avoid divide>*/
-        *pOutputBuffer++ = (EAS_I16)(acc0 >> 2);
+        *pOutputBuffer++ = (EAS_I16)acc0;
 
         /* increment phase */
         phaseFrac += phaseInc;

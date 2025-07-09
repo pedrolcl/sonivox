@@ -235,9 +235,16 @@ static EAS_I32 DLS_UpdateGain (S_WT_VOICE *pWTVoice, const S_DLS_ARTICULATION *p
     /* include velocity */
     if (pDLSArt->filterQandFlags & FLAG_DLS_VELOCITY_SENSITIVE)
     {
-        temp = velocity << 8;
+        temp = velocity * 32768 / 127;
         temp = FMUL_15x15(temp, temp);
         gain = FMUL_15x15(gain, temp);
+    }
+
+    if (gain > SYNTH_FULL_SCALE_EG1_GAIN) {
+        return gain;
+    }
+    if (gain < 0) {
+        return 0;
     }
 
     /* return gain */
