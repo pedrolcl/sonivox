@@ -39,14 +39,14 @@ static constexpr uint32_t sampleRate = 22050;
 static constexpr uint32_t numChannels = 2;
 
 static SonivoxTestEnvironment *gEnv = nullptr;
-#ifndef NEW_HOST_WRAPPER
+
 static int readAt(void *, void *, int, int);
 static int getSize(void *);
-#endif
 
 class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
                                                           /*audioPlayTimeMs*/ uint32_t,
-                                                          /*soundFont*/ string>>
+                                                          /*soundFont*/ string,
+                                                          /*crt openfile*/bool>>
 {
 public:
     SonivoxTest()
@@ -78,10 +78,11 @@ public:
     {
         EAS_RESULT result;
         struct stat buf;
-        tuple<string, uint32_t, string> params = GetParam();
+        tuple<string, uint32_t, string, bool> params = GetParam();
         mInputMediaFile = gEnv->getRes() + get<0>(params);
         mAudioplayTimeMs = get<1>(params);
         mSoundFont = get<2>(params);
+        mCrtOpenFile = get<3>(params);
         mTotalAudioChannels = numChannels;
         mAudioSampleRate = sampleRate;
 
@@ -102,20 +103,18 @@ public:
             mLength = buf.st_size;
             memset(&mDLSFile, 0, sizeof(mDLSFile));
 
-#ifdef NEW_HOST_WRAPPER
-            mDLSFile.handle = fdopen(mFd, "rb");
-            ASSERT_NE(mDLSFile.handle, nullptr)
-                << "Failed to open " << soundfontpath << " error: " << strerror(errno);
-#else
-            mDLSFile.handle = this;
-            mDLSFile.readAt = ::readAt;
-            mDLSFile.size = ::getSize;
-#endif
+            if (mCrtOpenFile) {
+                mDLSFile.handle = fdopen(mFd, "rb");
+                ASSERT_NE(mDLSFile.handle, nullptr)
+                    << "Failed to open " << soundfontpath << " error: " << strerror(errno);
+            } else {
+                mDLSFile.handle = this;
+                mDLSFile.readAt = ::readAt;
+                mDLSFile.size = ::getSize;
+            }
             result = EAS_LoadDLSCollection(mEASDataHandle, nullptr, &mDLSFile);
             ASSERT_EQ(result, EAS_SUCCESS) << "Failed to load DLS file: " << soundfontpath;
-#ifdef NEW_HOST_WRAPPER
             close(mFd);
-#endif
         }
 
         mFd = open(mInputMediaFile.c_str(), O_RDONLY | OPEN_FLAG);
@@ -128,13 +127,13 @@ public:
         mLength = buf.st_size;
         memset(&mEasFile, 0, sizeof(mEasFile));
 
-#ifdef NEW_HOST_WRAPPER
-        mEasFile.handle = fdopen(mFd, "rb");
-#else
-        mEasFile.handle = this;
-        mEasFile.readAt = ::readAt;
-        mEasFile.size = ::getSize;
-#endif
+        if (mCrtOpenFile) {
+            mEasFile.handle = fdopen(mFd, "rb");
+        } else {
+            mEasFile.handle = this;
+            mEasFile.readAt = ::readAt;
+            mEasFile.size = ::getSize;
+        }
 
         result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
         ASSERT_EQ(result, EAS_SUCCESS) << "Failed to open file: " << mInputMediaFile;
@@ -193,10 +192,9 @@ public:
 
     bool seekToLocation(EAS_I32);
     bool renderAudio();
-#ifndef NEW_HOST_WRAPPER
+
     int readAt(void *buf, int offset, int size);
     int getSize();
-#endif
 
     string mInputMediaFile;
     string mSoundFont;
@@ -206,6 +204,8 @@ public:
     off64_t mBase;
     int64_t mLength;
     int mFd;
+
+    bool mCrtOpenFile;
 
     EAS_DATA_HANDLE mEASDataHandle;
     EAS_HANDLE mEASStreamHandle;
@@ -217,7 +217,6 @@ public:
     const S_EAS_LIB_CONFIG *mEASConfig;
 };
 
-#ifndef NEW_HOST_WRAPPER
 static int readAt(void *handle, void *buffer, int offset, int size) {
     return ((SonivoxTest *)handle)->readAt(buffer, offset, size);
 }
@@ -239,7 +238,6 @@ int SonivoxTest::readAt(void *buffer, int offset, int size) {
 int SonivoxTest::getSize() {
     return mLength;
 }
-#endif
 
 bool SonivoxTest::seekToLocation(EAS_I32 locationExpectedMs) {
     EAS_RESULT result = EAS_Locate(mEASDataHandle, mEASStreamHandle, locationExpectedMs, false);
@@ -402,18 +400,31 @@ TEST_P(SonivoxTest, DecodePauseResumeTest) {
 
 INSTANTIATE_TEST_SUITE_P(SonivoxTestAll,
                          SonivoxTest,
-                         ::testing::Values(make_tuple("midi_a.mid", 2000, ""),
-                                           make_tuple("midi8sec.mid", 8002, ""),
-                                           make_tuple("midi_cs.mid", 2000, ""),
-                                           make_tuple("midi_gs.mid", 2000, ""),
-                                           make_tuple("ants.mid", 17233, ""),
-                                           make_tuple("testmxmf.mxmf", 29095, ""),
-                                           make_tuple("midi_a.mid", 2000, "soundfont.dls"),
-                                           make_tuple("midi8sec.mid", 8002, "soundfont.dls"),
-                                           make_tuple("midi_cs.mid", 2000, "soundfont.dls"),
-                                           make_tuple("midi_gs.mid", 2000, "soundfont.dls"),
-                                           make_tuple("ants.mid", 17233, "soundfont.dls"),
-                                           make_tuple("ants.mid", 17233, "soundfont.dls")));
+                         ::testing::Values(
+                             make_tuple("midi_a.mid", 2000, "", false),
+                             make_tuple("midi8sec.mid", 8002, "", false),
+                             make_tuple("midi_cs.mid", 2000, "", false),
+                             make_tuple("midi_gs.mid", 2000, "", false),
+                             make_tuple("ants.mid", 17233, "", false),
+                             make_tuple("testmxmf.mxmf", 29095, "", false),
+                             make_tuple("midi_a.mid", 2000, "soundfont.dls", false),
+                             make_tuple("midi8sec.mid", 8002, "soundfont.dls", false),
+                             make_tuple("midi_cs.mid", 2000, "soundfont.dls", false),
+                             make_tuple("midi_gs.mid", 2000, "soundfont.dls", false),
+                             make_tuple("ants.mid", 17233, "soundfont.dls", false),
+                             // crtopenfile=true tests
+                             make_tuple("midi_a.mid", 2000, "", true),
+                             make_tuple("midi8sec.mid", 8002, "", true),
+                             make_tuple("midi_cs.mid", 2000, "", true),
+                             make_tuple("midi_gs.mid", 2000, "", true),
+                             make_tuple("ants.mid", 17233, "", true),
+                             make_tuple("testmxmf.mxmf", 29095, "", true),
+                             make_tuple("midi_a.mid", 2000, "soundfont.dls", true),
+                             make_tuple("midi8sec.mid", 8002, "soundfont.dls", true),
+                             make_tuple("midi_cs.mid", 2000, "soundfont.dls", true),
+                             make_tuple("midi_gs.mid", 2000, "soundfont.dls", true),
+                             make_tuple("ants.mid", 17233, "soundfont.dls", true)
+                         ));
 
 int main(int argc, char **argv) {
     gEnv = new SonivoxTestEnvironment();
