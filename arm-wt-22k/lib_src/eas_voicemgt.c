@@ -4021,6 +4021,14 @@ void VMShutdown (S_EAS_DATA *pEASData)
     }
 #endif
 
+#ifdef _CC_CHORUS
+    VMShutdownChorus(pEASData, pEASData->pVoiceMgr);
+#endif
+
+#ifdef _CC_REVERB
+    VMShutdownReverb(pEASData, pEASData->pVoiceMgr);
+#endif
+
     /* check Configuration Module for static memory allocation */
     if (!pEASData->staticMemoryModel)
         EAS_HWFree(pEASData->hwInstData, pEASData->pVoiceMgr);
