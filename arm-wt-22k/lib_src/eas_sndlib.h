@@ -325,6 +325,10 @@ typedef struct s_bank_tag
 #define LIB_FORMAT_16_BIT_SAMPLES       0x00200000
 
 #ifdef DLS_SYNTHESIZER
+enum : int {
+    DLSLIB_TYPE_DLS = 0x00,
+    DLSLIB_TYPE_SF2 = 0x10
+};
 /*----------------------------------------------------------------------------
  * DLS data structure
  *
@@ -352,6 +356,7 @@ typedef struct s_eas_dls_tag
     EAS_U16             numDLSArticulations;
     EAS_U16             numDLSSamples;
     EAS_U8              refCount;
+    EAS_U8              libType;
 } S_DLS;
 #endif
 

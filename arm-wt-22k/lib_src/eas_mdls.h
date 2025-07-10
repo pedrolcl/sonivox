@@ -290,6 +290,11 @@ EAS_RESULT DLSCleanup (EAS_HW_DATA_HANDLE hwInstData, S_DLS *pDLS);
 void DLSAddRef (S_DLS *pDLS);
 EAS_I16 DLSConvertDelay (EAS_I32 timeCents);
 EAS_I16 DLSConvertRate (EAS_I32 timeCents);
+EAS_U8 DLSConvertQ (EAS_I32 q);
+EAS_I8 DLSConvertPan (EAS_I32 pan);
+EAS_I16 DLSConvertPitchToPhaseInc (EAS_I32 pitchCents);
+EAS_I16 DLSConvertSustain (EAS_I32 sustain);
+EAS_I16 DLSConvertSampleRate (EAS_U32 sampleRate);
 
 #ifdef _STANDALONE_CONVERTER
 void DLSConvParams (S_DLS_PARAMS *pParams, EAS_BOOL set);
