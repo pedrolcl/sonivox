@@ -519,6 +519,9 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
                 /*lint -e{702} use shift for performance */
                 temp = pEnvParams->attackTime + (pEnvParams->velToAttack * pVoice->velocity) / 128;
                 *pIncrement = DLSConvertRate(temp);
+                if (*pIncrement == 0) {
+                    *pIncrement = 1; // ensure no infinite attack
+                }
                 return;
             }
 
@@ -542,7 +545,9 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
                 /*lint -e{702} use shift for performance */
                 temp = pEnvParams->holdTime + (pEnvParams->keyNumToHold * pVoice->note) / 128;
                 *pIncrement = DLSConvertDelay(temp);
-                return;
+                if (*pIncrement != 0) {
+                    return;
+                }
             }
 
             // no hold
@@ -562,13 +567,18 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
             if (pEnvParams->decayTime != ZERO_TIME_IN_CENTS)
             {
                 temp = pEnvParams->decayTime + (pEnvParams->keyNumToDecay * pVoice->note) / 128;
-                *pIncrement = (SYNTH_FULL_SCALE_EG1_GAIN - pEnvParams->sustainLevel) / DLSConvertDelay(temp);
+                temp = DLSConvertDelay(temp);
+                if (temp == 0) {
+                    // very small decay time, regard it as no decay
+                    goto nodecay;
+                }
+                *pIncrement = (SYNTH_FULL_SCALE_EG1_GAIN - pEnvParams->sustainLevel) / temp;
                 if (*pIncrement == 0) {
                     *pIncrement = 1; // ensure no infinite decay
                 }
                 return;
             }
-
+nodecay:
             // no decay, fall to sustain
             *pValue = pEnvParams->sustainLevel;
             /*lint -e{825} falls through to next case */
