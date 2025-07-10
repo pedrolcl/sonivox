@@ -131,6 +131,7 @@ list(APPEND SOURCES
   arm-wt-22k/lib_src/eas_xmfdata.c
 #arm-wt-22k/lib_src/jet.c
   arm-wt-22k/lib_src/wt_200k_G.c
+  arm-wt-22k/src/rmidi.c
 )
 
 if (NEW_HOST_WRAPPER)
@@ -169,6 +170,7 @@ target_compile_definitions( sonivox-objects PRIVATE
   #_OTA_PARSER
   _XMF_PARSER
   #JET_INTERFACE
+  _RMID_PARSER
 )
 
 include(TestBigEndian)
