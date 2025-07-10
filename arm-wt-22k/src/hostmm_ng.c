@@ -110,6 +110,14 @@ EAS_RESULT EAS_HWOpenFile(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_LOCATOR locato
     if (pFile == NULL) {
         return EAS_ERROR_INVALID_PARAMETER;
     }
+    if (!(
+        (locator->readAt == NULL && locator->size == NULL)
+        || (locator->readAt != NULL && locator->size != NULL)
+    )) {
+        EAS_Report(_EAS_SEVERITY_ERROR, "EAS_HWOpenFile: Must specify both readAt and size or neither\n");
+        return EAS_ERROR_INVALID_PARAMETER;
+    }
+
     *pFile = malloc(sizeof(EAS_HW_FILE));
     (*pFile)->handle = locator->handle;
     (*pFile)->own = EAS_FALSE;
