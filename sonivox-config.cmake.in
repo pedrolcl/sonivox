@@ -1,14 +1,5 @@
 @PACKAGE_INIT@
-include(CMakeFindDependencyMacro)
-set(SONIVOX_WANTS_ZLIB @ZLIB_FOUND@)
-
-if (UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
-    find_library(HAVE_LIBM NAMES "m" NO_CACHE)
-endif()
-
-if (SONIVOX_WANTS_ZLIB)
-    find_dependency(ZLIB)
-endif()
+#include(CMakeFindDependencyMacro)
 
 #targets file
 include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-targets.cmake")
