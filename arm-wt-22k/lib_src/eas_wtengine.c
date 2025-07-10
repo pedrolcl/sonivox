@@ -133,12 +133,12 @@ void WT_VoiceGain (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
         /* stereo output */
 #if (NUM_OUTPUT_CHANNELS == 2)
         /* left channel */
-        *pMixBuffer++ += MULT_EG1_EG1(smp, gainLeft);
+        *pMixBuffer++ = MULT_EG1_EG1(smp, gainLeft);
         /* right channel */
-        *pMixBuffer++ += MULT_EG1_EG1(smp, gainRight);
+        *pMixBuffer++ = MULT_EG1_EG1(smp, gainRight);
 #else
         /* mono output */
-        *pMixBuffer++ += smp;
+        *pMixBuffer++ = smp;
 #endif
 
     }

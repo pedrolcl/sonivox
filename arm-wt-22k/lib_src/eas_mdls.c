@@ -148,11 +148,11 @@
 
 // #define _DEBUG_DLS
 
-#define DLS_MAX_WAVE_COUNT      2048
-#define DLS_MAX_ART_COUNT       4096
-#define DLS_MAX_REGION_COUNT    4096
+#define DLS_MAX_WAVE_COUNT      32767
+#define DLS_MAX_ART_COUNT       32767
+#define DLS_MAX_REGION_COUNT    32767
 #define DLS_MAX_INST_COUNT      512
-#define MAX_DLS_WAVE_SIZE       (1024*1024)
+#define MAX_DLS_WAVE_SIZE       (1024*1024*32) // 32 MiB
 
 #ifndef EAS_U32_MAX
 #define EAS_U32_MAX             (4294967295U)
@@ -392,10 +392,10 @@ static const S_DLS_ART_VALUES defaultArt =
     0,              /* Mod EG to pitch: 0 cents */
 
     0,              /* Default pan: 0.0% */
-    0,              /* Default reverb send: 0.0% */
     1000,           /* Default CC91 to reverb send: 100.0% */
+    0,              /* Default reverb send: 0.0% */
+    1000,           /* Default CC93 to chorus send: 100.0% */
     0,              /* Default chorus send: 0.0% */
-    1000            /* Default CC93 to chorus send: 100.0% */
     }
 };
 
@@ -988,6 +988,7 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     // limit to reasonable size
     if (dataSize < 0 || dataSize > MAX_DLS_WAVE_SIZE)
     {
+        EAS_Report(_EAS_SEVERITY_ERROR, "DLS wave chunk has invalid data size %d\n", dataSize);
         return EAS_ERROR_SOUND_LIBRARY;
     }
 
@@ -2699,12 +2700,12 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
     if (pDLSArt->values[PARAM_VEL_TO_GAIN] != 0)
         pArt->filterQandFlags |= FLAG_DLS_VELOCITY_SENSITIVE;
 
-#ifdef _REVERB
+#ifdef _CC_REVERB
     pArt->reverbSend = pDLSArt->values[PARAM_DEFAULT_REVERB_SEND];
     pArt->cc91ToReverbSend = pDLSArt->values[PARAM_MIDI_CC91_TO_REVERB_SEND];
 #endif
 
-#ifdef _CHORUS
+#ifdef _CC_CHORUS
     pArt->chorusSend = pDLSArt->values[PARAM_DEFAULT_CHORUS_SEND];
     pArt->cc93ToChorusSend = pDLSArt->values[PARAM_MIDI_CC93_TO_CHORUS_SEND];
 #endif

@@ -36,6 +36,7 @@
 #include "eas_wtsynth.h"
 #include "eas_pan.h"
 #include "eas_mdls.h"
+#include <string.h>
 #include "eas_dlssynth.h"
 
 #ifdef _METRICS_ENABLED
@@ -451,6 +452,9 @@ EAS_BOOL DLS_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOICE
     /* check for end of sample */
     if ((pWTVoice->loopStart != WT_NOISE_GENERATOR) && (pWTVoice->loopStart == pWTVoice->loopEnd))
         done = WT_CheckSampleEnd(pWTVoice, &intFrame, EAS_FALSE);
+
+    if (intFrame.numSamples < BUFFER_SIZE_IN_MONO_SAMPLES)
+        memset(pMixBuffer + intFrame.numSamples * NUM_OUTPUT_CHANNELS, 0, (BUFFER_SIZE_IN_MONO_SAMPLES - intFrame.numSamples) * NUM_OUTPUT_CHANNELS * sizeof(EAS_I32));
 
     WT_ProcessVoice(pWTVoice, &intFrame);
 
