@@ -258,7 +258,7 @@ EAS_RESULT EAS_HWFileSeekOfs(EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE file
     }
 
     if (file->readAt != NULL) {
-        file->pos = position;
+        file->pos += position;
         return EAS_SUCCESS;
     }
 
