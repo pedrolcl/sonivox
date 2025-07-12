@@ -25,14 +25,6 @@ project( sonivox
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-set(LUCKYOS Android Darwin Linux Windows)
-if (${CMAKE_SYSTEM_NAME} IN_LIST LUCKYOS)
-  message(STATUS "Enabling by default the NEW_HOST_WRAPPER option for ${CMAKE_SYSTEM_NAME}")
-  set(IS_LUCKY TRUE)
-else()
-  set(IS_LUCKY FALSE)
-endif()
-
 option(USE_44KHZ "Output 44100 Hz audio sample rate (instead of 22050 Hz)" TRUE)
 option(USE_16BITS_SAMPLES "Use 16 bits samples (instead of 8 bit)" TRUE)
 option(BUILD_SONIVOX_STATIC "Build the static library" TRUE)
@@ -40,7 +32,7 @@ option(BUILD_SONIVOX_SHARED "Build the shared library" TRUE)
 option(BUILD_EXAMPLE "Build and install the example program" TRUE)
 option(BUILD_TESTING "Build the unit tests" TRUE)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Whether to create position-independent targets" TRUE)
-option(NEW_HOST_WRAPPER "Use the new host wrapper" ${IS_LUCKY})
+option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
 set(MAX_VOICES 64 CACHE STRING "Maximum number of voices")
 
 include(CMakeDependentOption)

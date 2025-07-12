@@ -39,10 +39,6 @@ static constexpr uint32_t sampleRate = 22050;
 static constexpr uint32_t numChannels = 2;
 
 static SonivoxTestEnvironment *gEnv = nullptr;
-#ifndef NEW_HOST_WRAPPER
-static int readAt(void *, void *, int, int);
-static int getSize(void *);
-#endif
 
 class SonivoxTest : public ::testing::TestWithParam<tuple</*fileName*/ string,
                                                           /*audioPlayTimeMs*/ uint32_t,
@@ -102,20 +98,12 @@ public:
             mLength = buf.st_size;
             memset(&mDLSFile, 0, sizeof(mDLSFile));
 
-#ifdef NEW_HOST_WRAPPER
             mDLSFile.handle = fdopen(mFd, "rb");
             ASSERT_NE(mDLSFile.handle, nullptr)
                 << "Failed to open " << soundfontpath << " error: " << strerror(errno);
-#else
-            mDLSFile.handle = this;
-            mDLSFile.readAt = ::readAt;
-            mDLSFile.size = ::getSize;
-#endif
             result = EAS_LoadDLSCollection(mEASDataHandle, nullptr, &mDLSFile);
             ASSERT_EQ(result, EAS_SUCCESS) << "Failed to load DLS file: " << soundfontpath;
-#ifdef NEW_HOST_WRAPPER
             close(mFd);
-#endif
         }
 
         mFd = open(mInputMediaFile.c_str(), O_RDONLY | OPEN_FLAG);
@@ -128,13 +116,7 @@ public:
         mLength = buf.st_size;
         memset(&mEasFile, 0, sizeof(mEasFile));
 
-#ifdef NEW_HOST_WRAPPER
         mEasFile.handle = fdopen(mFd, "rb");
-#else
-        mEasFile.handle = this;
-        mEasFile.readAt = ::readAt;
-        mEasFile.size = ::getSize;
-#endif
 
         result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
         ASSERT_EQ(result, EAS_SUCCESS) << "Failed to open file: " << mInputMediaFile;
@@ -193,10 +175,6 @@ public:
 
     bool seekToLocation(EAS_I32);
     bool renderAudio();
-#ifndef NEW_HOST_WRAPPER
-    int readAt(void *buf, int offset, int size);
-    int getSize();
-#endif
 
     string mInputMediaFile;
     string mSoundFont;
@@ -216,30 +194,6 @@ public:
     EAS_I32 mPCMBufferSize;
     const S_EAS_LIB_CONFIG *mEASConfig;
 };
-
-#ifndef NEW_HOST_WRAPPER
-static int readAt(void *handle, void *buffer, int offset, int size) {
-    return ((SonivoxTest *)handle)->readAt(buffer, offset, size);
-}
-
-static int getSize(void *handle) {
-    return ((SonivoxTest *)handle)->getSize();
-}
-
-int SonivoxTest::readAt(void *buffer, int offset, int size) {
-    if (offset > mLength) offset = mLength;
-    lseek(mFd, mBase + offset, SEEK_SET);
-    if (offset + size > mLength) {
-        size = mLength - offset;
-    }
-
-    return read(mFd, buffer, size);
-}
-
-int SonivoxTest::getSize() {
-    return mLength;
-}
-#endif
 
 bool SonivoxTest::seekToLocation(EAS_I32 locationExpectedMs) {
     EAS_RESULT result = EAS_Locate(mEASDataHandle, mEASStreamHandle, locationExpectedMs, false);
@@ -412,7 +366,6 @@ INSTANTIATE_TEST_SUITE_P(SonivoxTestAll,
                                            make_tuple("midi8sec.mid", 8002, "soundfont.dls"),
                                            make_tuple("midi_cs.mid", 2000, "soundfont.dls"),
                                            make_tuple("midi_gs.mid", 2000, "soundfont.dls"),
-                                           make_tuple("ants.mid", 17233, "soundfont.dls"),
                                            make_tuple("ants.mid", 17233, "soundfont.dls")));
 
 int main(int argc, char **argv) {

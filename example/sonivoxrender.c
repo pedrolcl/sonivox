@@ -49,27 +49,6 @@ int verbosity =
 const S_EAS_LIB_CONFIG *mEASConfig = NULL;
 char sLibrary_version[16];
 
-#ifndef NEW_HOST_WRAPPER
-int Read(void *handle, void *buf, int offset, int size)
-{
-    int ret;
-
-    ret = fseek((FILE *) handle, offset, SEEK_SET);
-    if (ret < 0) return 0;
-
-    return fread(buf, 1, size, (FILE *) handle);
-}
-
-int Size(void *handle) {
-    int ret;
-
-    ret = fseek((FILE *) handle, 0, SEEK_END);
-    if (ret < 0) return ret;
-
-    return ftell((FILE *) handle);
-}
-#endif
-
 void initLibraryVersion()
 {
     memset(sLibrary_version, 0, sizeof(sLibrary_version));
@@ -130,11 +109,6 @@ int initializeLibrary(void)
             ok = EXIT_FAILURE;
             goto cleanup;
         }
-
-#ifndef NEW_HOST_WRAPPER
-        mDLSFile.readAt = Read;
-        mDLSFile.size = Size;
-#endif
 
         result = EAS_LoadDLSCollection(mEASDataHandle, NULL, &mDLSFile);
         fclose(mDLSFile.handle);
@@ -237,11 +211,6 @@ int renderFile(const char *fileName)
         ok = EXIT_FAILURE;
         return ok;
     }
-
-#ifndef NEW_HOST_WRAPPER
-    mEasFile.readAt = Read;
-    mEasFile.size = Size;
-#endif
 
     EAS_RESULT result = EAS_OpenFile(mEASDataHandle, &mEasFile, &mEASStreamHandle);
     if (result != EAS_SUCCESS) {
