@@ -408,6 +408,7 @@ EAS_RESULT VMInitChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 
 void VMShutdownChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 {
+    pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_DRY, EAS_CHORUS_LEVEL_MAX);
     pVoiceMgr->chorusModule.effect = NULL;
     pVoiceMgr->chorusModule.effectData = NULL;
 }
