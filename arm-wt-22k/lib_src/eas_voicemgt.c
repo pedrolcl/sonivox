@@ -361,6 +361,7 @@ EAS_RESULT VMInitReverb(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
     // TODO: a reset function may be needed to reinitialize the effect
 
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_BYPASS, EAS_FALSE);
+    pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_PRESET, REVERB_DEFAULT_ROOM_NUMBER);
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_DRY, 0);
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_WET, EAS_REVERB_WET_MAX);
 
@@ -405,6 +406,7 @@ EAS_RESULT VMInitChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
     // TODO: a reset function may be needed to reinitialize the effect
 
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_BYPASS, EAS_FALSE);
+    pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_PRESET, EAS_CHORUS_PRESET_DEFAULT);
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_DRY, 0);
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_LEVEL, EAS_CHORUS_LEVEL_MAX);
 

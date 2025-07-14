@@ -44,8 +44,13 @@
 #include "eas_vm_protos.h"
 #include "eas_math.h"
 
+#ifdef _CC_CHORUS
 #include "eas_chorus.h"
+#endif
+
+#ifdef _CC_REVERB
 #include "eas_reverb.h"
+#endif
 
 #ifdef JET_INTERFACE
 #include "jet_data.h"
