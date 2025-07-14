@@ -365,18 +365,11 @@ EAS_RESULT VMInitReverb(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_DRY, 0);
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_WET, EAS_REVERB_WET_MAX);
 
-    // Take over reverb data's ownership
-    pEASData->effectsModules[EAS_MODULE_REVERB].effectData = NULL;
-
     return EAS_SUCCESS;
 }
 
 void VMShutdownReverb(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 {
-    if (pVoiceMgr->reverbModule.effectData != NULL) {
-        // Give back reverb data's ownership
-        pEASData->effectsModules[EAS_MODULE_REVERB].effectData = pVoiceMgr->reverbModule.effectData;
-    }
     pVoiceMgr->reverbModule.effect = NULL;
     pVoiceMgr->reverbModule.effectData = NULL;
 }
@@ -410,18 +403,11 @@ EAS_RESULT VMInitChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_DRY, 0);
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_LEVEL, EAS_CHORUS_LEVEL_MAX);
 
-    // Take over chorus data's ownership
-    pEASData->effectsModules[EAS_MODULE_CHORUS].effectData = NULL;
-
     return EAS_SUCCESS;
 }
 
 void VMShutdownChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 {
-    if (pVoiceMgr->chorusModule.effectData != NULL) {
-        // Give back chorus data's ownership
-        pEASData->effectsModules[EAS_MODULE_CHORUS].effectData = pVoiceMgr->chorusModule.effectData;
-    }
     pVoiceMgr->chorusModule.effect = NULL;
     pVoiceMgr->chorusModule.effectData = NULL;
 }

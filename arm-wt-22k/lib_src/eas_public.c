@@ -2367,12 +2367,6 @@ EAS_PUBLIC EAS_RESULT EAS_SetParameter (EAS_DATA_HANDLE pEASData, EAS_I32 module
             }
             return EAS_SUCCESS;
         }
-
-        if (pEASData->effectsModules[module].effectData == NULL)
-        {
-            EAS_Report(_EAS_SEVERITY_ERROR, "Setting chorus params while not overriding CC chorus is not allowed\n");
-            return EAS_ERROR_INVALID_PARAMETER;
-        }
     }
 
     if (module == EAS_MODULE_REVERB)
@@ -2388,12 +2382,6 @@ EAS_PUBLIC EAS_RESULT EAS_SetParameter (EAS_DATA_HANDLE pEASData, EAS_I32 module
                 return VMInitReverb(pEASData, pEASData->pVoiceMgr);
             }
             return EAS_SUCCESS;
-        }
-
-        if (pEASData->effectsModules[module].effectData == NULL)
-        {
-            EAS_Report(_EAS_SEVERITY_ERROR, "Setting reverb params while not overriding CC reverb is not allowed\n");
-            return EAS_ERROR_INVALID_PARAMETER;
         }
     }
 
