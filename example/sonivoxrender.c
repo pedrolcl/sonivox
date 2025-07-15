@@ -375,8 +375,8 @@ int main (int argc, char **argv)
                                            {"level", required_argument, 0, 'l'},
                                            {"gain", required_argument, 0, 'g'},
                                            {"Verbosity", required_argument, 0, 'V'},
-                                           {"reverb-override", no_argument, 0, 'R'},
-                                           {"chorus-override", no_argument, 0, 'C'},
+                                           {"reverb-post-mix", no_argument, 0, 'R'},
+                                           {"chorus-post-mix", no_argument, 0, 'C'},
                                            {0, 0, 0, 0}};
 
     while (1) {
@@ -393,7 +393,7 @@ int main (int argc, char **argv)
                 "Usage: %s [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] "
                 "[-w|--wet 0..32767] [-n|--dry 0..32767] "
                 "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..196] [-V|--Verbosity "
-                "0..5] file.mid ...\n"
+                "0..5] [--reverb-post-mix] [--chorus-post-mix] file.mid ...\n"
                 "Render standard MIDI files into raw PCM audio.\n"
                 "Options:\n"
                 "\t-h, --help\t\tthis help message.\n"
@@ -408,8 +408,8 @@ int main (int argc, char **argv)
                 "\t-g, --gain n\t\tmaster gain: 0..196. 100 = +0dB.\n"
                 "\t-V, --Verbosity n\tVerbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, "
                 "5=details\n"
-                "\t--reverb-override\toverride CC91 reverb send.\n"
-                "\t--chorus-override\toverride CC93 chorus send.\n",
+                "\t--reverb-post-mix\tignore CC91 reverb send.\n"
+                "\t--chorus-post-mix\tignore CC93 chorus send.\n",
                 argv[0]);
             return EXIT_FAILURE;
         case 'v':
