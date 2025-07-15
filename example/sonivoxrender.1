@@ -13,8 +13,8 @@ audio
 [\f[B]\-c|\-\-chorus\f[R] \f[I]0..4\f[R]] [\f[B]\-l|\-\-level\f[R]
 \f[I]0..32767\f[R]] [\f[B]\-g|\-\-gain\f[R] \f[I]0..196\f[R]]
 [\f[B]\-V|\-\-Verbosity\f[R] \f[I]0..5\f[R]]
-[\f[B]\-\-reverb\-post\-mix\f[R]] [\f[B]\-\-chorus\-post\-mix\f[R]]
-\f[I]midi_file\f[R]
+[\f[B]\-R|\-\-reverb\-post\-mix\f[R]]
+[\f[B]\-C|\-\-chorus\-post\-mix\f[R]] \f[I]midi_file\f[R]
 .SH DESCRIPTION
 This program is a MIDI file renderer based on the sonivox synthesizer
 library.
@@ -56,12 +56,12 @@ The number is relative to 100, in 1dB increments, e.g.\ 120 = +20dB, 80
 \-V, \-\-Verbosity \f[I]verbosity\f[R]
 Verbosity level between 0 and 5, where 0=no, 1..5=severity levels.
 .TP
-\-\-reverb\-post\-mix
+\-R, \-\-reverb\-post\-mix
 Ignore CC91 reverb send level.
 The reverb effect will apply to mixed output audio, which is the old
 behavior.
 .TP
-\-\-chorus\-post\-mix
+\-C, \-\-chorus\-post\-mix
 Ignore CC93 chorus send level.
 See also \f[B]\-\-reverb\-post\-mix\f[R].
 .SS Arguments

@@ -7,7 +7,7 @@
 
 # SYNOPSIS
 
-| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _file.dls_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..196_] [**-V|-\-Verbosity** _0..5_] [**-\-reverb-post-mix**] [**-\-chorus-post-mix**] _midi_file_
+| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _file.dls_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..196_] [**-V|-\-Verbosity** _0..5_] [**-R|-\-reverb-post-mix**] [**-C|-\-chorus-post-mix**] _midi_file_
 
 # DESCRIPTION
 
@@ -56,11 +56,11 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 
 :   Verbosity level between 0 and 5, where 0=no, 1..5=severity levels.
 
--\-reverb-post-mix
+-R, -\-reverb-post-mix
 
 :   Ignore CC91 reverb send level. The reverb effect will apply to mixed output audio, which is the old behavior.
 
--\-chorus-post-mix
+-C, -\-chorus-post-mix
 
 :   Ignore CC93 chorus send level. See also **-\-reverb-post-mix**.
 

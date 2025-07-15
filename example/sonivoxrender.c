@@ -380,7 +380,7 @@ int main (int argc, char **argv)
                                            {0, 0, 0, 0}};
 
     while (1) {
-        c = getopt_long(argc, argv, "hvd:r:w:n:c:l:g:V:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hvd:r:w:n:c:l:g:V:RC", long_options, &option_index);
 
         if (c == -1) {
             break;
@@ -393,7 +393,7 @@ int main (int argc, char **argv)
                 "Usage: %s [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] "
                 "[-w|--wet 0..32767] [-n|--dry 0..32767] "
                 "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..196] [-V|--Verbosity "
-                "0..5] [--reverb-post-mix] [--chorus-post-mix] file.mid ...\n"
+                "0..5] [-R|--reverb-post-mix] [-C|--chorus-post-mix] file.mid ...\n"
                 "Render standard MIDI files into raw PCM audio.\n"
                 "Options:\n"
                 "\t-h, --help\t\tthis help message.\n"
@@ -408,8 +408,8 @@ int main (int argc, char **argv)
                 "\t-g, --gain n\t\tmaster gain: 0..196. 100 = +0dB.\n"
                 "\t-V, --Verbosity n\tVerbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, "
                 "5=details\n"
-                "\t--reverb-post-mix\tignore CC91 reverb send.\n"
-                "\t--chorus-post-mix\tignore CC93 chorus send.\n",
+                "\t-R, --reverb-post-mix\tignore CC91 reverb send.\n"
+                "\t-C, --chorus-post-mix\tignore CC93 chorus send.\n",
                 argv[0]);
             return EXIT_FAILURE;
         case 'v':
