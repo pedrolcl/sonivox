@@ -37,6 +37,11 @@
 
 #include <stdint.h>
 
+#ifdef EXTERNAL_AUDIO
+// TODO: eas_synthcfg is not a public header
+#include "eas_synthcfg.h"
+#endif
+
 /* EAS_RESULT return codes */
 typedef long EAS_RESULT;
 #define EAS_SUCCESS                         0
@@ -246,24 +251,24 @@ typedef struct s_ext_audio_event_tag
     EAS_BOOL8   noteOn;
 } S_EXT_AUDIO_EVENT;
 
-// note: this structure depends on macros which is not defined here
-// so it is commented as it is not unsed
-// typedef struct s_midi_controllers_tag
-// {
-//     EAS_U8      modWheel;           /* CC1 */
-//     EAS_U8      volume;             /* CC7 */
-//     EAS_U8      pan;                /* CC10 */
-//     EAS_U8      expression;         /* CC11 */
-//     EAS_U8      channelPressure;    /* MIDI channel pressure */
+#ifdef EXTERNAL_AUDIO
+typedef struct s_midi_controllers_tag
+{
+    EAS_U8      modWheel;           /* CC1 */
+    EAS_U8      volume;             /* CC7 */
+    EAS_U8      pan;                /* CC10 */
+    EAS_U8      expression;         /* CC11 */
+    EAS_U8      channelPressure;    /* MIDI channel pressure */
 
-// #ifdef  _CC_REVERB
-//     EAS_U8      reverbSend;         /* CC91 */
-// #endif
+#ifdef  _CC_REVERB
+    EAS_U8      reverbSend;         /* CC91 */
+#endif
 
-// #ifdef  _CC_CHORUS
-//     EAS_U8      chorusSend;         /* CC93 */
-// #endif
-// } S_MIDI_CONTROLLERS;
+#ifdef  _CC_CHORUS
+    EAS_U8      chorusSend;         /* CC93 */
+#endif
+} S_MIDI_CONTROLLERS;
+#endif
 
 /* iMode play modes enumeration for EAS_SetPlayMode */
 typedef enum
