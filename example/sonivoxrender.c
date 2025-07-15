@@ -34,11 +34,11 @@
 
 const char *dls_path = NULL;
 EAS_I32 playback_gain = 100;
-EAS_I32 reverb_type = 1;
+EAS_I32 reverb_type = 0;
 EAS_I32 reverb_wet = 32767;
 EAS_I32 reverb_dry = 0;
 EAS_BOOL reverb_override = EAS_FALSE;
-EAS_I32 chorus_type = 1;
+EAS_I32 chorus_type = 0;
 EAS_I32 chorus_level = 32767;
 EAS_BOOL chorus_override = EAS_FALSE;
 EAS_DATA_HANDLE mEASDataHandle = NULL;
