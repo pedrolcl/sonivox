@@ -43,6 +43,18 @@
 #include "eas_mdls.h"
 #endif
 
+// About CC reverb and chorus:
+// 1. There is only a single global reverb effect module instance per synth instance, likewise for the chorus effect.
+//    The effect module's instances are created in EAS_Init() and destroyed in EAS_Shutdown().
+//    The effect modules belong to the synth instance.
+//    VM keeps references of the modules (if needed) for convenience, but the ownership is not transferred.
+// 2. CC91 and CC93 are channel messages, which set send levels of the reverb and chorus effects for one of the 16 channels.
+//    Send levels of each channel could be different, however the configurations of the effects (which is the module data in implementation)
+//    are global, and same no matter if the effects are applied to the final mix or each channel.
+// 3. VMAddSamples applies the effects per channel, and EAS_MixEnginePost() applies the effects to the final mix.
+//    These two FX processes are EXCLUSIVE. In other words, ReverbProcess() and ChorusProcess() are never called twice through one EAS_Render() call.
+//
+
 #ifdef _CC_REVERB
 #include "eas_reverb.h"
 #include "eas_reverbdata.h"
@@ -362,6 +374,7 @@ EAS_RESULT VMInitReverb(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_BYPASS, EAS_FALSE);
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_PRESET, REVERB_DEFAULT_ROOM_NUMBER);
+    // Dry audio is mixed by VMAddSamples, fx module's mix is not needed
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_DRY, EAS_REVERB_DRY_MIN);
 
     return EAS_SUCCESS;
@@ -402,6 +415,7 @@ EAS_RESULT VMInitChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_BYPASS, EAS_FALSE);
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_PRESET, EAS_CHORUS_PRESET_DEFAULT);
+    // Dry audio is mixed by VMAddSamples, fx module's mix is not needed
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_DRY, EAS_CHORUS_DRY_MIN);
 
     return EAS_SUCCESS;
