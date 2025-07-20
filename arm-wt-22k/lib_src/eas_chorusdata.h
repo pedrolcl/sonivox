@@ -42,6 +42,9 @@
 #define EAS_CHORUS_LEVEL_MIN        0
 #define EAS_CHORUS_LEVEL_MAX        32767
 
+#define EAS_CHORUS_DRY_MIN          0
+#define EAS_CHORUS_DRY_MAX          32767
+
 #define EAS_CHORUS_RATE_MIN         10
 #define EAS_CHORUS_RATE_MAX         50
 
@@ -61,7 +64,7 @@ typedef struct
     EAS_I16             m_nRate;
     EAS_I16             m_nDepth;
     EAS_I16             m_nLevel;
-
+    EAS_I16             m_nDry;
 } S_CHORUS_PRESET;
 
 typedef struct

@@ -362,14 +362,16 @@ EAS_RESULT VMInitReverb(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_BYPASS, EAS_FALSE);
     pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_PRESET, REVERB_DEFAULT_ROOM_NUMBER);
-    pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_DRY, 0);
-    pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_WET, EAS_REVERB_WET_MAX);
+    pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_DRY, EAS_REVERB_DRY_MIN);
 
     return EAS_SUCCESS;
 }
 
 void VMShutdownReverb(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 {
+    if (pVoiceMgr->reverbModule.effect) {
+        pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_PRESET, REVERB_DEFAULT_ROOM_NUMBER);
+    }
     pVoiceMgr->reverbModule.effect = NULL;
     pVoiceMgr->reverbModule.effectData = NULL;
 }
@@ -400,8 +402,7 @@ EAS_RESULT VMInitChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_BYPASS, EAS_FALSE);
     pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_PRESET, EAS_CHORUS_PRESET_DEFAULT);
-    pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_DRY, 0);
-    pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_LEVEL, EAS_CHORUS_LEVEL_MAX);
+    pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_DRY, EAS_CHORUS_DRY_MIN);
 
     return EAS_SUCCESS;
 }
@@ -409,7 +410,7 @@ EAS_RESULT VMInitChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 void VMShutdownChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
 {
     if (pVoiceMgr->chorusModule.effect) {
-        pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_DRY, EAS_CHORUS_LEVEL_MAX);
+        pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_PRESET, EAS_CHORUS_PRESET_DEFAULT);
     }
     pVoiceMgr->chorusModule.effect = NULL;
     pVoiceMgr->chorusModule.effectData = NULL;
