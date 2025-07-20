@@ -37,8 +37,10 @@ EAS_I32 playback_gain = 100;
 EAS_I32 reverb_type = 0;
 EAS_I32 reverb_wet = 32767;
 EAS_I32 reverb_dry = 0;
+EAS_BOOL reverb_override = EAS_FALSE;
 EAS_I32 chorus_type = 0;
 EAS_I32 chorus_level = 32767;
+EAS_BOOL chorus_override = EAS_FALSE;
 EAS_DATA_HANDLE mEASDataHandle = NULL;
 int verbosity =
 #ifdef NDEBUG
@@ -126,6 +128,13 @@ int initializeLibrary(void)
         goto cleanup;
     }
 
+    result = EAS_SetParameter(mEASDataHandle, EAS_MODULE_REVERB, EAS_PARAM_REVERB_OVERRIDE_CC, reverb_override);
+    if (result != EAS_SUCCESS) {
+        fprintf(stderr, "Failed to enable reverb override\n");
+        ok = EXIT_FAILURE;
+        goto cleanup;
+    }
+
     EAS_BOOL reverb_bypass = EAS_TRUE;
     EAS_I32 reverb_preset = reverb_type - 1;
     if ( reverb_preset >= EAS_PARAM_REVERB_LARGE_HALL && reverb_preset <= EAS_PARAM_REVERB_ROOM ) {
@@ -137,9 +146,9 @@ int initializeLibrary(void)
             goto cleanup;
         }
         result = EAS_SetParameter(mEASDataHandle,
-                                  EAS_MODULE_REVERB,
-                                  EAS_PARAM_REVERB_WET,
-                                  reverb_wet);
+                                EAS_MODULE_REVERB,
+                                EAS_PARAM_REVERB_WET,
+                                reverb_wet);
         if (result != EAS_SUCCESS) {
             fprintf(stderr, "Failed to set reverb wet amount");
             ok = EXIT_FAILURE;
@@ -156,6 +165,13 @@ int initializeLibrary(void)
     result = EAS_SetParameter(mEASDataHandle, EAS_MODULE_REVERB, EAS_PARAM_REVERB_BYPASS, reverb_bypass);
     if (result != EAS_SUCCESS) {
         fprintf(stderr, "Failed to set reverb bypass");
+        ok = EXIT_FAILURE;
+        goto cleanup;
+    }
+
+    result = EAS_SetParameter(mEASDataHandle, EAS_MODULE_CHORUS, EAS_PARAM_CHORUS_OVERRIDE_CC, chorus_override);
+    if (result != EAS_SUCCESS) {
+        fprintf(stderr, "Failed to enable chorus override\n");
         ok = EXIT_FAILURE;
         goto cleanup;
     }
@@ -328,10 +344,12 @@ int main (int argc, char **argv)
                                            {"level", required_argument, 0, 'l'},
                                            {"gain", required_argument, 0, 'g'},
                                            {"Verbosity", required_argument, 0, 'V'},
+                                           {"reverb-post-mix", no_argument, 0, 'R'},
+                                           {"chorus-post-mix", no_argument, 0, 'C'},
                                            {0, 0, 0, 0}};
 
     while (1) {
-        c = getopt_long(argc, argv, "hvd:r:w:n:c:l:g:V:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hvd:r:w:n:c:l:g:V:RC", long_options, &option_index);
 
         if (c == -1) {
             break;
@@ -344,7 +362,7 @@ int main (int argc, char **argv)
                 "Usage: %s [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] "
                 "[-w|--wet 0..32767] [-n|--dry 0..32767] "
                 "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..196] [-V|--Verbosity "
-                "0..5] file.mid ...\n"
+                "0..5] [-R|--reverb-post-mix] [-C|--chorus-post-mix] file.mid ...\n"
                 "Render standard MIDI files into raw PCM audio.\n"
                 "Options:\n"
                 "\t-h, --help\t\tthis help message.\n"
@@ -358,7 +376,9 @@ int main (int argc, char **argv)
                 "\t-l, --level n\t\tchorus level: 0..32767.\n"
                 "\t-g, --gain n\t\tmaster gain: 0..196. 100 = +0dB.\n"
                 "\t-V, --Verbosity n\tVerbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, "
-                "5=details\n",
+                "5=details\n"
+                "\t-R, --reverb-post-mix\tignore CC91 reverb send.\n"
+                "\t-C, --chorus-post-mix\tignore CC93 chorus send.\n",
                 argv[0]);
             return EXIT_FAILURE;
         case 'v':
@@ -366,6 +386,12 @@ int main (int argc, char **argv)
             return EXIT_FAILURE;
         case 'd':
             dls_path = optarg;
+            break;
+        case 'R':
+            reverb_override = EAS_TRUE;
+            break;
+        case 'C':
+            chorus_override = EAS_TRUE;
             break;
         case 'r':
             reverb_type = atoi(optarg);

@@ -280,6 +280,7 @@ static void ChorusProcess (EAS_VOID_PTR pInstData, EAS_PCM *pSrc, EAS_PCM *pDst,
                 tapL = WeightedTap(pChorusData->chorusDelayL, pChorusData->chorusIndexL, positionOffsetL, CHORUS_L_SIZE);
 
                 //scale by chorus level, then sum with input buffer contents and saturate
+                nInputSample = MULT_EG1_EG1(nInputSample, pChorusData->m_nDry);
                 tempValue = MULT_EG1_EG1(tapL, pChorusData->m_nLevel);
                 nOutputSample = SATURATE(tempValue + nInputSample);
 
@@ -326,6 +327,7 @@ static void ChorusProcess (EAS_VOID_PTR pInstData, EAS_PCM *pSrc, EAS_PCM *pDst,
                 tapR = WeightedTap(pChorusData->chorusDelayR, pChorusData->chorusIndexR, positionOffsetR, CHORUS_R_SIZE);
 
                 //scale by chorus level, then sum with output buffer contents and saturate
+                nInputSample = MULT_EG1_EG1(nInputSample, pChorusData->m_nDry);
                 tempValue = MULT_EG1_EG1(tapR, pChorusData->m_nLevel);
                 nOutputSample = SATURATE(tempValue + nInputSample);
 
@@ -416,6 +418,10 @@ static EAS_RESULT ChorusGetParam (EAS_VOID_PTR pInstData, EAS_I32 param, EAS_I32
         case EAS_PARAM_CHORUS_LEVEL:
             *pValue = (EAS_I32) p->m_nLevel;
             break;
+        case EAS_PARAM_CHORUS_DRY:
+            *pValue = (EAS_I32) p->m_nDry;
+            break;
+        
         default:
             return EAS_ERROR_INVALID_PARAMETER;
     }
@@ -474,6 +480,11 @@ static EAS_RESULT ChorusSetParam (EAS_VOID_PTR pInstData, EAS_I32 param, EAS_I32
                 return EAS_ERROR_INVALID_PARAMETER;
             p->m_nLevel = (EAS_I16) value;
             break;
+        case EAS_PARAM_CHORUS_DRY:
+            if(value<EAS_CHORUS_DRY_MIN || value>EAS_CHORUS_DRY_MAX)
+                return EAS_ERROR_INVALID_PARAMETER;
+            p->m_nDry = (EAS_I16) value;
+            break;
 
         default:
             return EAS_ERROR_INVALID_PARAMETER;
@@ -495,37 +506,37 @@ static EAS_RESULT ChorusSetParam (EAS_VOID_PTR pInstData, EAS_I32 param, EAS_I32
 */
 static EAS_RESULT ChorusReadInPresets(S_CHORUS_OBJECT *pChorusData)
 {
-
-    int preset = 0;
-    int defaultPreset = 0;
-
     //now init any remaining presets to defaults
-    for (defaultPreset = preset; defaultPreset < CHORUS_MAX_TYPE; defaultPreset++)
+    for (int preset = 0; preset < CHORUS_MAX_TYPE; preset++)
     {
-        S_CHORUS_PRESET *pPreset = &pChorusData->m_sPreset.m_sPreset[defaultPreset];
-        if (defaultPreset == 0 || defaultPreset > CHORUS_MAX_TYPE-1)
+        S_CHORUS_PRESET *pPreset = &pChorusData->m_sPreset.m_sPreset[preset];
+        if (preset == 0 || preset > CHORUS_MAX_TYPE-1)
         {
             pPreset->m_nDepth = 39;
             pPreset->m_nRate = 30;
             pPreset->m_nLevel = 32767;
+            pPreset->m_nDry = 32767;
         }
-        else if (defaultPreset == 1)
+        else if (preset == 1)
         {
             pPreset->m_nDepth = 21;
             pPreset->m_nRate = 45;
             pPreset->m_nLevel = 25000;
+            pPreset->m_nDry = 32767;
         }
-        else if (defaultPreset == 2)
+        else if (preset == 2)
         {
             pPreset->m_nDepth = 53;
             pPreset->m_nRate = 25;
             pPreset->m_nLevel = 32000;
+            pPreset->m_nDry = 32767;
         }
-        else if (defaultPreset == 3)
+        else if (preset == 3)
         {
             pPreset->m_nDepth = 32;
             pPreset->m_nRate = 37;
             pPreset->m_nLevel = 29000;
+            pPreset->m_nDry = 32767;
         }
     }
 
@@ -556,6 +567,7 @@ static EAS_RESULT ChorusUpdate(S_CHORUS_OBJECT *pChorusData)
     pChorusData->m_nLevel = pPreset->m_nLevel;
     pChorusData->m_nRate =  pPreset->m_nRate;
     pChorusData->m_nDepth = pPreset->m_nDepth;
+    pChorusData->m_nDry = pPreset->m_nDry;
 
     //chorus rate and depth need some massaging from preset value (which is sample rate independent)
 
