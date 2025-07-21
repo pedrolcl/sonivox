@@ -1,6 +1,13 @@
+// SoundFont 2.04 File Parser
+//
+// Note that this is not a complete implementation. It only supports what EAS's DLS synth can do.
+// Unsupported features are reported in the log.
+//
+// SF3 (https://github.com/FluidSynth/fluidsynth/wiki/SoundFont3Format) is recognized (with the sample link flag correctly set),
+// though not supported, and will not load.
+
 #include "eas_sf2.h"
 #include "eas_host.h"
-#include "eas_math.h"
 #include "eas_report.h"
 #include "eas_mdls.h"
 #include <stdlib.h>
@@ -14,8 +21,6 @@
 #endif
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
-
-#define clamp(v, l, r) (max((l), min((v), (r))))
 
 enum : int {
     RIFF_IDENTIFIER = 0x52494646, // 'RIFF'
@@ -144,7 +149,7 @@ enum : int {
 };
 
 enum : EAS_U16 {
-    SAMPLETYPE_COMPRESSED = 0x10 // See https://github.com/FluidSynth/fluidsynth/wiki/SoundFont3Format
+    SAMPLETYPE_COMPRESSED = 0x10
 };
 
 // internal data when parsing
@@ -1891,6 +1896,7 @@ static EAS_RESULT Parse_bag(S_SF2_PARSER* pParser, const EAS_I16 gens[sfg_endOpe
         *loopMode = 1; // loop forever
     } else if (gens[sfg_sampleModes] == 3) { // loop and release
         // TODO: eas does not support this
+        EAS_Report(_EAS_SEVERITY_WARNING, "SF2Parser: sampleModes 3 'loop and release' is not supported at generator entry\n");
         *loopMode = 1; // loop forever
     } else { // no loop
         *loopMode = 0;
