@@ -2865,27 +2865,23 @@ EAS_I8 DLSConvertPan (EAS_I32 pan)
 }
 
 /*----------------------------------------------------------------------------
- * ConvertQ()
+ * DLSConvertQ()
  *----------------------------------------------------------------------------
- * Convert the DLS filter resonance to an index value used by the synth
- * that accesses tables of coefficients based on the Q.
+ * q: Resonance peak's relative gain to pass magnitude in 0.1dB steps
  *----------------------------------------------------------------------------
 */
-EAS_U8 DLSConvertQ (EAS_I32 q)
+EAS_U16 DLSConvertQ (EAS_I32 q)
 {
-
     /* apply limits */
-    if (q <= 0)
+    if (q <= 0) {
         return 0;
+    }
 
-    /* convert to table index */
-    /*lint -e{704} use shift for performance */
-    q = (FILTER_Q_CONVERSION_FACTOR * q + 0x4000) >> 15;
+    if (q > FILTER_Q_MASK) {
+        return FILTER_Q_MASK;
+    }
 
-    /* apply upper limit */
-    if (q >= FILTER_RESONANCE_NUM_ENTRIES)
-        q = FILTER_RESONANCE_NUM_ENTRIES - 1;
-    return (EAS_U8) q;
+    return q;
 }
 
 #ifdef _DEBUG_DLS

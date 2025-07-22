@@ -76,8 +76,10 @@ typedef struct s_wt_int_frame_tag
 */
 typedef struct s_filter_control_tag
 {
-    EAS_I32     z1;                             /* 1 sample delay state variable */
-    EAS_I32     z2;                             /* 2 sample delay state variable */
+    EAS_I32     y1;                             /* 1 sample delay state variable */
+    EAS_I32     y2;                             /* 2 sample delay state variable */
+    EAS_I32     x1;                             /* 1 sample delay input variable */
+    EAS_I32     x2;                             /* 2 sample delay input variable */
 } S_FILTER_CONTROL;
 #endif
 

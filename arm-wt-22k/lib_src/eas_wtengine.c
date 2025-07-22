@@ -373,11 +373,12 @@ void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
 */
 void WT_VoiceFilter (S_FILTER_CONTROL *pFilter, S_WT_INT_FRAME *pWTIntFrame)
 {
-    EAS_PCM *pAudioBuffer;
-    EAS_I32 numSamples;
+    if (pWTIntFrame->frame.b02 == 0) {
+        return;
+    }
 
     /* initialize some local variables */
-    numSamples = pWTIntFrame->numSamples;
+    EAS_I32 numSamples = pWTIntFrame->numSamples;
     if (numSamples <= 0) {
         EAS_Report(_EAS_SEVERITY_ERROR, "%s: numSamples <= 0\n", __func__);
         ALOGE("b/26366256");
@@ -389,49 +390,45 @@ void WT_VoiceFilter (S_FILTER_CONTROL *pFilter, S_WT_INT_FRAME *pWTIntFrame)
         android_errorWriteLog(0x534e4554, "317780080");
         numSamples = BUFFER_SIZE_IN_MONO_SAMPLES;
     }
-    pAudioBuffer = pWTIntFrame->pAudioBuffer;
+    EAS_PCM *pAudioBuffer = pWTIntFrame->pAudioBuffer;
 
-    // About the minus:
     // General 2-pole IIR transfer function is:
     //  H(z) = (b0 + b1 * z^-1 + b2 * z^-2) / (1 + a1 * z^-1 + a2 * z^-2)
     // Its difference equation is:
-    //  y[n] = b0 * x[n] + b1 * y[n-1] + b2 * y[n-2] - a1 * y[n-1] - a2 * y[n-2]
-    // According to the DLS 2.2 spec, the transfer function is:
-    //  H(z) = K / (1 + b1 * z^-1 + b2 * z^-2)
-    // Its differential equation is:
-    //  y[n] = k * x[n] - b1 * y[n-1] - b2 * y[n-2]
-    // And the coefficients are calculated to match this equation.
-    // However, in the loop below, we use
-    //  y[n] = k * x[n] + b1 * y[n-1] + b2 * y[n-2]
-    // So b1 and b2 are negated to match equation above.
-    const EAS_I32 b1 = -pWTIntFrame->frame.b1;
-    const EAS_I32 b2 = -pWTIntFrame->frame.b2;
-    const EAS_I32 k = pWTIntFrame->frame.k;
+    //  y[n] = b0 * x[n] + b1 * x[n-1] + b2 * x[n-2] - a1 * y[n-1] - a2 * y[n-2]
+    const float b1 = pWTIntFrame->frame.b1;
+    const float b02 = pWTIntFrame->frame.b02;
+    const float a1 = pWTIntFrame->frame.a1;
+    const float a2 = pWTIntFrame->frame.a2;
 
-    EAS_I32 z1 = pFilter->z1; // y[n-1]
-    EAS_I32 z2 = pFilter->z2; // y[n-2]
+    EAS_I32 y1 = pFilter->y1; // y[n-1]
+    EAS_I32 y2 = pFilter->y2; // y[n-2]
+    EAS_I32 x1 = pFilter->x1; // x[n-1]
+    EAS_I32 x2 = pFilter->x2; // x[n-2]
 
-    const EAS_I32 scale = 1 << 15; // scale of coefficients
-    const EAS_I32 limit = 1 << 15;
+    const float limit = 1 << 15;
 
     while (numSamples--)
     {
-        int64_t acc0 = (1LL * z1 * b1) / scale;
-        acc0 += (1LL * z2 * b2) / scale;
-        acc0 += (1LL * k * (*pAudioBuffer)) / scale;
+        float acc0 = b02 * (*pAudioBuffer) + b1 * x1 + b02 * x2 - a1 * y1 - a2 * y2;
 
         // saturate
         if (acc0 > limit - 1) acc0 = limit - 1;
         if (acc0 < -limit) acc0 = -limit;
 
-        z2 = z1;
-        z1 = acc0;
-        *pAudioBuffer++ = z1; // y[n]
+        y2 = y1;
+        y1 = (EAS_I32) acc0;
+        x2 = x1;
+        x1 = *pAudioBuffer;
+
+        *pAudioBuffer++ = y1; // y[n]
     }
 
     /* save delay values */
-    pFilter->z1 = z1;
-    pFilter->z2 = z2;
+    pFilter->y1 = y1;
+    pFilter->y2 = y2;
+    pFilter->x1 = x1;
+    pFilter->x2 = x2;
 }
 #endif
 
@@ -539,7 +536,7 @@ void WT_ProcessVoice (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
     }
 
 #ifdef _FILTER_ENABLED
-    if (pWTIntFrame->frame.k != 0)
+    if (pWTIntFrame->frame.b02 != 0)
         WT_VoiceFilter(&pWTVoice->filter, pWTIntFrame);
 #endif
 

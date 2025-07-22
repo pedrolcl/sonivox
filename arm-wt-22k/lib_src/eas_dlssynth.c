@@ -266,7 +266,7 @@ static void DLS_UpdateFilter (S_SYNTH_VOICE *pVoice, S_WT_VOICE *pWTVoice, S_WT_
     /* no need to calculate filter coefficients if it is bypassed */
     if (pDLSArt->filterCutoff == DEFAULT_DLS_FILTER_CUTOFF_FREQUENCY)
     {
-        pIntFrame->frame.k = 0;
+        pIntFrame->frame.b02 = 0;
         return;
     }
 
@@ -300,7 +300,7 @@ static void DLS_UpdateFilter (S_SYNTH_VOICE *pVoice, S_WT_VOICE *pWTVoice, S_WT_
 
     if (cutoff == 13500) 
     {
-        pIntFrame->frame.k = 0; // bypass filter
+        pIntFrame->frame.b02 = 0; // bypass filter
         return;
     }
 
@@ -352,8 +352,10 @@ EAS_RESULT DLS_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOIC
 #endif
 
     /* initialize the filter states */
-    pWTVoice->filter.z1 = 0;
-    pWTVoice->filter.z2 = 0;
+    pWTVoice->filter.y1 = 0;
+    pWTVoice->filter.y2 = 0;
+    pWTVoice->filter.x1 = 0;
+    pWTVoice->filter.x2 = 0;
 
     /* initialize the oscillator */
 #if defined (_8_BIT_SAMPLES)

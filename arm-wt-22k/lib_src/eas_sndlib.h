@@ -194,7 +194,7 @@ typedef struct s_dls_articulation_tag
     EAS_U16         pad;
 
     EAS_I8          pan;
-    EAS_U8          filterQandFlags;
+    EAS_U16         filterQandFlags;
 
 #ifdef _CC_REVERB
     EAS_I16         reverbSend;
@@ -210,8 +210,8 @@ typedef struct s_dls_articulation_tag
 /* flags in filterQandFlags
  * NOTE: Q is stored in bottom 5 bits
  */
-#define FLAG_DLS_VELOCITY_SENSITIVE     0x80
-#define FILTER_Q_MASK                   0x1f
+#define FLAG_DLS_VELOCITY_SENSITIVE     0x8000
+#define FILTER_Q_MASK                   0x7fff
 
 /*----------------------------------------------------------------------------
  * Wavetable region data structure
