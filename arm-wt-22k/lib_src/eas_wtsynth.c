@@ -28,7 +28,9 @@
 */
 
 // includes
+#define _USE_MATH_DEFINES
 #include <math.h>
+
 #define LOG_TAG "SYNTH"
 #include "log/log.h"
 #include <cutils/log.h>
