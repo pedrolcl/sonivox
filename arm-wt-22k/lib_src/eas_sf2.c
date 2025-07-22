@@ -22,7 +22,7 @@
 #define max(a,b) ((a) > (b) ? (a) : (b))
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
-enum E_RIFF_IDENTIFIER : int {
+enum {
     RIFF_IDENTIFIER = 0x52494646, // 'RIFF'
     LIST_IDENTIFIER = 0x4C495354, // 'LIST'
     SFBK_IDENTIFIER = 0x7366626B, // 'sfbk'
@@ -43,7 +43,7 @@ enum E_RIFF_IDENTIFIER : int {
 };
 
 // SFGenerator enums
-enum E_SFGenerator : EAS_U16 {
+enum E_SFGenerator {
     sfg_startAddrsOffset = 0,
 	sfg_endAddrsOffset = 1,
 	sfg_startloopAddrsOffset = 2,
@@ -108,7 +108,7 @@ enum E_SFGenerator : EAS_U16 {
 };
 
 // SFModulator enums
-enum E_SFModulator : EAS_U16 {
+enum E_SFModulator {
 	sfm_noController = 0,
 	sfm_noteOnVolume = 2,
 	sfm_noteOnKeyNumber = 3,
@@ -120,20 +120,20 @@ enum E_SFModulator : EAS_U16 {
 };
 
 // SFTransform enums
-enum E_SFTransform : EAS_U16 { 
+enum E_SFTransform { 
 	sft_Linear = 0,
 	sft_AbsoluteValue = 2
 };
 
 // SFControllerType enums
-enum E_SFControllerType : EAS_U8 { 
+enum E_SFControllerType { 
 	sfct_Linear = 0, 
 	sfct_Concave = 1, 
 	sfct_Convex = 2, 
 	sfct_Switch = 3 
 };
 
-enum E_SF2_REC_SIZES : int {
+enum E_SF2_REC_SIZES {
     PHDR_SIZE = 38,
     SHDR_SIZE = 46,
     INST_SIZE = 22,
@@ -143,12 +143,12 @@ enum E_SF2_REC_SIZES : int {
     GEN_SIZE = 4,
 };
 
-enum E_SF2Parser_LIMITS : int {
+enum E_SF2Parser_LIMITS {
     MAX_GENS_IN_MERGED_REGION = 65536,
     MAX_MODS_IN_MERGED_REGION = 65536
 };
 
-enum E_SAMPLE_TYPE_FLAGS : EAS_U16 {
+enum E_SAMPLE_TYPE_FLAGS {
     SAMPLETYPE_COMPRESSED = 0x10
 };
 
