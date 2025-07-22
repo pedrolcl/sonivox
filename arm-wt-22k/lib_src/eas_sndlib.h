@@ -325,7 +325,7 @@ typedef struct s_bank_tag
 #define LIB_FORMAT_16_BIT_SAMPLES       0x00200000
 
 #ifdef DLS_SYNTHESIZER
-enum : int {
+enum E_DLSLIB_TYPE : int {
     DLSLIB_TYPE_DLS = 0x00,
     DLSLIB_TYPE_SF2 = 0x10
 };
