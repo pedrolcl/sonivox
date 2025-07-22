@@ -298,14 +298,11 @@ static void DLS_UpdateFilter (S_SYNTH_VOICE *pVoice, S_WT_VOICE *pWTVoice, S_WT_
     /*lint -e{702} use shift for performance */
     cutoff += (pVoice->note * pDLSArt->keyNumToFc) >> 7;
 
-    /* subtract the A5 offset and the sampling frequency */
-    cutoff -= FILTER_CUTOFF_FREQ_ADJUST + A5_PITCH_OFFSET_IN_CENTS;
-
-    /* limit the cutoff frequency */
-    if (cutoff > FILTER_CUTOFF_MAX_PITCH_CENTS)
-        cutoff = FILTER_CUTOFF_MAX_PITCH_CENTS;
-    else if (cutoff < FILTER_CUTOFF_MIN_PITCH_CENTS)
-        cutoff = FILTER_CUTOFF_MIN_PITCH_CENTS;
+    if (cutoff == 13500) 
+    {
+        pIntFrame->frame.k = 0; // bypass filter
+        return;
+    }
 
     WT_SetFilterCoeffs(pIntFrame, cutoff, pDLSArt->filterQandFlags & FILTER_Q_MASK);
 }

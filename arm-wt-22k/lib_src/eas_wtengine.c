@@ -363,7 +363,7 @@ void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
  * WT_VoiceFilter
  *----------------------------------------------------------------------------
  * Purpose:
- * Implements a 2-pole filter
+ * Implements a 2-pole IIR filter
  *
  * Inputs:
  *
@@ -374,13 +374,6 @@ void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
 void WT_VoiceFilter (S_FILTER_CONTROL *pFilter, S_WT_INT_FRAME *pWTIntFrame)
 {
     EAS_PCM *pAudioBuffer;
-    EAS_I32 k;
-    EAS_I32 b1;
-    EAS_I32 b2;
-    EAS_I32 z1;
-    EAS_I32 z2;
-    EAS_I32 acc0;
-    EAS_I32 acc1;
     EAS_I32 numSamples;
 
     /* initialize some local variables */
@@ -398,34 +391,47 @@ void WT_VoiceFilter (S_FILTER_CONTROL *pFilter, S_WT_INT_FRAME *pWTIntFrame)
     }
     pAudioBuffer = pWTIntFrame->pAudioBuffer;
 
-    z1 = pFilter->z1;
-    z2 = pFilter->z2;
-    b1 = -pWTIntFrame->frame.b1;
+    // About the minus:
+    // General 2-pole IIR transfer function is:
+    //  H(z) = (b0 + b1 * z^-1 + b2 * z^-2) / (1 + a1 * z^-1 + a2 * z^-2)
+    // Its difference equation is:
+    //  y[n] = b0 * x[n] + b1 * y[n-1] + b2 * y[n-2] - a1 * y[n-1] - a2 * y[n-2]
+    // According to the DLS 2.2 spec, the transfer function is:
+    //  H(z) = K / (1 + b1 * z^-1 + b2 * z^-2)
+    // Its differential equation is:
+    //  y[n] = k * x[n] - b1 * y[n-1] - b2 * y[n-2]
+    // And the coefficients are calculated to match this equation.
+    // However, in the loop below, we use
+    //  y[n] = k * x[n] + b1 * y[n-1] + b2 * y[n-2]
+    // So b1 and b2 are negated to match equation above.
+    const EAS_I32 b1 = -pWTIntFrame->frame.b1;
+    const EAS_I32 b2 = -pWTIntFrame->frame.b2;
+    const EAS_I32 k = pWTIntFrame->frame.k;
 
-    /*lint -e{702} <avoid divide> */
-    b2 = -pWTIntFrame->frame.b2 >> 1;
+    EAS_I32 z1 = pFilter->z1; // y[n-1]
+    EAS_I32 z2 = pFilter->z2; // y[n-2]
 
-    /*lint -e{702} <avoid divide> */
-    k = pWTIntFrame->frame.k >> 1;
+    const EAS_I32 scale = 1 << 15; // scale of coefficients
+    const EAS_I32 limit = 1 << 15;
 
     while (numSamples--)
     {
+        int64_t acc0 = (1LL * z1 * b1) / scale;
+        acc0 += (1LL * z2 * b2) / scale;
+        acc0 += (1LL * k * (*pAudioBuffer)) / scale;
 
-        /* do filter calculations */
-        acc0 = *pAudioBuffer;
-        acc1 = z1 * b1;
-        acc1 += z2 * b2;
-        acc0 = acc1 + k * acc0;
+        // saturate
+        if (acc0 > limit - 1) acc0 = limit - 1;
+        if (acc0 < -limit) acc0 = -limit;
+
         z2 = z1;
-
-        /*lint -e{702} <avoid divide> */
-        z1 = acc0 >> 14;
-        *pAudioBuffer++ = (EAS_I16) z1;
+        z1 = acc0;
+        *pAudioBuffer++ = z1; // y[n]
     }
 
-    /* save delay values     */
-    pFilter->z1 = (EAS_I16) z1;
-    pFilter->z2 = (EAS_I16) z2;
+    /* save delay values */
+    pFilter->z1 = z1;
+    pFilter->z2 = z2;
 }
 #endif
 

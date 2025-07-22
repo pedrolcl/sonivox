@@ -28,6 +28,7 @@
 */
 
 // includes
+#include <math.h>
 #define LOG_TAG "SYNTH"
 #include "log/log.h"
 #include <cutils/log.h>
@@ -1056,20 +1057,12 @@ static void WT_UpdateFilter (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pIntFrame, co
     cutoff = MULT_EG1_EG1(pWTVoice->eg2Value, pArt->eg2ToFc);
     cutoff += pArt->filterCutoff;
 
-    /* subtract the A5 offset and the sampling frequency */
-    cutoff -= FILTER_CUTOFF_FREQ_ADJUST + A5_PITCH_OFFSET_IN_CENTS;
-
-    /* limit the cutoff frequency */
-    if (cutoff > FILTER_CUTOFF_MAX_PITCH_CENTS)
-        cutoff = FILTER_CUTOFF_MAX_PITCH_CENTS;
-    else if (cutoff < FILTER_CUTOFF_MIN_PITCH_CENTS)
-        cutoff = FILTER_CUTOFF_MIN_PITCH_CENTS;
-
     WT_SetFilterCoeffs(pIntFrame, cutoff, pArt->filterQ);
 }
 #endif
 
 #if defined(_FILTER_ENABLED) || defined(DLS_SYNTHESIZER)
+#if 0 // This is original code from EAS. Its cutoff is limited and I can't find another good limit for it
 /*----------------------------------------------------------------------------
  * coef
  *----------------------------------------------------------------------------
@@ -1272,6 +1265,15 @@ void WT_SetFilterCoeffs (S_WT_INT_FRAME *pIntFrame, EAS_I32 cutoff, EAS_I32 reso
 {
     EAS_I32 temp;
 
+    /* subtract the A5 offset and the sampling frequency */
+    cutoff -= FILTER_CUTOFF_FREQ_ADJUST + A5_PITCH_OFFSET_IN_CENTS;
+
+    /* limit the cutoff frequency */
+    if (cutoff > FILTER_CUTOFF_MAX_PITCH_CENTS)
+        cutoff = FILTER_CUTOFF_MAX_PITCH_CENTS;
+    else if (cutoff < FILTER_CUTOFF_MIN_PITCH_CENTS)
+        cutoff = FILTER_CUTOFF_MIN_PITCH_CENTS;
+
     /*
     Convert the cutoff, which has had A5 subtracted, using the 2^x approx
     Note, this cutoff is related to theta cutoff by
@@ -1280,10 +1282,13 @@ void WT_SetFilterCoeffs (S_WT_INT_FRAME *pIntFrame, EAS_I32 cutoff, EAS_I32 reso
     */
     cutoff = EAS_Calculate2toX(cutoff);
 
+    // temp seems to be .15 frac
+    // now frame is .14 frac
+
     /* calculate b2 coef */
     temp = k2g1[resonance] + MULT_AUDIO_COEF(cutoff, k2g2[resonance]);
     temp = k2g0 + MULT_AUDIO_COEF(cutoff, temp);
-    pIntFrame->frame.b2 = temp;
+    pIntFrame->frame.b2 = temp >> 1;
 
     /* calculate b1 coef */
     temp = MULT_AUDIO_COEF(cutoff, nk1g2);
@@ -1295,7 +1300,63 @@ void WT_SetFilterCoeffs (S_WT_INT_FRAME *pIntFrame, EAS_I32 cutoff, EAS_I32 reso
     temp = n1g2[resonance] + MULT_AUDIO_COEF(cutoff, n1g3[resonance]);
     temp = MULT_AUDIO_COEF(cutoff, temp);
     temp = MULT_AUDIO_COEF(cutoff, temp);
-    pIntFrame->frame.k = temp;
+    pIntFrame->frame.k = temp >> 1;
 }
+#else
+// A complete rewrite
+// I'm not sure how it works, anyway it works well
+/* 
+ * Compute filter coefficients for a 2nd-order (2-pole) low-pass IIR filter
+ * k, b1, b2's definition accords with DLS 2.2 specification.
+*/
+void WT_SetFilterCoeffs(S_WT_INT_FRAME *pIntFrame, EAS_I32 cutoff, EAS_I32 resonance) {
+    double fc = pow(2.0, (cutoff - 6900.0) / 1200.0) * 440.0;
+
+    const double fs = (double)_OUTPUT_SAMPLE_RATE;
+    const double min_fc = fs / 240.0;
+    const double max_fc = fs / 2.0;
+    fc = fmax(fmin(fc, max_fc), min_fc);
+
+    // EAS's resonance is in 0.75dB steps
+    const double resonance_dB = fmax(resonance * 0.75, 0.0);
+
+    // filter pole angle
+    const double theta = 2.0 * M_PI * fc / fs;  // 数字域截止频率（弧度）
+    const double sin_theta = sin(theta);
+    const double cos_theta = cos(theta);
+
+    // pole radius using resonance formula
+    const double sqrt_term = sqrt(pow(10.0, resonance_dB / 10.0) - 1.0);
+    const double r_denominator = pow(10.0, resonance_dB / 20.0) * sin_theta + 1.0;
+    const double r_numerator = cos_theta + sin_theta * sqrt_term;
+    double r = r_numerator / r_denominator;
+    r = fmin(r, 0.999);  // ensure stability (r < 1)
+
+    // compute filter coefficients, matching DLS 2.2 transfer function
+    // H(z) = K/(1 + b1*z^-1 + b2*z^-2)
+    const double b1 = -2.0 * r * cos_theta;
+    const double b2 = r * r;
+    const double g = pow(10.0, -resonance_dB / 40.0);
+    const double K = g * (1.0 + b1 + b2);
+
+    const double scale = 1 << 15;
+    const EAS_I32 lim = 1 << 16;
+
+    EAS_I32 fixed_b1 = b1 * scale;
+    EAS_I32 fixed_b2 = b2 * scale;
+    EAS_I32 fixed_k = K * scale;
+
+    if (fixed_b1 > lim - 1) fixed_b1 = lim - 1;
+    if (fixed_b1 < -lim) fixed_b1 = -lim;
+    if (fixed_b2 > lim - 1) fixed_b2 = lim - 1;
+    if (fixed_b2 < -lim) fixed_b2 = -lim;
+    if (fixed_k > lim - 1) fixed_k = lim - 1;
+    if (fixed_k < -lim) fixed_k = -lim;
+
+    pIntFrame->frame.b1 = fixed_b1;
+    pIntFrame->frame.b2 = fixed_b2;
+    pIntFrame->frame.k = fixed_k;
+}
+#endif
 #endif
 
