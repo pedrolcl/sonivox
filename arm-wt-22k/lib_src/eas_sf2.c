@@ -1911,7 +1911,7 @@ static EAS_RESULT Parse_bag(S_SF2_PARSER* pParser, const EAS_I16 gens[sfg_endOpe
 
     // modulators
     for (EAS_U32 i = 0; i < modCount; i++) {
-        const char* myOffset = pMods + (MOD_SIZE * (EAS_IPTR)i);
+        const char* myOffset = (char*)pMods + (MOD_SIZE * (EAS_IPTR)i);
         const EAS_U16 modSrc = *(EAS_U16*)myOffset;
         const EAS_U16 modDest = *(EAS_I16*)(myOffset + 2);
         const EAS_I16 modAmount = *(EAS_U16*)(myOffset + 4);
