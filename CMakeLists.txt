@@ -33,6 +33,7 @@ option(BUILD_EXAMPLE "Build and install the example program" TRUE)
 option(BUILD_TESTING "Build the unit tests" TRUE)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Whether to create position-independent targets" TRUE)
 option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
+option(SF2_SUPPORT "Enable SF2 support and float DCF" TRUE)
 set(MAX_VOICES 64 CACHE STRING "Maximum number of voices")
 
 include(CMakeDependentOption)
@@ -133,6 +134,13 @@ else()
     list(APPEND SOURCES arm-wt-22k/host_src/eas_hostmm.c)
 endif()
 
+if (SF2_SUPPORT)
+    list(APPEND SOURCES arm-wt-22k/lib_src/eas_sf2.c arm-wt-22k/lib_src/eas_filter_float.c)
+else()
+    message(STATUS "SF2 support disabled.")
+    list(APPEND SOURCES arm-wt-22k/lib_src/eas_filter.c)
+endif()
+
 configure_file(arm-wt-22k/host_src/eas.cmake libsonivox/eas.h @ONLY)
 
 list(APPEND HEADERS
@@ -187,6 +195,10 @@ endif()
 
 if(ZLIB_FOUND)
     target_compile_definitions( sonivox-objects PRIVATE _ZLIB_UNPACKER )
+endif()
+
+if (SF2_SUPPORT)
+    target_compile_definitions( sonivox-objects PRIVATE _SF2_SUPPORT _FLOAT_DCF )
 endif()
 
 target_include_directories( sonivox-objects PRIVATE

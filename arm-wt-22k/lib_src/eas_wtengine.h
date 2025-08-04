@@ -41,6 +41,7 @@
 
 #include "eas_sndlib.h"
 #include "eas_wt_IPC_frame.h"
+#include "eas_filter.h"
 
 /*----------------------------------------------------------------------------
  * defines
@@ -69,19 +70,6 @@ typedef struct s_wt_int_frame_tag
     EAS_I32         prevGain;
 } S_WT_INT_FRAME;
 
-#if defined(_FILTER_ENABLED)
-/*----------------------------------------------------------------------------
- * S_FILTER_CONTROL data structure
- *----------------------------------------------------------------------------
-*/
-typedef struct s_filter_control_tag
-{
-    EAS_I32     y1;                             /* 1 sample delay state variable */
-    EAS_I32     y2;                             /* 2 sample delay state variable */
-    EAS_I32     x1;                             /* 1 sample delay input variable */
-    EAS_I32     x2;                             /* 2 sample delay input variable */
-} S_FILTER_CONTROL;
-#endif
 
 /*------------------------------------
  * S_LFO_CONTROL data structure

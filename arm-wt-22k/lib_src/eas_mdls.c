@@ -519,7 +519,12 @@ EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle,
     {
         if (temp == CHUNK_TYPE('s', 'f', 'b', 'k')) {
             // let SF2Parser takeover
+#ifdef _SF2_SUPPORT
             return SF2Parser(hwInstData, fileHandle, offset, ppDLS);
+#else
+            EAS_Report(_EAS_SEVERITY_ERROR, "SF2 support is not enabled\n");
+            return EAS_ERROR_FEATURE_NOT_AVAILABLE;
+#endif
         }
         EAS_Report(_EAS_SEVERITY_ERROR, "Expected DLS chunk, got %08x\n", temp);
         return EAS_ERROR_FILE_FORMAT;
@@ -763,8 +768,10 @@ EAS_RESULT DLSCleanup (EAS_HW_DATA_HANDLE hwInstData, S_DLS *pDLS)
             if (--pDLS->refCount == 0) {
                 if (pDLS->libType == DLSLIB_TYPE_DLS) {
                     EAS_HWFree(hwInstData, pDLS);
+#ifdef _SF2_SUPPORT
                 } else if (pDLS->libType == DLSLIB_TYPE_SF2) {
                     return SF2Cleanup(hwInstData, pDLS);
+#endif
                 } else {
                     return EAS_ERROR_DATA_INCONSISTENCY;
                 }

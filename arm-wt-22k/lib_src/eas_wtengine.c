@@ -57,10 +57,6 @@ extern void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFr
 extern void WT_Interpolate (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame);
 #endif
 
-#if defined(_FILTER_ENABLED)
-extern void WT_VoiceFilter (S_FILTER_CONTROL*pFilter, S_WT_INT_FRAME *pWTIntFrame);
-#endif
-
 // The PRNG in WT_NoiseGenerator relies on modulo math
 #undef  NO_INT_OVERFLOW_CHECKS
 #if defined(_MSC_VER)
@@ -359,77 +355,7 @@ void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
 #endif
 
 #if defined(_FILTER_ENABLED) && !defined(NATIVE_EAS_KERNEL)
-/*----------------------------------------------------------------------------
- * WT_VoiceFilter
- *----------------------------------------------------------------------------
- * Purpose:
- * Implements a 2-pole IIR filter
- *
- * Inputs:
- *
- * Outputs:
- *
- *----------------------------------------------------------------------------
-*/
-void WT_VoiceFilter (S_FILTER_CONTROL *pFilter, S_WT_INT_FRAME *pWTIntFrame)
-{
-    if (pWTIntFrame->frame.b02 == 0) {
-        return;
-    }
 
-    /* initialize some local variables */
-    EAS_I32 numSamples = pWTIntFrame->numSamples;
-    if (numSamples <= 0) {
-        EAS_Report(_EAS_SEVERITY_ERROR, "%s: numSamples <= 0\n", __func__);
-        ALOGE("b/26366256");
-        android_errorWriteLog(0x534e4554, "26366256");
-        return;
-    } else if (numSamples > BUFFER_SIZE_IN_MONO_SAMPLES) {
-        EAS_Report(_EAS_SEVERITY_ERROR, "%s: numSamples %d > %d BUFFER_SIZE_IN_MONO_SAMPLES\n", __func__, numSamples, BUFFER_SIZE_IN_MONO_SAMPLES);
-        ALOGE("b/317780080 clip numSamples %d -> %d", numSamples, BUFFER_SIZE_IN_MONO_SAMPLES);
-        android_errorWriteLog(0x534e4554, "317780080");
-        numSamples = BUFFER_SIZE_IN_MONO_SAMPLES;
-    }
-    EAS_PCM *pAudioBuffer = pWTIntFrame->pAudioBuffer;
-
-    // General 2-pole IIR transfer function is:
-    //  H(z) = (b0 + b1 * z^-1 + b2 * z^-2) / (1 + a1 * z^-1 + a2 * z^-2)
-    // Its difference equation is:
-    //  y[n] = b0 * x[n] + b1 * x[n-1] + b2 * x[n-2] - a1 * y[n-1] - a2 * y[n-2]
-    const float b1 = pWTIntFrame->frame.b1;
-    const float b02 = pWTIntFrame->frame.b02;
-    const float a1 = pWTIntFrame->frame.a1;
-    const float a2 = pWTIntFrame->frame.a2;
-
-    EAS_I32 y1 = pFilter->y1; // y[n-1]
-    EAS_I32 y2 = pFilter->y2; // y[n-2]
-    EAS_I32 x1 = pFilter->x1; // x[n-1]
-    EAS_I32 x2 = pFilter->x2; // x[n-2]
-
-    const float limit = 1 << 15;
-
-    while (numSamples--)
-    {
-        float acc0 = b02 * (*pAudioBuffer) + b1 * x1 + b02 * x2 - a1 * y1 - a2 * y2;
-
-        // saturate
-        if (acc0 > limit - 1) acc0 = limit - 1;
-        if (acc0 < -limit) acc0 = -limit;
-
-        y2 = y1;
-        y1 = (EAS_I32) acc0;
-        x2 = x1;
-        x1 = *pAudioBuffer;
-
-        *pAudioBuffer++ = y1; // y[n]
-    }
-
-    /* save delay values */
-    pFilter->y1 = y1;
-    pFilter->y2 = y2;
-    pFilter->x1 = x1;
-    pFilter->x2 = x2;
-}
 #endif
 
 /*----------------------------------------------------------------------------
@@ -536,8 +462,12 @@ void WT_ProcessVoice (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
     }
 
 #ifdef _FILTER_ENABLED
-    if (pWTIntFrame->frame.b02 != 0)
-        WT_VoiceFilter(&pWTVoice->filter, pWTIntFrame);
+#ifdef _FLOAT_DCF
+    if (pWTIntFrame->frame.b02 != 0.0f)
+#else
+    if (pWTIntFrame->frame.k != 0)
+#endif
+        { WT_VoiceFilter(&pWTVoice->filter, pWTIntFrame); }
 #endif
 
 //2 TEST NEW MIXER FUNCTION

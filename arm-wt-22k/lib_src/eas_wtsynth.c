@@ -27,10 +27,6 @@
  *----------------------------------------------------------------------------
 */
 
-// includes
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #define LOG_TAG "SYNTH"
 #include "log/log.h"
 #include <cutils/log.h>
@@ -42,6 +38,8 @@
 #include "eas_synth_protos.h"
 #include "eas_wtsynth.h"
 #include "eas_pan.h"
+
+#include <string.h>
 
 #ifdef DLS_SYNTHESIZER
 #include "eas_dlssynth.h"
@@ -144,10 +142,7 @@ static EAS_RESULT WT_Initialize (S_VOICE_MGR *pVoiceMgr)
         pVoiceMgr->wtVoices[i].phaseAccum = DEFAULT_PHASE_INT;
 
 #ifdef _FILTER_ENABLED
-        pVoiceMgr->wtVoices[i].filter.y1 = 0;
-        pVoiceMgr->wtVoices[i].filter.y2 = 0;
-        pVoiceMgr->wtVoices[i].filter.x1 = 0;
-        pVoiceMgr->wtVoices[i].filter.x2 = 0;
+        memset(&pVoiceMgr->wtVoices[i].filter, 0, sizeof(S_FILTER_CONTROL));
 #endif
     }
 
@@ -383,10 +378,7 @@ static EAS_RESULT WT_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNT
 
 #ifdef _FILTER_ENABLED
     /* clear out the filter states */
-    pWTVoice->filter.y1 = 0;
-    pWTVoice->filter.y2 = 0;
-    pWTVoice->filter.x1 = 0;
-    pWTVoice->filter.x2 = 0;
+    memset(&pWTVoice->filter, 0, sizeof(S_FILTER_CONTROL));
 #endif
 
     /* if this wave is to be generated using noise generator */
@@ -563,10 +555,15 @@ static EAS_BOOL WT_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH
 
 #ifdef _FILTER_ENABLED
     /* calculate filter if library uses filter */
-    if (pSynth->pEAS->libAttr & LIB_FORMAT_FILTER_ENABLED)
+    if (pSynth->pEAS->libAttr & LIB_FORMAT_FILTER_ENABLED) {
         WT_UpdateFilter(pWTVoice, &intFrame, pArt);
-    else
-        intFrame.frame.b02 = 0;
+    } else {
+#ifdef _FLOAT_DCF
+        intFrame.frame.b02 = 0.0f;
+#else
+        intFrame.frame.k = 0;
+#endif
+    }
 #endif
 
     /* update the gain */
@@ -1055,7 +1052,11 @@ static void WT_UpdateFilter (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pIntFrame, co
     /* no need to calculate filter coefficients if it is bypassed */
     if (pArt->filterCutoff == DEFAULT_EAS_FILTER_CUTOFF_FREQUENCY)
     {
-        pIntFrame->frame.b02 = 0;
+#ifdef _FLOAT_DCF
+        pIntFrame->frame.b02 = 0.0f;
+#else
+        pIntFrame->frame.k = 0;
+#endif
         return;
     }
 
@@ -1067,59 +1068,4 @@ static void WT_UpdateFilter (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pIntFrame, co
 }
 #endif
 
-#if defined(_FILTER_ENABLED) || defined(DLS_SYNTHESIZER)
-// A complete rewrite
-// I'm not sure how it works, anyway it works well
-/* 
- * Compute filter coefficients for a 2nd-order (2-pole) low-pass IIR filter
- *
- * General 2-pole IIR transfer function is:
- *  H(z) = (b0 + b1 * z^-1 + b2 * z^-2) / (1 + a1 * z^-1 + a2 * z^-2)
- * Its difference equation is:
- *  y[n] = b0 * x[n] + b1 * x[n-1] + b2 * x[n-2] - a1 * y[n-1] - a2 * y[n-2]
- *
- */
-void WT_SetFilterCoeffs(S_WT_INT_FRAME *pIntFrame, EAS_I32 cutoff, EAS_I32 resonance) {
-    double fc = pow(2.0, (cutoff - 6900.0) / 1200.0) * 440.0;
-
-    const double fs = (double)_OUTPUT_SAMPLE_RATE;
-    const double min_fc = fs / 240.0;
-    const double max_fc = fs / 2.0;
-    fc = fmax(fmin(fc, max_fc), min_fc);
-
-    // EAS's resonance is in 0.75dB steps
-    const double resonance_dB = fmax(resonance / 10.0, 0.0);
-
-    // filter pole angle
-    const double theta = 2.0 * M_PI * fc / fs;
-
-    const double T = 1.0 / _OUTPUT_SAMPLE_RATE;
-    const double omega0 = 2.0 * _OUTPUT_SAMPLE_RATE * tan(theta / 2);
-    double q;
-    if (resonance_dB < 1e-9) {
-        q = 1 / sqrt(2); // default Q for Butterworth filter
-    } else {
-        q = pow(10.0, resonance_dB / 20.0);
-    }
-
-    const double omega0T = omega0 * T;
-    const double D = 4 + 2 * omega0T / q + omega0T * omega0T;
-
-    // compute filter coefficients
-    const double a1 = (-8 + 2 * (omega0T * omega0T)) / D;
-    const double a2 = (4 - 2 * omega0T / q + omega0T * omega0T) / D;
-    double b02 = omega0T * omega0T / D;
-    double b1 = 2 * (omega0T * omega0T) / D;
-
-    // apply resonance gain compensation
-    const double g = pow(10.0, -resonance_dB / 40.0);
-    b02 *= g;
-    b1 *= g;
-
-    pIntFrame->frame.b1 = b1;
-    pIntFrame->frame.b02 = b02;
-    pIntFrame->frame.a1 = a1;
-    pIntFrame->frame.a2 = a2;
-}
-#endif
 
