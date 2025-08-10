@@ -359,7 +359,7 @@ int main (int argc, char **argv)
         case 'h':
             fprintf(
                 stderr,
-                "Usage: %s [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] "
+                "Usage: %s [-h|--help] [-v|--version] [-d|--dls soundfont] [-r|--reverb 0..4] "
                 "[-w|--wet 0..32767] [-n|--dry 0..32767] "
                 "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..196] [-V|--Verbosity "
                 "0..5] [-R|--reverb-post-mix] [-C|--chorus-post-mix] file.mid ...\n"
@@ -367,7 +367,7 @@ int main (int argc, char **argv)
                 "Options:\n"
                 "\t-h, --help\t\tthis help message.\n"
                 "\t-v, --version\t\tsonivox version.\n"
-                "\t-d, --dls file.dls\tDLS soundfont.\n"
+                "\t-d, --dls soundfont\tDLS or SF2 soundfont.\n"
                 "\t-r, --reverb n\t\treverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, "
                 "4=room.\n"
                 "\t-w, --wet n\t\treverb wet: 0..32767.\n"

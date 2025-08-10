@@ -266,7 +266,11 @@ static void DLS_UpdateFilter (S_SYNTH_VOICE *pVoice, S_WT_VOICE *pWTVoice, S_WT_
     /* no need to calculate filter coefficients if it is bypassed */
     if (pDLSArt->filterCutoff == DEFAULT_DLS_FILTER_CUTOFF_FREQUENCY)
     {
+#ifdef _FLOAT_DCF
+        pIntFrame->frame.b02 = 0.0f;
+#else
         pIntFrame->frame.k = 0;
+#endif
         return;
     }
 
@@ -298,14 +302,15 @@ static void DLS_UpdateFilter (S_SYNTH_VOICE *pVoice, S_WT_VOICE *pWTVoice, S_WT_
     /*lint -e{702} use shift for performance */
     cutoff += (pVoice->note * pDLSArt->keyNumToFc) >> 7;
 
-    /* subtract the A5 offset and the sampling frequency */
-    cutoff -= FILTER_CUTOFF_FREQ_ADJUST + A5_PITCH_OFFSET_IN_CENTS;
-
-    /* limit the cutoff frequency */
-    if (cutoff > FILTER_CUTOFF_MAX_PITCH_CENTS)
-        cutoff = FILTER_CUTOFF_MAX_PITCH_CENTS;
-    else if (cutoff < FILTER_CUTOFF_MIN_PITCH_CENTS)
-        cutoff = FILTER_CUTOFF_MIN_PITCH_CENTS;
+    if (cutoff == 13500) // bypass filter
+    {
+#ifdef _FLOAT_DCF
+        pIntFrame->frame.b02 = 0.0f;
+#else
+        pIntFrame->frame.k = 0;
+#endif
+        return;
+    }
 
     WT_SetFilterCoeffs(pIntFrame, cutoff, pDLSArt->filterQandFlags & FILTER_Q_MASK);
 }
@@ -355,8 +360,7 @@ EAS_RESULT DLS_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOIC
 #endif
 
     /* initialize the filter states */
-    pWTVoice->filter.z1 = 0;
-    pWTVoice->filter.z2 = 0;
+    memset(&pWTVoice->filter, 0, sizeof(S_FILTER_CONTROL));
 
     /* initialize the oscillator */
 #if defined (_8_BIT_SAMPLES)

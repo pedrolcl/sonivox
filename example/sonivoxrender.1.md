@@ -7,7 +7,7 @@
 
 # SYNOPSIS
 
-| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _file.dls_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..196_] [**-V|-\-Verbosity** _0..5_] [**-R|-\-reverb-post-mix**] [**-C|-\-chorus-post-mix**] _midi_file_
+| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _soundfont_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..196_] [**-V|-\-Verbosity** _0..5_] [**-R|-\-reverb-post-mix**] [**-C|-\-chorus-post-mix**] _midi_file_
 
 # DESCRIPTION
 
@@ -24,9 +24,9 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 
 :   Prints the version numbers.
 
--d, -\-dls  _file.dls_
+-d, -\-dls  _soundfont_
 
-:   Optional DLS soundfont file name. If not provided, it uses an internal embedded soundfont.
+:   Optional DLS or SF2 soundfont file name. If not provided, it uses an internal embedded soundfont.
 
 -r, -\-reverb  _reverb_preset_
 

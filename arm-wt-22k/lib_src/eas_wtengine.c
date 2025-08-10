@@ -359,74 +359,7 @@ void WT_InterpolateNoLoop (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
 #endif
 
 #if defined(_FILTER_ENABLED) && !defined(NATIVE_EAS_KERNEL)
-/*----------------------------------------------------------------------------
- * WT_VoiceFilter
- *----------------------------------------------------------------------------
- * Purpose:
- * Implements a 2-pole filter
- *
- * Inputs:
- *
- * Outputs:
- *
- *----------------------------------------------------------------------------
-*/
-void WT_VoiceFilter (S_FILTER_CONTROL *pFilter, S_WT_INT_FRAME *pWTIntFrame)
-{
-    EAS_PCM *pAudioBuffer;
-    EAS_I32 k;
-    EAS_I32 b1;
-    EAS_I32 b2;
-    EAS_I32 z1;
-    EAS_I32 z2;
-    EAS_I32 acc0;
-    EAS_I32 acc1;
-    EAS_I32 numSamples;
 
-    /* initialize some local variables */
-    numSamples = pWTIntFrame->numSamples;
-    if (numSamples <= 0) {
-        EAS_Report(_EAS_SEVERITY_ERROR, "%s: numSamples <= 0\n", __func__);
-        ALOGE("b/26366256");
-        android_errorWriteLog(0x534e4554, "26366256");
-        return;
-    } else if (numSamples > BUFFER_SIZE_IN_MONO_SAMPLES) {
-        EAS_Report(_EAS_SEVERITY_ERROR, "%s: numSamples %d > %d BUFFER_SIZE_IN_MONO_SAMPLES\n", __func__, numSamples, BUFFER_SIZE_IN_MONO_SAMPLES);
-        ALOGE("b/317780080 clip numSamples %d -> %d", numSamples, BUFFER_SIZE_IN_MONO_SAMPLES);
-        android_errorWriteLog(0x534e4554, "317780080");
-        numSamples = BUFFER_SIZE_IN_MONO_SAMPLES;
-    }
-    pAudioBuffer = pWTIntFrame->pAudioBuffer;
-
-    z1 = pFilter->z1;
-    z2 = pFilter->z2;
-    b1 = -pWTIntFrame->frame.b1;
-
-    /*lint -e{702} <avoid divide> */
-    b2 = -pWTIntFrame->frame.b2 >> 1;
-
-    /*lint -e{702} <avoid divide> */
-    k = pWTIntFrame->frame.k >> 1;
-
-    while (numSamples--)
-    {
-
-        /* do filter calculations */
-        acc0 = *pAudioBuffer;
-        acc1 = z1 * b1;
-        acc1 += z2 * b2;
-        acc0 = acc1 + k * acc0;
-        z2 = z1;
-
-        /*lint -e{702} <avoid divide> */
-        z1 = acc0 >> 14;
-        *pAudioBuffer++ = (EAS_I16) z1;
-    }
-
-    /* save delay values     */
-    pFilter->z1 = (EAS_I16) z1;
-    pFilter->z2 = (EAS_I16) z2;
-}
 #endif
 
 /*----------------------------------------------------------------------------
@@ -533,8 +466,12 @@ void WT_ProcessVoice (S_WT_VOICE *pWTVoice, S_WT_INT_FRAME *pWTIntFrame)
     }
 
 #ifdef _FILTER_ENABLED
+#ifdef _FLOAT_DCF
+    if (pWTIntFrame->frame.b02 != 0.0f)
+#else
     if (pWTIntFrame->frame.k != 0)
-        WT_VoiceFilter(&pWTVoice->filter, pWTIntFrame);
+#endif
+        { WT_VoiceFilter(&pWTVoice->filter, pWTIntFrame); }
 #endif
 
 //2 TEST NEW MIXER FUNCTION

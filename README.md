@@ -15,7 +15,7 @@
 This project is a fork of the Android Open Source Project 'platform_external_sonivox', including a CMake based build system to be used not on Android, but on any other computer Operating System.
 Google licensed this work originally named Sonivox EAS (Embedded Audio Synthesis) from the company Sonic Network Inc. under the terms of the Apache License 2.0.
 
-This is a Wave Table synthesizer, not using external soundfont files by default but embedded samples. It also supports external DLS soundfont files for better rendering quality. It is also a real time GM synthesizer. It consumes very little resources, so it may be indicated in projects for small embedded devices.
+This is a Wave Table synthesizer, not using external soundfont files by default but embedded samples. It also supports external DLS or SF2 soundfont files for better rendering quality. It is also a real time GM synthesizer. It consumes very little resources, so it may be indicated in projects for small embedded devices.
 There is neither MIDI input nor Audio output facilities included in the library. You need to provide your own input/output.
 
 You may find several projects already using this library as a git submodule:
@@ -38,7 +38,7 @@ The build system has the following options:
 * `BUILD_TESTING`: ON by default, to control if the unit tests are built, which require Google Test.
 * `BUILD_EXAMPLE`: ON by default, to build and install the example program.
 * `CMAKE_POSITION_INDEPENDENT_CODE`: Whether to create position-independent targets. ON By default.
-* `NEW_HOST_WRAPPER`: Uses the new CRT-based host wrapper for faster DLS loading. ON by default.
+* `NEW_HOST_WRAPPER`: Uses the new CRT-based host wrapper for faster file loading. ON by default.
 * `MAX_VOICES`: Maximum number of voices. 64 by default.
 
 See also the [CMake documentation](https://cmake.org/cmake/help/latest/index.html) for common build options.
@@ -63,19 +63,21 @@ You can use the program to listen MIDI files or to create audio files (like MP3 
 
 ~~~
 $ ./sonivoxrender -h
-Usage: ./sonivoxrender [-h|--help] [-v|--version] [-d|--dls file.dls] [-r|--reverb 0..4] [-w|--wet 0..32767] [-n|--dry 0..32767] [-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..100] [-V|--Verbosity 0..5] file.mid ...
+Usage: ./sonivoxrender [-h|--help] [-v|--version] [-d|--dls soundfont] [-r|--reverb 0..4] [-w|--wet 0..32767] [-n|--dry 0..32767] [-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..196] [-V|--Verbosity 0..5] [-R|--reverb-post-mix] [-C|--chorus-post-mix] file.mid ...
 Render standard MIDI files into raw PCM audio.
 Options:
-    -h, --help          this help message.
-    -v, --version       sonivox version.
-    -d, --dls file.dls  DLS soundfont.
-    -r, --reverb n      reverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, 4=room.
-    -w, --wet n         reverb wet: 0..32767.
-    -n, --dry n         reverb dry: 0..32767.
-    -c, --chorus n      chorus preset: 0=no, 1..4=presets.
-    -l, --level n       chorus level: 0..32767.
-    -g, --gain n        master gain: 0..100.
-    -V, --Verbosity n   Verbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, 5=details.
+        -h, --help              this help message.
+        -v, --version           sonivox version.
+        -d, --dls soundfont     DLS or SF2 soundfont.
+        -r, --reverb n          reverb preset: 0=no, 1=large hall, 2=hall, 3=chamber, 4=room.
+        -w, --wet n             reverb wet: 0..32767.
+        -n, --dry n             reverb dry: 0..32767.
+        -c, --chorus n          chorus preset: 0=no, 1..4=presets.
+        -l, --level n           chorus level: 0..32767.
+        -g, --gain n            master gain: 0..196. 100 = +0dB.
+        -V, --Verbosity n       Verbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, 5=details
+        -R, --reverb-post-mix   ignore CC91 reverb send.
+        -C, --chorus-post-mix   ignore CC93 chorus send.
 ~~~
 
 The following examples assume the default option USE_44KHZ=ON:
@@ -115,6 +117,12 @@ Example 7: pipe the rendered audio thru the [FFmpeg](https://ffmpeg.org/)'s 'ffp
 This has the advantage of being multiplatform. Depending on the FFmpeg installed version, you may need instead:
 
     $ sonivoxrender ants.mid | ffplay -i - -f s16le -ar 44.1k -ch_layout stereo -nodisp -autoexit -loglevel quiet
+
+Example 8: pipe the rendered audio thru the ['mpv' media player](https://mpv.io/):
+
+    $ sonivoxrender ants.mid | mpv --demuxer=rawaudio -demuxer-rawaudio-format=s16le --demuxer-rawaudio-rate=44100 --demuxer-rawaudio-channels=2 --no-video -
+
+Besides being multiplatform, this supports progress view and better navigation (backed by in-memory cache).
 
 You may replace "ants.mid" by another MIDI or XMF file, like "test/res/testmxmf.mxmf"
 

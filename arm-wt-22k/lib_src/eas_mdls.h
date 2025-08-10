@@ -145,18 +145,6 @@ typedef struct
 #endif
 
 /*
- * FILTER_Q_CONVERSION_FACTOR convers the 0.1dB steps in the DLS
- * file to our internal 0.75 dB steps. The value is calculated
- * as follows:
- *
- * 32768 / (10 * <step-size in dB>)
- *
- * FILTER_RESONANCE_NUM_ENTRIES is the number of entries in the table
-*/
-#define FILTER_Q_CONVERSION_FACTOR          4369
-#define FILTER_RESONANCE_NUM_ENTRIES        31
-
-/*
  * Multiplier to convert DLS gain units (10ths of a dB) to a
  * power-of-two exponent for conversion to linear gain using our
  * piece-wise linear approximator. Note that we ignore the lower
@@ -290,6 +278,11 @@ EAS_RESULT DLSCleanup (EAS_HW_DATA_HANDLE hwInstData, S_DLS *pDLS);
 void DLSAddRef (S_DLS *pDLS);
 EAS_I16 DLSConvertDelay (EAS_I32 timeCents);
 EAS_I16 DLSConvertRate (EAS_I32 timeCents);
+EAS_U16 DLSConvertQ (EAS_I32 q);
+EAS_I8 DLSConvertPan (EAS_I32 pan);
+EAS_I16 DLSConvertPitchToPhaseInc (EAS_I32 pitchCents);
+EAS_I16 DLSConvertSustain (EAS_I32 sustain);
+EAS_I16 DLSConvertSampleRate (EAS_U32 sampleRate);
 
 #ifdef _STANDALONE_CONVERTER
 void DLSConvParams (S_DLS_PARAMS *pParams, EAS_BOOL set);
