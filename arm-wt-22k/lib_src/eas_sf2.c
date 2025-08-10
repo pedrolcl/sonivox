@@ -2079,9 +2079,5 @@ static EAS_RESULT Parse_bag(S_SF2_PARSER* pParser, const EAS_I16 gens[sfg_endOpe
         pDLSArt->filterQandFlags &= ~FLAG_DLS_VELOCITY_SENSITIVE;
     }
 
-    // TODO: EAS's filter implementation is weird, SF2's defaul value (13500 20kHz) still cause a significant amount of treble reduction
-    // TODO: This line will disable the filter. A new filter implementation may be needed
-    //pDLSArt->filterCutoff = DEFAULT_DLS_FILTER_CUTOFF_FREQUENCY;
-
     return EAS_SUCCESS;
 }

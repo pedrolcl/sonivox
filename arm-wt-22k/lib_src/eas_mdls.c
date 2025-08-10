@@ -125,7 +125,9 @@
 #include "eas_report.h"
 #include <string.h>
 
+#ifdef _SF2_SUPPORT
 #include "eas_sf2.h"
+#endif
 
 #if defined(_16_BIT_SAMPLES)
 // for mp3 decoding

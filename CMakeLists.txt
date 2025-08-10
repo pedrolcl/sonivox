@@ -125,7 +125,6 @@ list(APPEND SOURCES
 #arm-wt-22k/lib_src/jet.c
   arm-wt-22k/lib_src/wt_200k_G.c
   arm-wt-22k/src/rmidi.c
-  arm-wt-22k/lib_src/eas_sf2.c
 )
 
 if (NEW_HOST_WRAPPER)
