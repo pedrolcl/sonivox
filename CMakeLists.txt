@@ -91,6 +91,9 @@ list(APPEND SOURCES
   arm-wt-22k/lib_src/eas_data.c
   arm-wt-22k/lib_src/eas_dlssynth.c
   arm-wt-22k/lib_src/eas_flog.c
+  arm-wt-22k/lib_src/eas_fmengine.c
+  arm-wt-22k/lib_src/eas_fmsynth.c
+  arm-wt-22k/lib_src/eas_fmtables.c
 #arm-wt-22k/lib_src/eas_ima_tables.c
 #arm-wt-22k/lib_src/eas_imaadpcm.c
 #arm-wt-22k/lib_src/eas_imelody.c
@@ -123,7 +126,8 @@ list(APPEND SOURCES
   arm-wt-22k/lib_src/eas_xmf.c
   arm-wt-22k/lib_src/eas_xmfdata.c
 #arm-wt-22k/lib_src/jet.c
-  arm-wt-22k/lib_src/wt_200k_G.c
+#arm-wt-22k/lib_src/wt_200k_G.c
+  arm-wt-22k/lib_src/eas_fmsndlib.c
   arm-wt-22k/src/rmidi.c
 )
 
@@ -158,7 +162,7 @@ add_library( sonivox-objects OBJECT ${SOURCES} ${HEADERS} )
 
 target_compile_definitions( sonivox-objects PRIVATE
   UNIFIED_DEBUG_MESSAGES
-  EAS_WT_SYNTH
+  EAS_HYBRID_SYNTH
   NUM_OUTPUT_CHANNELS=2
   MAX_SYNTH_VOICES=${MAX_VOICES}
   _FILTER_ENABLED

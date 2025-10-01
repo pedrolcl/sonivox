@@ -34,6 +34,7 @@
 #include "eas_effects.h"
 #include "eas_types.h"
 #include "eas_sndlib.h"
+#include "eas_synthcfg.h"
 
 #ifdef _WT_SYNTH
 #include "eas_wtsynth.h"
@@ -56,10 +57,13 @@
 #endif
 
 /* defines */
-#ifndef NUM_PRIMARY_VOICES
-#define NUM_PRIMARY_VOICES      MAX_SYNTH_VOICES
-#elif !defined(NUM_SECONDARY_VOICES)
+#if defined(_HYBRID_SYNTH)
+#if !defined(NUM_PRIMARY_VOICES)
+#define NUM_PRIMARY_VOICES      (MAX_SYNTH_VOICES / 2)
+#endif
+#if !defined(NUM_SECONDARY_VOICES)
 #define NUM_SECONDARY_VOICES    (MAX_SYNTH_VOICES - NUM_PRIMARY_VOICES)
+#endif
 #endif
 
 #if defined(EAS_WT_SYNTH)
@@ -354,7 +358,7 @@ typedef struct s_voice_mgr_tag
     EAS_PCM                 voiceBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
 
 #ifdef _FM_SYNTH
-    EAS_PCM                 operMixBuffer[SYNTH_UPDATE_PERIOD_IN_SAMPLES];
+    EAS_PCM                 operMixBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
     S_FM_VOICE              fmVoices[NUM_FM_VOICES];
 #endif
 
@@ -383,7 +387,7 @@ typedef struct s_voice_mgr_tag
     EAS_FRAME_BUFFER_HANDLE pFrameBuffer;
 #endif
 
-#if defined(_SECONDARY_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
+#if defined(_HYBRID_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
     EAS_U16                 maxPolyphonyPrimary;
     EAS_U16                 maxPolyphonySecondary;
 #endif

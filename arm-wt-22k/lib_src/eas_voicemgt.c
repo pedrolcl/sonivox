@@ -309,7 +309,7 @@ EAS_RESULT VMInitialize (S_EAS_DATA *pEASData)
     pVoiceMgr->pGlobalEAS = (S_EAS*) &easSoundLib;
     pVoiceMgr->maxPolyphony = (EAS_U16) MAX_SYNTH_VOICES;
 
-#if defined(_SECONDARY_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
+#if defined(_HYBRID_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
     pVoiceMgr->maxPolyphonyPrimary = NUM_PRIMARY_VOICES;
     pVoiceMgr->maxPolyphonySecondary = NUM_SECONDARY_VOICES;
 #endif
@@ -1748,7 +1748,7 @@ void VMStartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U8 channel, EAS_
     pRegion = GetRegionPtr(pSynth, regionIndex);
 
     /* select correct synth */
-#if defined(_SECONDARY_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
+#if defined(_HYBRID_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
     {
 #ifdef EAS_SPLIT_WT_SYNTH
         if ((pRegion->keyGroupAndFlags & REGION_FLAG_OFF_CHIP) == 0)
@@ -2713,6 +2713,14 @@ static EAS_RESULT VMFindProgram (const S_EAS *pEAS, EAS_U32 bank, EAS_U8 program
     if (pEAS == NULL)
         return EAS_FAILURE;
 
+    // FM-only soundlibs does not contain the FLAG_RGN_IDX_FM_SYNTH flag
+    EAS_U16 additionalFlag = 0;
+    if (pEAS->pWTRegions == NULL && pEAS->pFMRegions != NULL)
+    {
+        // indicates this region is for FM synthesis and should be handled by the secondary (FM) synth
+        additionalFlag = FLAG_RGN_IDX_FM_SYNTH;
+    }
+
     /* search the banks */
     for (i = 0; i <  pEAS->numBanks; i++)
     {
@@ -2721,7 +2729,7 @@ static EAS_RESULT VMFindProgram (const S_EAS *pEAS, EAS_U32 bank, EAS_U8 program
             regionIndex = pEAS->pBanks[i].regionIndex[programNum];
             if (regionIndex != INVALID_REGION_INDEX)
             {
-                *pRegionIndex = regionIndex;
+                *pRegionIndex = regionIndex | additionalFlag;
                 return EAS_SUCCESS;
             }
             break;
@@ -2736,7 +2744,7 @@ static EAS_RESULT VMFindProgram (const S_EAS *pEAS, EAS_U32 bank, EAS_U8 program
     {
         if (p->locale == locale)
         {
-            *pRegionIndex = p->regionIndex;
+            *pRegionIndex = p->regionIndex | additionalFlag;
             return EAS_SUCCESS;
         }
     }
@@ -3323,7 +3331,7 @@ EAS_RESULT VMSetSynthPolyphony (S_VOICE_MGR *pVoiceMgr, EAS_I32 synth, EAS_I32 p
         polyphonyCount = 1;
 
     /* split architecture */
-#if defined(_SECONDARY_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
+#if defined(_HYBRID_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
     if (synth == EAS_MCU_SYNTH)
     {
         if (polyphonyCount > NUM_PRIMARY_VOICES)
@@ -3479,7 +3487,7 @@ EAS_RESULT VMSetSynthPolyphony (S_VOICE_MGR *pVoiceMgr, EAS_I32 synth, EAS_I32 p
 EAS_RESULT VMGetSynthPolyphony (S_VOICE_MGR *pVoiceMgr, EAS_I32 synth, EAS_I32 *pPolyphonyCount)
 {
 
-#if defined(_SECONDARY_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
+#if defined(_HYBRID_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
     if (synth == EAS_MCU_SYNTH)
         *pPolyphonyCount = pVoiceMgr->maxPolyphonyPrimary;
     else if (synth == EAS_DSP_SYNTH)
@@ -3750,31 +3758,33 @@ EAS_RESULT VMValidateEASLib (EAS_SNDLIB_HANDLE pEAS)
             return EAS_ERROR_SOUND_LIBRARY;
         }
 
-        /* check sample rate */
-        if ((pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK) != _OUTPUT_SAMPLE_RATE)
-        {
-            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sample rate mismatch in sound library: Read %lu, expected %lu\n",
-                (unsigned long)pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK, (unsigned long)_OUTPUT_SAMPLE_RATE);
-            return EAS_ERROR_SOUND_LIBRARY;
-        }
+        if (pEAS->pWTRegions != NULL) {
+            /* check sample rate */
+            if ((pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK) != _OUTPUT_SAMPLE_RATE)
+            {
+                EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sample rate mismatch in sound library: Read %lu, expected %lu\n",
+                    (unsigned long)pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK, (unsigned long)_OUTPUT_SAMPLE_RATE);
+                return EAS_ERROR_SOUND_LIBRARY;
+            }
 
 #ifdef _WT_SYNTH
-        /* check sample bit depth */
+            /* check sample bit depth */
 #ifdef _8_BIT_SAMPLES
-        if (pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES)
-        {
-            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 8-bit samples and found 16-bit\n");
-            return EAS_ERROR_SOUND_LIBRARY;
-        }
+            if (pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES)
+            {
+                EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 8-bit samples and found 16-bit\n");
+                return EAS_ERROR_SOUND_LIBRARY;
+            }
 #endif
 #ifdef _16_BIT_SAMPLES
-        if ((pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES) == 0)
-        {
-            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 16-bit samples and found 8-bit\n");
-            return EAS_ERROR_SOUND_LIBRARY;
+            if ((pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES) == 0)
+            {
+                EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 16-bit samples and found 8-bit\n");
+                return EAS_ERROR_SOUND_LIBRARY;
+            }
+#endif
+#endif
         }
-#endif
-#endif
     }
 
     return EAS_SUCCESS;

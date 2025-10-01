@@ -309,20 +309,24 @@ typedef struct s_bank_tag
 } S_BANK;
 
 
-/* defines for libFormat field
- * bits 0-17 are the sample rate
- * bit 18 is true if wavetable is present
- * bit 19 is true if FM is present
- * bit 20 is true if filter is enabled
- * bit 21 is sample depth (0 = 8-bits, 1 = 16-bits)
- * bits 22-31 are reserved
- */
+// note that the original comment seems to be completely false
+// the libAttr field is: 0x0010xxxx for 8-bit samples and 0x0020xxxx for 16-bit samples
+// xxxx is sample rate (e.g. 0x5622 = 22050, 0xac44 = 44100)
+
+// /* defines for libFormat field
+//  * bits 0-17 are the sample rate
+//  * bit 18 is true if wavetable is present
+//  * bit 19 is true if FM is present
+//  * bit 20 is true if filter is enabled
+//  * bit 21 is sample depth (0 = 8-bits, 1 = 16-bits)
+//  * bits 22-31 are reserved
+//  */
 #define LIBFORMAT_SAMPLE_RATE_MASK      0x0003ffff
-#define LIB_FORMAT_TYPE_MASK            0x000c0000
-#define LIB_FORMAT_WAVETABLE            0x00000000
-#define LIB_FORMAT_FM                   0x00040000
-#define LIB_FORMAT_HYBRID               0x00080000
-#define LIB_FORMAT_FILTER_ENABLED       0x00100000
+// #define LIB_FORMAT_TYPE_MASK            0x000c0000
+// #define LIB_FORMAT_WAVETABLE            0x00000000
+// #define LIB_FORMAT_FM                   0x00040000
+// #define LIB_FORMAT_HYBRID               0x00080000
+// #define LIB_FORMAT_FILTER_ENABLED       0x00100000
 #define LIB_FORMAT_16_BIT_SAMPLES       0x00200000
 
 #ifdef DLS_SYNTHESIZER
