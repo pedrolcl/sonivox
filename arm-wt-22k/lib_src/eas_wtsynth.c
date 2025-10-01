@@ -399,7 +399,11 @@ static EAS_RESULT WT_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNT
         else
             pWTVoice->phaseAccum = pSynth->pEAS->pSampleOffsets[pRegion->waveIndex];
 #else
-        pWTVoice->phaseAccum = pSynth->pEAS->pSamples + pSynth->pEAS->pSampleOffsets[pRegion->waveIndex]/2;
+#if defined (_8_BIT_SAMPLES)
+        pWTVoice->phaseAccum = pSynth->pEAS->pSamples + pSynth->pEAS->pSampleOffsets[pRegion->waveIndex];
+#else //_16_BIT_SAMPLES
+        pWTVoice->phaseAccum = pSynth->pEAS->pSamples + (pSynth->pEAS->pSampleOffsets[pRegion->waveIndex] / 2);
+#endif
 #endif
 
         if (pRegion->region.keyGroupAndFlags & REGION_FLAG_IS_LOOPED)
@@ -554,7 +558,8 @@ static EAS_BOOL WT_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH
     WT_UpdateLFO(&pWTVoice->modLFO, pArt->lfoFreq);
 
 #ifdef _FILTER_ENABLED
-    /* calculate filter if library uses filter */
+/*
+    // calculate filter if library uses filter //
     if (pSynth->pEAS->libAttr & LIB_FORMAT_FILTER_ENABLED) {
         WT_UpdateFilter(pWTVoice, &intFrame, pArt);
     } else {
@@ -564,6 +569,9 @@ static EAS_BOOL WT_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH
         intFrame.frame.k = 0;
 #endif
     }
+*/
+    // The LIB_FORMAT_FILTER_ENABLED flag is just bogus. It seems to be 8-bit samples flag.
+    WT_UpdateFilter(pWTVoice, &intFrame, pArt);
 #endif
 
     /* update the gain */
