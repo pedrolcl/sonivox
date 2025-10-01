@@ -887,7 +887,6 @@ static EAS_BOOL FM_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH
 	/* save operator targets for this frame */
 	for (oper = 0; oper < 4; oper++)
 	{
-		EAS_Report(_EAS_SEVERITY_INFO, "fm oper %d gain %d env %d out %d\n", oper, pFMVoice->oper[oper].baseGain, pFMVoice->oper[oper].envGain, pFMVoice->oper[oper].outputGain);
 		vFrame.gain[oper] = (EAS_U16) FMUL_15x15(pFMVoice->oper[oper].baseGain, pFMVoice->oper[oper].envGain);
 		vFrame.pitch[oper] = pFMVoice->oper[oper].pitch;
 

@@ -293,7 +293,7 @@ void FM_Operator (
 
 	/* calculate gain increment */
 	/*lint -e{703} use shift for performance */
-	gainInc = ((EAS_I32) gainTarget - (EAS_I32) p->gain) << (16 - SYNTH_UPDATE_PERIOD_IN_BITS);
+	gainInc = ((EAS_I32) gainTarget - (EAS_I32) p->gain) * (1 << 16) / BUFFER_SIZE_IN_MONO_SAMPLES;
 
 	/* establish local phase variables */
 	phase = p->phase;
@@ -401,7 +401,7 @@ void FM_NoiseOperator (
 
 	/* calculate gain increment */
 	/*lint -e{703} use shift for performance */
-	gainInc = ((EAS_I32) gainTarget - (EAS_I32) p->gain) << (16 - SYNTH_UPDATE_PERIOD_IN_BITS);
+	gainInc = ((EAS_I32) gainTarget - (EAS_I32) p->gain) * (1 << 16) / BUFFER_SIZE_IN_MONO_SAMPLES;
 
 	/* establish local phase variables */
 	phase = p->phase;
@@ -746,7 +746,7 @@ void FM_SynthMixVoice(S_FM_ENG_VOICE *p,  EAS_U16 nGainTarget, EAS_I32 numSample
 
 	/* calculate gain increment */
 	/*lint -e{703} <use shift for performance> */
-	nGainInc = ((EAS_I32) nGainTarget - (EAS_I32) p->voiceGain) << (16 - SYNTH_UPDATE_PERIOD_IN_BITS);
+	nGainInc = ((EAS_I32) nGainTarget - (EAS_I32) p->voiceGain) * (1 << 16) / BUFFER_SIZE_IN_MONO_SAMPLES;
 
 	/* mix the output buffer */
 	while (numSamplesToAdd--)
@@ -758,21 +758,14 @@ void FM_SynthMixVoice(S_FM_ENG_VOICE *p,  EAS_U16 nGainTarget, EAS_I32 numSample
 #if (NUM_OUTPUT_CHANNELS == 2)
 
 		/*lint -e{704} <use shift for performance> */
-		nTemp = ((EAS_I32) nTemp * (nGain >> 16)) >> FM_GAIN_SHIFT;
+		nTemp = FMUL_15x15(nTemp, nGain / (1 << 16));
 
-		/*lint -e{704} <use shift for performance> */
-		{
-			EAS_I32 nTemp2;
-			nTemp = nTemp >> FM_STEREO_PRE_GAIN_SHIFT;
-			nTemp2 = (nTemp * p->gainLeft) >> FM_STEREO_POST_GAIN_SHIFT;
-			*pBuffer++ += nTemp2;
-			nTemp2 = (nTemp * p->gainRight) >> FM_STEREO_POST_GAIN_SHIFT;
-			*pBuffer++ += nTemp2;
-		}
+		*pBuffer++ = FMUL_15x15(nTemp, p->gainLeft);
+		*pBuffer++ = FMUL_15x15(nTemp, p->gainRight);
 #else
 		/*lint -e{704} <use shift for performance> */
-		nTemp = ((EAS_I32) nTemp * (nGain >> 16)) >> FM_MONO_GAIN_SHIFT;
-		*pBuffer++ += nTemp;
+		nTemp = FMUL_15x15(nTemp, nGain / (1 << 16));
+		*pBuffer++ = nTemp;
 #endif
 
 		/* increment gain for anti-zipper filter */
