@@ -84,7 +84,7 @@ typedef struct s_region_tag
 /*
  * Bit fields for m_nKeyGroupAndFlags
  * Bits 0-2 are mode bits in FM synth
- * Bits 8-11 are the key group
+ * Bits 8-15 are the key group
  */
 #define REGION_FLAG_IS_LOOPED                   0x01
 #define REGION_FLAG_USE_WAVE_GENERATOR          0x02
@@ -93,7 +93,7 @@ typedef struct s_region_tag
 #define REGION_FLAG_SQUARE_WAVE                 0x10
 #define REGION_FLAG_OFF_CHIP                    0x20
 #define REGION_FLAG_NON_SELF_EXCLUSIVE          0x40
-#define REGION_FLAG_LAST_REGION                 0x8000
+#define REGION_FLAG_LAST_REGION                 0x80
 
 /*----------------------------------------------------------------------------
  * Envelope data structure
