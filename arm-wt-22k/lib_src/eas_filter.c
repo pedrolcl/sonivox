@@ -3,6 +3,7 @@
 #include "eas_report.h"
 #include "eas_audioconst.h"
 #include "eas_math.h"
+#include "eas_synth.h"
 
 #include "log/log.h"
 #include <cutils/log.h>
@@ -298,6 +299,15 @@ static const EAS_I16 n1g3[] =
 void WT_SetFilterCoeffs (S_WT_INT_FRAME *pIntFrame, EAS_I32 cutoff, EAS_I32 resonance)
 {
     EAS_I32 temp;
+
+    /* subtract the A5 offset and the sampling frequency */
+    cutoff -= FILTER_CUTOFF_FREQ_ADJUST + A5_PITCH_OFFSET_IN_CENTS;
+
+    /* limit the cutoff frequency */
+    if (cutoff > FILTER_CUTOFF_MAX_PITCH_CENTS)
+        cutoff = FILTER_CUTOFF_MAX_PITCH_CENTS;
+    else if (cutoff < FILTER_CUTOFF_MIN_PITCH_CENTS)
+        cutoff = FILTER_CUTOFF_MIN_PITCH_CENTS;
 
     /*
     Convert the cutoff, which has had A5 subtracted, using the 2^x approx
