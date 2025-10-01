@@ -2122,7 +2122,7 @@ static EAS_RESULT Parse_rgnh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_DL
     pRgn->wtRegion.region.rangeHigh = (EAS_U8) highKey;
 
     /*lint -e{734} keyGroup will always be from 0-15 */
-    pRgn->wtRegion.region.keyGroupAndFlags = keyGroup << 8;
+    pRgn->wtRegion.region.keyGroupAndFlags = (keyGroup & 0x7f) << 8;
     pRgn->velLow = (EAS_U8) lowVel;
     pRgn->velHigh = (EAS_U8) highVel;
     if (optionFlags & F_RGN_OPTION_SELFNONEXCLUSIVE)

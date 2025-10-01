@@ -1902,11 +1902,11 @@ static EAS_RESULT Parse_bag(S_SF2_PARSER* pParser, const EAS_I16 gens[sfg_endOpe
         *loopMode = 0;
     }
 
-    if (gens[sfg_exclusiveClass] > 0xFF) {
+    if (gens[sfg_exclusiveClass] > 0x7f) {
         EAS_Report(_EAS_SEVERITY_WARNING, "SF2Parser: exclusive class number %u is too large at generator entry\n", gens[sfg_exclusiveClass]);
         pDLSRegion->wtRegion.region.keyGroupAndFlags = REGION_FLAG_NON_SELF_EXCLUSIVE;
     } else {
-        pDLSRegion->wtRegion.region.keyGroupAndFlags = ((EAS_U8)gens[sfg_exclusiveClass] << 8) | REGION_FLAG_NON_SELF_EXCLUSIVE;
+        pDLSRegion->wtRegion.region.keyGroupAndFlags = ((gens[sfg_exclusiveClass] & 0x7f) << 8) | REGION_FLAG_NON_SELF_EXCLUSIVE;
     }
 
     // modulators

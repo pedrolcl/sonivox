@@ -1591,7 +1591,7 @@ void VMCheckKeyGroup (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U16 keyGroup,
             {
                 /* check key group */
                 pRegion = GetRegionPtr(pSynth, pVoiceMgr->voices[voiceNum].regionIndex);
-                if (keyGroup == (pRegion->keyGroupAndFlags >> 8))
+                if (keyGroup == (pRegion->keyGroupAndFlags & REGION_KEY_GROUP_MASK))
                 {
 #ifdef _DEBUG_VM
                     { /* dpp: EAS_ReportEx(_EAS_SEVERITY_INFO, "VMCheckKeyGroup: voice %d matches key group %d\n", voiceNum, keyGroup >> 8); */ }
@@ -1616,7 +1616,7 @@ void VMCheckKeyGroup (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U16 keyGroup,
             {
                 /* check key group */
                 pRegion = GetRegionPtr(pSynth, pVoiceMgr->voices[voiceNum].nextRegionIndex);
-                if (keyGroup == (pRegion->keyGroupAndFlags >> 8))
+                if (keyGroup == (pRegion->keyGroupAndFlags & REGION_KEY_GROUP_MASK))
                 {
 #ifdef _DEBUG_VM
                     { /* dpp: EAS_ReportEx(_EAS_SEVERITY_INFO, "VMCheckKeyGroup: voice %d matches key group %d\n", voiceNum, keyGroup >> 8); */ }
@@ -1778,8 +1778,8 @@ void VMStartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U8 channel, EAS_
     {
 
         /* check for key group exclusivity */
-        keyGroup = pRegion->keyGroupAndFlags >> 8;
-        if (keyGroup!= 0)
+        keyGroup = pRegion->keyGroupAndFlags & REGION_KEY_GROUP_MASK;
+        if (keyGroup != 0)
             VMCheckKeyGroup(pVoiceMgr, pSynth, keyGroup, channel);
 
         /* check polyphony limit and steal a voice if necessary */
