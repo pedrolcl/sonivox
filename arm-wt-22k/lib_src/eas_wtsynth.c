@@ -616,6 +616,9 @@ static EAS_BOOL WT_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH
     if (intFrame.numSamples > BUFFER_SIZE_IN_MONO_SAMPLES)
         intFrame.numSamples = BUFFER_SIZE_IN_MONO_SAMPLES;
 
+    if (intFrame.numSamples < BUFFER_SIZE_IN_MONO_SAMPLES)
+        memset(pMixBuffer + intFrame.numSamples * NUM_OUTPUT_CHANNELS, 0, (BUFFER_SIZE_IN_MONO_SAMPLES - intFrame.numSamples) * NUM_OUTPUT_CHANNELS * sizeof(EAS_I32));
+
 #ifdef EAS_SPLIT_WT_SYNTH
     if (voiceNum < NUM_PRIMARY_VOICES)
     {
