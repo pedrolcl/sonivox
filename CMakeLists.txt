@@ -127,7 +127,8 @@ list(APPEND SOURCES
   arm-wt-22k/lib_src/eas_xmfdata.c
 #arm-wt-22k/lib_src/jet.c
 #arm-wt-22k/lib_src/wt_200k_G.c
-  arm-wt-22k/lib_src/eas_fmsndlib.c
+#arm-wt-22k/lib_src/eas_fmsndlib.c
+  arm-wt-22k/lib_src/hybrid_22khz_mcu.c
   arm-wt-22k/src/rmidi.c
 )
 
