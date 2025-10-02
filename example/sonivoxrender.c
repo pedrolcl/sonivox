@@ -33,7 +33,17 @@
 #define alloca _alloca
 #endif
 
+// actually they have type of S_EAS
+extern const void* easSoundLib_hybrid; 
+extern const void* easSoundLib_fm;
+
 const char *dls_path = NULL;
+enum {
+    SNDLIB_WT = 0,
+    SNDLIB_FM,
+    SNDLIB_HYBRID,
+    SNDLIB_END
+} sndlib_type = SNDLIB_WT;
 EAS_I32 playback_gain = 100;
 EAS_I32 reverb_type = 0;
 EAS_I32 reverb_wet = 32767;
@@ -102,6 +112,22 @@ int initializeLibrary(void)
         fprintf(stderr, "Failed to initialize EAS data handle\n");
         ok = EXIT_FAILURE;
         return ok;
+    }
+
+    switch (sndlib_type)
+    {
+    case SNDLIB_WT:
+        break;
+    case SNDLIB_FM:
+        EAS_SetSoundLibrary(mEASDataHandle, NULL, (EAS_SNDLIB_HANDLE)&easSoundLib_fm);
+        break;
+    case SNDLIB_HYBRID:
+        EAS_SetSoundLibrary(mEASDataHandle, NULL, (EAS_SNDLIB_HANDLE)&easSoundLib_hybrid);
+        break;
+    default:
+        fprintf(stderr, "invalid sound library: %d\n", sndlib_type);
+        ok = EXIT_FAILURE;
+        goto cleanup;
     }
 
     if (dls_path != NULL) {
@@ -349,10 +375,11 @@ int main (int argc, char **argv)
                                            {"Verbosity", required_argument, 0, 'V'},
                                            {"reverb-post-mix", no_argument, 0, 'R'},
                                            {"chorus-post-mix", no_argument, 0, 'C'},
+                                           {"sndlib", required_argument, 0, 's'},
                                            {0, 0, 0, 0}};
 
     while (1) {
-        c = getopt_long(argc, argv, "hvd:r:w:n:c:l:g:V:RC", long_options, &option_index);
+        c = getopt_long(argc, argv, "hvd:r:w:n:c:l:g:V:RCs:", long_options, &option_index);
 
         if (c == -1) {
             break;
@@ -365,7 +392,7 @@ int main (int argc, char **argv)
                 "Usage: %s [-h|--help] [-v|--version] [-d|--dls soundfont] [-r|--reverb 0..4] "
                 "[-w|--wet 0..32767] [-n|--dry 0..32767] "
                 "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..196] [-V|--Verbosity "
-                "0..5] [-R|--reverb-post-mix] [-C|--chorus-post-mix] file.mid ...\n"
+                "0..5] [-R|--reverb-post-mix] [-C|--chorus-post-mix] [-s|--sndlib 0..2] file.mid ...\n"
                 "Render standard MIDI files into raw PCM audio.\n"
                 "Options:\n"
                 "\t-h, --help\t\tthis help message.\n"
@@ -381,7 +408,8 @@ int main (int argc, char **argv)
                 "\t-V, --Verbosity n\tVerbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, "
                 "5=details\n"
                 "\t-R, --reverb-post-mix\tignore CC91 reverb send.\n"
-                "\t-C, --chorus-post-mix\tignore CC93 chorus send.\n",
+                "\t-C, --chorus-post-mix\tignore CC93 chorus send.\n"
+                "\t-s, --sndlib n\t\tsound engine library: 0=wt, 1=fm, 2=hybrid.\n",
                 argv[0]);
             return EXIT_FAILURE;
         case 'v':
@@ -442,6 +470,13 @@ int main (int argc, char **argv)
             verbosity = atoi(optarg);
             if ((verbosity < 0) || (verbosity > 5)) {
                 fprintf(stderr, "invalid verbosity level: %d\n", verbosity);
+                return EXIT_FAILURE;
+            }
+            break;
+        case 's':
+            sndlib_type = atoi(optarg);
+            if ((sndlib_type < SNDLIB_WT) || (sndlib_type >= SNDLIB_END)) {
+                fprintf(stderr, "invalid sound library: %d\n", sndlib_type);
                 return EXIT_FAILURE;
             }
             break;

@@ -32,7 +32,7 @@
  * Articulations
  *----------------------------------------------------------------------------
 */
-const S_ARTICULATION eas_articulations[] = 
+static const S_ARTICULATION eas_articulations[] = 
 {
 	{ /* articulation 0 */
 		{ 32767, 30725, 0, 30725 },
@@ -305,7 +305,7 @@ const S_ARTICULATION eas_articulations[] =
  * Regions
  *----------------------------------------------------------------------------
 */
-const S_WT_REGION eas_regions[] = 
+static const S_WT_REGION eas_regions[] = 
 {
 	{ { 0, 27, 27 }, -2868, 16422, 0, 0, 19, 0 }, /* region 0 */
 	{ { 0, 28, 28 }, -3568, 32767, 0, 0, 13, 0 }, /* region 1 */
@@ -374,7 +374,7 @@ const S_WT_REGION eas_regions[] =
  * FM Regions
  *----------------------------------------------------------------------------
 */
-const S_FM_REGION eas_fmRegions[] = 
+static const S_FM_REGION eas_fmRegions[] = 
 {
 
 	{ /* FM region 0 */
@@ -1534,7 +1534,7 @@ const S_FM_REGION eas_fmRegions[] =
  * Programs
  *----------------------------------------------------------------------------
 */
-const S_PROGRAM eas_programs[] = 
+static const S_PROGRAM eas_programs[] = 
 {
 	{ 7864320, 0 } /* program 0 */
 }; /* end Programs */
@@ -1543,7 +1543,7 @@ const S_PROGRAM eas_programs[] =
  * Banks
  *----------------------------------------------------------------------------
 */
-const S_BANK eas_banks[] =
+static const S_BANK eas_banks[] =
 {
 	{ /* bank 0 */
 		30976,
@@ -1573,7 +1573,7 @@ const S_BANK eas_banks[] =
  *----------------------------------------------------------------------------
 */
 
-const EAS_SAMPLE eas_samples[] = 
+static const EAS_SAMPLE eas_samples[] = 
 {
 	  13,  -24,   28,  -32,   33,  -37,   39,  -61,  119,  -76,  120,  -70,   99, -122,   89, -113,
 	  91, -123,  122, -123,   77,   86, -116,    6, -118,  123,  -23,   64,  -93,   17,   24, -125,
@@ -5095,7 +5095,7 @@ const EAS_SAMPLE eas_samples[] =
 	   0,    0,    0,    0
 };
 
-const EAS_U32 eas_sampleLengths[] = 
+static const EAS_U32 eas_sampleLengths[] = 
 {
 	9922, 9338, 6793, 5242, 3057, 2818, 2806, 1835,
 	1603, 1262, 1227, 1168, 1132, 1132, 994, 907,
@@ -5103,7 +5103,7 @@ const EAS_U32 eas_sampleLengths[] =
 	347, 212, 167, 40, 40, 32, 30
 };
 
-const EAS_U32 eas_sampleOffsets[] = 
+static const EAS_U32 eas_sampleOffsets[] = 
 {
 	0x00000000, 0x000026c2, 0x00004b3c, 0x000065c5, 0x00007a3f, 0x00008630, 0x00009132, 0x00009c28,
 	0x0000a353, 0x0000a996, 0x0000ae84, 0x0000b34f, 0x0000b7df, 0x0000bc4b, 0x0000c0b7, 0x0000c499,
@@ -5115,7 +5115,7 @@ const EAS_U32 eas_sampleOffsets[] =
  * S_EAS (hybrid)
  *----------------------------------------------------------------------------
 */
-const S_EAS easSoundLib = 
+const S_EAS easSoundLib_hybrid = 
 {
 	0x01534145,
 	0x00105622,

@@ -24,7 +24,7 @@
 
 /* begin region data */
 /*lint -e{651} lint complains about unnecessary brackets */
-const S_FM_REGION regions[] =
+static const S_FM_REGION regions[] =
 {
 
 	/* Region 0 */
@@ -1608,7 +1608,7 @@ const S_FM_REGION regions[] =
  * Programs
  *----------------------------------------------------------------------------
 */
-const S_PROGRAM programs[] =
+static const S_PROGRAM programs[] =
 {
 	{ 7864320, 128 } /* program 0 */
 }; /* end Programs */
@@ -1617,7 +1617,7 @@ const S_PROGRAM programs[] =
  * Banks
  *----------------------------------------------------------------------------
 */
-const S_BANK banks[] =
+static const S_BANK banks[] =
 {
 	{ /* bank 0 */
 		30976,
@@ -1646,7 +1646,7 @@ const S_BANK banks[] =
  * S_EAS
  *----------------------------------------------------------------------------
 */
-const S_EAS easSoundLib =
+const S_EAS easSoundLib_fm =
 {
 	0x01534145,
 	0x00105622,

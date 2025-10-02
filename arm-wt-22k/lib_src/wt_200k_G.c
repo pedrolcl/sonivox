@@ -52,7 +52,7 @@
  * Programs
  *----------------------------------------------------------------------------
 */
-const S_PROGRAM eas_programs[] =
+static const S_PROGRAM eas_programs[] =
 {
     { 7864320, 0 } /* program 0 */
 }; /* end Programs */
@@ -61,7 +61,7 @@ const S_PROGRAM eas_programs[] =
  * Banks
  *----------------------------------------------------------------------------
 */
-const S_BANK eas_banks[] =
+static const S_BANK eas_banks[] =
 {
     { /* bank 0 */
         30976,
