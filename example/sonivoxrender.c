@@ -28,6 +28,7 @@
 #include <eas_report.h>
 
 #if defined(_MSC_VER)
+#include <io.h>
 #include <malloc.h>
 #define alloca _alloca
 #endif
@@ -81,8 +82,10 @@ int initializeLibrary(void)
 {
     int ok = EXIT_SUCCESS;
 
-#ifdef __WIN32__
-	setmode(fileno(stdout), O_BINARY);
+#if defined(__MINGW32__) 
+    setmode(fileno(stdout), O_BINARY);
+#elif defined(_MSC_VER)
+    _setmode(_fileno(stdout), _O_BINARY);
 #endif
 
     EAS_SetDebugFile(stderr, 1);
