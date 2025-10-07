@@ -2781,95 +2781,87 @@ static EAS_RESULT VMFindDLSProgram (const S_DLS *pDLS, EAS_U32 bank, EAS_U8 prog
         }
     }
 
-    /* also search bank 0 when default bank (MSB) is used */
-    if (((bank & 0xFF00) == DEFAULT_MELODY_BANK_NUMBER) || ((bank & 0xFF00) == DEFAULT_RHYTHM_BANK_NUMBER))
+    // used later for subst
+    EAS_U8 program = programNum;
+subst:
+    // 1. default melody/rhythm msb to 0, keep lsb
+    if ((bank & 0x1FF00) == DEFAULT_MELODY_BANK_NUMBER || (bank & 0x1FF00) == (0x10000 | DEFAULT_RHYTHM_BANK_NUMBER))
     {
-        /* establish locale */
-        locale = ((bank & 0x100FF) << 8) | programNum;
+        locale = ((bank & 0x100FF) << 8) | program;
 
-        /* search for program */
         for (i = 0, p = pDLS->pDLSPrograms; i < pDLS->numDLSPrograms; i++, p++)
         {
             if (p->locale == locale)
             {
                 *pRegionIndex = p->regionIndex;
-                return EAS_SUCCESS;
+                goto subst_success;
             }
         }
     }
 
-    /* fall back to default bank */
-    if ((bank != DEFAULT_MELODY_BANK_NUMBER) && (bank != (0x10000 | DEFAULT_RHYTHM_BANK_NUMBER)))
-    {
-        /* establish locale */
-        if (bank & 0x10000)
-        {
-            locale = ((0x10000 | DEFAULT_RHYTHM_BANK_NUMBER) << 8) | programNum;
-        }
-        else
-        {
-            locale = (DEFAULT_MELODY_BANK_NUMBER << 8) | programNum;
+    // 2. bank to DEFAULT_MELODY_BANK_NUMBER or DEFAULT_RHYTHM_BANK_NUMBER (lsb to 0)
+    if (bank != DEFAULT_MELODY_BANK_NUMBER && bank != (0x10000 | DEFAULT_RHYTHM_BANK_NUMBER)) {
+        if (bank & 0x10000) {
+            locale = ((0x10000 | DEFAULT_RHYTHM_BANK_NUMBER) << 8) | program;
+        } else {
+            locale = (DEFAULT_MELODY_BANK_NUMBER << 8) | program;
         }
 
-        /* search for program */
         for (i = 0, p = pDLS->pDLSPrograms; i < pDLS->numDLSPrograms; i++, p++)
         {
             if (p->locale == locale)
             {
                 *pRegionIndex = p->regionIndex;
-                return EAS_SUCCESS;
-            }
-        }
-
-        /* also search bank 0 */
-
-        /* establish locale */
-        locale = ((bank & 0x10000) << 8) | programNum;
-
-        /* search for program */
-        for (i = 0, p = pDLS->pDLSPrograms; i < pDLS->numDLSPrograms; i++, p++)
-        {
-            if (p->locale == locale)
-            {
-                *pRegionIndex = p->regionIndex;
-                return EAS_SUCCESS;
+                goto subst_success;
             }
         }
     }
 
-    /* switch to program 0 in the default bank, when searching for drum instrument */
-    if ((bank & 0x10000) && programNum)
-    {
-        /* establish locale */
-        locale = ((0x10000 | DEFAULT_RHYTHM_BANK_NUMBER) << 8);
+    // 3. bank to 0
+    if ((bank & 0xFFFF) != 0) {
+        locale = ((bank & 0x10000) << 8) | program;
 
-        /* search for program */
         for (i = 0, p = pDLS->pDLSPrograms; i < pDLS->numDLSPrograms; i++, p++)
         {
             if (p->locale == locale)
             {
                 *pRegionIndex = p->regionIndex;
-                return EAS_SUCCESS;
-            }
-        }
-
-        /* also search bank 0 */
-
-        /* establish locale */
-        locale = (0x10000 << 8);
-
-        /* search for program */
-        for (i = 0, p = pDLS->pDLSPrograms; i < pDLS->numDLSPrograms; i++, p++)
-        {
-            if (p->locale == locale)
-            {
-                *pRegionIndex = p->regionIndex;
-                return EAS_SUCCESS;
+                goto subst_success;
             }
         }
     }
+
+    // 4. for drums, bank to DEFAULT_RHYTHM_BANK_NUMBER but don't check drum flag
+    if ((bank & 0x1FF00) == (0x10000 | DEFAULT_RHYTHM_BANK_NUMBER)) {
+        locale = (DEFAULT_RHYTHM_BANK_NUMBER << 8) | program;
+
+        for (i = 0, p = pDLS->pDLSPrograms; i < pDLS->numDLSPrograms; i++, p++)
+        {
+            if (p->locale == locale)
+            {
+                *pRegionIndex = p->regionIndex;
+                goto subst_success;
+            }
+        }
+    }
+
+    // 5. for drums, pc to 0
+    if ((bank & 0x10000) && program != 0)
+    {
+        program = 0;
+        goto subst;
+    }
+
+    EAS_Report(_EAS_SEVERITY_WARNING, "VMFindDLSProgram: Program [drum=%u, bank=%u/%u, pc=%u] not found, subst WT\n", 
+        (bank & 0x10000) ? 1 : 0, (bank & 0xFF00) >> 8, bank & 0xFF, programNum);
 
     return EAS_FAILURE;
+
+subst_success:
+    EAS_Report(_EAS_SEVERITY_WARNING, "VMFindDLSProgram: Program [drum=%u, bank=%u/%u, pc=%u] not found, subst [drum=%u, bank=%u/%u, pc=%u]\n", 
+        (bank & 0x10000) ? 1 : 0, (bank & 0xFF00) >> 8, bank & 0xFF, programNum,
+        ((locale >> 8) & 0x10000) ? 1 : 0, ((locale >> 8) & 0xFF00) >> 8, (locale >> 8) & 0xFF, locale & 0xFF);
+    return EAS_SUCCESS;
 }
 #endif
 
@@ -2943,32 +2935,50 @@ void VMProgramChange (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U8 channel, E
 
 #ifdef DLS_SYNTHESIZER
     /* first check for DLS program that may overlay the internal instrument */
-    if (VMFindDLSProgram(pSynth->pDLS, bank | ((pChannel->channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL) ? 0x10000 : 0), program, &regionIndex) != EAS_SUCCESS)
+    if (VMFindDLSProgram(pSynth->pDLS, bank | ((pChannel->channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL) ? 0x10000 : 0), program, &regionIndex) == EAS_SUCCESS)
+    {
+        goto match_success;
+    }
 #endif
 
-    /* braces to support 'if' clause above */
+    if (VMFindProgram(pSynth->pEAS, bank, program, &regionIndex) == EAS_SUCCESS)
     {
-
-        /* look in the internal banks */
-        if (VMFindProgram(pSynth->pEAS, bank, program, &regionIndex) != EAS_SUCCESS)
-
-        /* fall back to default bank */
-        {
-            if (pSynth->channels[channel].channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL)
-                bank = DEFAULT_RHYTHM_BANK_NUMBER;
-            else
-                bank = DEFAULT_MELODY_BANK_NUMBER;
-
-            if (VMFindProgram(pSynth->pEAS, bank, program, &regionIndex) != EAS_SUCCESS)
-
-            /* switch to program 0 in the default bank */
-            {
-                if (VMFindProgram(pSynth->pEAS, bank, 0, &regionIndex) != EAS_SUCCESS)
-                    { /* dpp: EAS_ReportEx(_EAS_SEVERITY_WARNING, "VMProgramChange: No program @ %03d:%03d:%03d\n",
-                        (bank >> 8) & 0x7f, bank & 0x7f, program); */ }
-            }
-        }
+        goto match_success;
     }
+
+    /* fall back to default bank */
+    if (pSynth->channels[channel].channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL) {
+        bank = DEFAULT_RHYTHM_BANK_NUMBER;
+    } else {
+        bank = DEFAULT_MELODY_BANK_NUMBER;
+    }
+
+    if (VMFindProgram(pSynth->pEAS, bank, program, &regionIndex) == EAS_SUCCESS) {
+        EAS_Report(_EAS_SEVERITY_WARNING, "VMProgramChange: Program [drum=%u, bank=%u/%u, pc=%u] not found, subst [drum=%u, bank=%u/%u, pc=%u]\n", 
+            pSynth->channels[channel].channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL ? 1 : 0,
+            (pChannel->bankNum & 0xFF00) >> 8, pChannel->bankNum & 0xFF, program,
+            pSynth->channels[channel].channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL ? 1 : 0,
+            (bank & 0xFF00) >> 8, bank & 0xFF, program
+        );
+        goto match_success;
+    }
+
+    // fall back to program 0 in default bank
+    if (VMFindProgram(pSynth->pEAS, bank, 0, &regionIndex) == EAS_SUCCESS) {
+        EAS_Report(_EAS_SEVERITY_WARNING, "VMProgramChange: Program [drum=%u, bank=%u/%u, pc=%u] not found, subst [drum=%u, bank=%u/%u, pc=%u]\n",
+            pSynth->channels[channel].channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL ? 1 : 0,
+            (pChannel->bankNum & 0xFF00) >> 8, pChannel->bankNum & 0xFF, program,
+            pSynth->channels[channel].channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL ? 1 : 0,
+            (bank & 0xFF00) >> 8, bank & 0xFF, 0
+        );
+        goto match_success;
+    }
+
+    EAS_Report(_EAS_SEVERITY_WARNING, "VMProgramChange: Program [drum=%u, bank=%u/%u, pc=%u] not found!!!\n", 
+        pSynth->channels[channel].channelFlags & CHANNEL_FLAG_RHYTHM_CHANNEL ? 1 : 0,
+        (pChannel->bankNum & 0xFF00) >> 8, pChannel->bankNum & 0xFF, program);
+
+match_success:
 
     /* we have our new program change for this channel */
     pChannel->programNum = program;
