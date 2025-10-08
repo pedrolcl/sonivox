@@ -1777,7 +1777,7 @@ static EAS_RESULT Parse_insh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     {
         EAS_Report(_EAS_SEVERITY_WARNING, "DLS bank number is out of range: %08x\n", bank);
     }
-    if (bank & 0x80000000u)
+    if (bank & 0x80000000u || (bank & 0x7f7f) == DEFAULT_RHYTHM_BANK_NUMBER)
     {
         /* drum instrument */
         bank &= 0x7f7f;

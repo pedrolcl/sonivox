@@ -2831,21 +2831,7 @@ subst:
         }
     }
 
-    // 4. for drums, bank to DEFAULT_RHYTHM_BANK_NUMBER but don't check drum flag
-    if ((bank & 0x1FF00) == (0x10000 | DEFAULT_RHYTHM_BANK_NUMBER)) {
-        locale = (DEFAULT_RHYTHM_BANK_NUMBER << 8) | program;
-
-        for (i = 0, p = pDLS->pDLSPrograms; i < pDLS->numDLSPrograms; i++, p++)
-        {
-            if (p->locale == locale)
-            {
-                *pRegionIndex = p->regionIndex;
-                goto subst_success;
-            }
-        }
-    }
-
-    // 5. for drums, pc to 0
+    // 4. for drums, pc to 0
     if ((bank & 0x10000) && program != 0)
     {
         program = 0;
