@@ -125,6 +125,10 @@
 #include "eas_report.h"
 #include <string.h>
 
+#ifdef _SF2_SUPPORT
+#include "eas_sf2.h"
+#endif
+
 #if defined(_16_BIT_SAMPLES)
 // for mp3 decoding
 #define MINIMP3_IMPLEMENTATION
@@ -148,11 +152,11 @@
 
 // #define _DEBUG_DLS
 
-#define DLS_MAX_WAVE_COUNT      2048
-#define DLS_MAX_ART_COUNT       4096
-#define DLS_MAX_REGION_COUNT    4096
+#define DLS_MAX_WAVE_COUNT      32767
+#define DLS_MAX_ART_COUNT       32767
+#define DLS_MAX_REGION_COUNT    32767
 #define DLS_MAX_INST_COUNT      512
-#define MAX_DLS_WAVE_SIZE       (1024*1024)
+#define MAX_DLS_WAVE_SIZE       (1024*1024*32) // 32 MiB
 
 #ifndef EAS_U32_MAX
 #define EAS_U32_MAX             (4294967295U)
@@ -332,7 +336,7 @@ static const S_CONNECTION connTable[] =
     { CONN_SRC_NONE, CONN_SRC_NONE, CONN_DST_REVERB, PARAM_DEFAULT_REVERB_SEND },
     { CONN_SRC_CC91, CONN_SRC_NONE, CONN_DST_REVERB, PARAM_MIDI_CC91_TO_REVERB_SEND },
     { CONN_SRC_NONE, CONN_SRC_NONE, CONN_DST_CHORUS, PARAM_DEFAULT_CHORUS_SEND },
-    { CONN_SRC_CC93, CONN_SRC_NONE, CONN_DST_REVERB, PARAM_MIDI_CC93_TO_CHORUS_SEND }
+    { CONN_SRC_CC93, CONN_SRC_NONE, CONN_DST_CHORUS, PARAM_MIDI_CC93_TO_CHORUS_SEND }
 };
 #define ENTRIES_IN_CONN_TABLE (sizeof(connTable)/sizeof(S_CONNECTION))
 
@@ -392,10 +396,10 @@ static const S_DLS_ART_VALUES defaultArt =
     0,              /* Mod EG to pitch: 0 cents */
 
     0,              /* Default pan: 0.0% */
-    0,              /* Default reverb send: 0.0% */
     1000,           /* Default CC91 to reverb send: 100.0% */
+    0,              /* Default reverb send: 0.0% */
+    1000,           /* Default CC93 to chorus send: 100.0% */
     0,              /* Default chorus send: 0.0% */
-    1000            /* Default CC93 to chorus send: 100.0% */
     }
 };
 
@@ -446,11 +450,6 @@ static EAS_RESULT Parse_wlnk (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
 static EAS_RESULT Parse_cdl (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 size, EAS_U32 *pValue);
 static void Convert_rgn (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_U16 regionIndex, EAS_U16 artIndex, EAS_U16 waveIndex, S_WSMP_DATA *pWsmp);
 static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES *pDLSArt,  EAS_U16 artIndex);
-static EAS_I16 ConvertSampleRate (EAS_U32 sampleRate);
-static EAS_I16 ConvertSustain (EAS_I32 sustain);
-static EAS_I16 ConvertPitchToPhaseInc (EAS_I32 pitchCents);
-static EAS_I8 ConvertPan (EAS_I32 pan);
-static EAS_U8 ConvertQ (EAS_I32 q);
 
 #ifdef _DEBUG_DLS
 void DumpDLS (S_DLS *pEAS);
@@ -520,7 +519,16 @@ EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle,
         return result;
     if (temp != CHUNK_DLS)
     {
-        EAS_Report(_EAS_SEVERITY_ERROR, "Expected DLS chunk, got %08lx\n", temp);
+        if (temp == CHUNK_TYPE('s', 'f', 'b', 'k')) {
+            // let SF2Parser takeover
+#ifdef _SF2_SUPPORT
+            return SF2Parser(hwInstData, fileHandle, offset, ppDLS);
+#else
+            EAS_Report(_EAS_SEVERITY_ERROR, "SF2 support is not enabled\n");
+            return EAS_ERROR_FEATURE_NOT_AVAILABLE;
+#endif
+        }
+        EAS_Report(_EAS_SEVERITY_ERROR, "Expected DLS chunk, got %08x\n", temp);
         return EAS_ERROR_FILE_FORMAT;
     }
 
@@ -663,12 +671,13 @@ EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle,
         dls.pDLS = EAS_HWMalloc(dls.hwInstData, size);
         if (dls.pDLS == NULL)
         {
-            EAS_Report(_EAS_SEVERITY_ERROR, "EAS_HWMalloc failed for DLS memory allocation size %ld\n", size);
+            EAS_Report(_EAS_SEVERITY_ERROR, "EAS_HWMalloc failed for DLS memory allocation size %d\n", size);
             EAS_HWFree(dls.hwInstData, dls.wsmpData);
             return EAS_ERROR_MALLOC_FAILED;
         }
         EAS_HWMemSet(dls.pDLS, 0, size);
         dls.pDLS->refCount = 1;
+        dls.pDLS->libType = DLSLIB_TYPE_DLS;
         p = PtrOfs(dls.pDLS, sizeof(S_EAS));
 
         /* setup pointer to programs */
@@ -758,8 +767,17 @@ EAS_RESULT DLSCleanup (EAS_HW_DATA_HANDLE hwInstData, S_DLS *pDLS)
     {
         if (pDLS->refCount)
         {
-            if (--pDLS->refCount == 0)
-                EAS_HWFree(hwInstData, pDLS);
+            if (--pDLS->refCount == 0) {
+                if (pDLS->libType == DLSLIB_TYPE_DLS) {
+                    EAS_HWFree(hwInstData, pDLS);
+#ifdef _SF2_SUPPORT
+                } else if (pDLS->libType == DLSLIB_TYPE_SF2) {
+                    return SF2Cleanup(hwInstData, pDLS);
+#endif
+                } else {
+                    return EAS_ERROR_DATA_INCONSISTENCY;
+                }
+            }
         }
     }
     return EAS_SUCCESS;
@@ -988,6 +1006,7 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     // limit to reasonable size
     if (dataSize < 0 || dataSize > MAX_DLS_WAVE_SIZE)
     {
+        EAS_Report(_EAS_SEVERITY_ERROR, "DLS wave chunk has invalid data size %d\n", dataSize);
         return EAS_ERROR_SOUND_LIBRARY;
     }
 
@@ -1146,7 +1165,7 @@ static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WS
         return result;
     if (p->gain > 0)
     {
-        EAS_Report(_EAS_SEVERITY_DETAIL, "Positive gain [%ld] in DLS wsmp ignored, set to 0dB\n", p->gain);
+        EAS_Report(_EAS_SEVERITY_DETAIL, "Positive gain [%d] in DLS wsmp ignored, set to 0dB\n", p->gain);
         p->gain = 0;
     }
 
@@ -1163,7 +1182,7 @@ static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WS
     {
 
         if (ltemp > 1)
-            EAS_Report(_EAS_SEVERITY_WARNING, "DLS sample with %lu loops, ignoring extra loops\n", ltemp);
+            EAS_Report(_EAS_SEVERITY_WARNING, "DLS sample with %u loops, ignoring extra loops\n", ltemp);
 
         /* skip ahead to loop data */
         if ((result = EAS_HWFileSeek(pDLSData->hwInstData, pDLSData->fileHandle, pos + (EAS_I32) cbSize)) != EAS_SUCCESS)
@@ -1756,7 +1775,7 @@ static EAS_RESULT Parse_insh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     /* verify the parameters are valid */
     if (bank & 0x7fff8080)
     {
-        EAS_Report(_EAS_SEVERITY_WARNING, "DLS bank number is out of range: %08lx\n", bank);
+        EAS_Report(_EAS_SEVERITY_WARNING, "DLS bank number is out of range: %08x\n", bank);
     }
     if (bank & 0x80000000u)
     {
@@ -1771,7 +1790,7 @@ static EAS_RESULT Parse_insh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     }
     if (program > 127)
     {
-        EAS_Report(_EAS_SEVERITY_WARNING, "DLS program number is out of range: %08lx\n", program);
+        EAS_Report(_EAS_SEVERITY_WARNING, "DLS program number is out of range: %08x\n", program);
         program &= 0x7f;
     }
 
@@ -2103,7 +2122,7 @@ static EAS_RESULT Parse_rgnh (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_DL
     pRgn->wtRegion.region.rangeHigh = (EAS_U8) highKey;
 
     /*lint -e{734} keyGroup will always be from 0-15 */
-    pRgn->wtRegion.region.keyGroupAndFlags = keyGroup << 8;
+    pRgn->wtRegion.region.keyGroupAndFlags = (keyGroup & 0x7f) << 8;
     pRgn->velLow = (EAS_U8) lowVel;
     pRgn->velHigh = (EAS_U8) highVel;
     if (optionFlags & F_RGN_OPTION_SELFNONEXCLUSIVE)
@@ -2610,7 +2629,7 @@ static void Convert_rgn (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_U16 regionIndex, E
     pRgn->wtRegion.gain = (EAS_I16) (pWsmp->gain >> 16);
     pRgn->wtRegion.loopStart = pWsmp->loopStart;
     pRgn->wtRegion.loopEnd = (pWsmp->loopStart + pWsmp->loopLength);
-    pRgn->wtRegion.tuning = pWsmp->fineTune -(pWsmp->unityNote * 100) + ConvertSampleRate(pWsmp->sampleRate);
+    pRgn->wtRegion.tuning = pWsmp->fineTune -(pWsmp->unityNote * 100) + DLSConvertSampleRate(pWsmp->sampleRate);
     if (pWsmp->loopLength != 0)
         pRgn->wtRegion.region.keyGroupAndFlags |= REGION_FLAG_IS_LOOPED;
 }
@@ -2639,9 +2658,9 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
     // Be aware, these values have been RSHIFTED by 16 bits
 
     /* LFO parameters */
-    pArt->modLFO.lfoFreq = ConvertPitchToPhaseInc(pDLSArt->values[PARAM_MOD_LFO_FREQ]);
+    pArt->modLFO.lfoFreq = DLSConvertPitchToPhaseInc(pDLSArt->values[PARAM_MOD_LFO_FREQ]);
     pArt->modLFO.lfoDelay = -DLSConvertDelay(pDLSArt->values[PARAM_MOD_LFO_DELAY]);
-    pArt->vibLFO.lfoFreq = ConvertPitchToPhaseInc(pDLSArt->values[PARAM_VIB_LFO_FREQ]);
+    pArt->vibLFO.lfoFreq = DLSConvertPitchToPhaseInc(pDLSArt->values[PARAM_VIB_LFO_FREQ]);
     pArt->vibLFO.lfoDelay = -DLSConvertDelay(pDLSArt->values[PARAM_VIB_LFO_DELAY]);
 
     /* EG1 parameters */
@@ -2649,27 +2668,27 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
     pArt->eg1.attackTime = pDLSArt->values[PARAM_VOL_EG_ATTACK];
     pArt->eg1.holdTime = pDLSArt->values[PARAM_VOL_EG_HOLD];
     pArt->eg1.decayTime = pDLSArt->values[PARAM_VOL_EG_DECAY];
-    pArt->eg1.sustainLevel = ConvertSustain(pDLSArt->values[PARAM_VOL_EG_SUSTAIN]);
-    pArt->eg1.releaseTime = DLSConvertRate(pDLSArt->values[PARAM_VOL_EG_RELEASE]);
+    pArt->eg1.sustainLevel = DLSConvertSustain(pDLSArt->values[PARAM_VOL_EG_SUSTAIN]);
+    pArt->eg1.releaseTime = DLSConvertDelay(pDLSArt->values[PARAM_VOL_EG_RELEASE]);
     pArt->eg1.velToAttack = pDLSArt->values[PARAM_VOL_EG_VEL_TO_ATTACK];
     pArt->eg1.keyNumToDecay = pDLSArt->values[PARAM_VOL_EG_KEY_TO_DECAY];
     pArt->eg1.keyNumToHold = pDLSArt->values[PARAM_VOL_EG_KEY_TO_HOLD];
-    pArt->eg1ShutdownTime = DLSConvertRate(pDLSArt->values[PARAM_VOL_EG_SHUTDOWN]);
+    pArt->eg1ShutdownTime = DLSConvertDelay(pDLSArt->values[PARAM_VOL_EG_SHUTDOWN]);
 
     /* EG2 parameters */
     pArt->eg2.delayTime = DLSConvertDelay(pDLSArt->values[PARAM_MOD_EG_DELAY]);
     pArt->eg2.attackTime = pDLSArt->values[PARAM_MOD_EG_ATTACK];
     pArt->eg2.holdTime = pDLSArt->values[PARAM_MOD_EG_HOLD];
     pArt->eg2.decayTime = pDLSArt->values[PARAM_MOD_EG_DECAY];
-    pArt->eg2.sustainLevel = ConvertSustain(pDLSArt->values[PARAM_MOD_EG_SUSTAIN]);
-    pArt->eg2.releaseTime = DLSConvertRate(pDLSArt->values[PARAM_MOD_EG_RELEASE]);
+    pArt->eg2.sustainLevel = DLSConvertSustain(pDLSArt->values[PARAM_MOD_EG_SUSTAIN]);
+    pArt->eg2.releaseTime = DLSConvertDelay(pDLSArt->values[PARAM_MOD_EG_RELEASE]);
     pArt->eg2.velToAttack = pDLSArt->values[PARAM_MOD_EG_VEL_TO_ATTACK];
     pArt->eg2.keyNumToDecay = pDLSArt->values[PARAM_MOD_EG_KEY_TO_DECAY];
     pArt->eg2.keyNumToHold = pDLSArt->values[PARAM_MOD_EG_KEY_TO_HOLD];
 
     /* filter parameters */
     pArt->filterCutoff = pDLSArt->values[PARAM_INITIAL_FC];
-    pArt->filterQandFlags = ConvertQ(pDLSArt->values[PARAM_INITIAL_Q]);
+    pArt->filterQandFlags = DLSConvertQ(pDLSArt->values[PARAM_INITIAL_Q]);
     pArt->modLFOToFc = pDLSArt->values[PARAM_MOD_LFO_TO_FC];
     pArt->modLFOCC1ToFc = pDLSArt->values[PARAM_MOD_LFO_CC1_TO_FC];
     pArt->modLFOChanPressToFc = pDLSArt->values[PARAM_MOD_LFO_CHAN_PRESS_TO_FC];
@@ -2694,17 +2713,17 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
     pArt->eg2ToPitch = pDLSArt->values[PARAM_MOD_EG_TO_PITCH];
 
     /* output parameters */
-    pArt->pan = ConvertPan(pDLSArt->values[PARAM_DEFAULT_PAN]);
+    pArt->pan = DLSConvertPan(pDLSArt->values[PARAM_DEFAULT_PAN]);
 
     if (pDLSArt->values[PARAM_VEL_TO_GAIN] != 0)
         pArt->filterQandFlags |= FLAG_DLS_VELOCITY_SENSITIVE;
 
-#ifdef _REVERB
+#ifdef _CC_REVERB
     pArt->reverbSend = pDLSArt->values[PARAM_DEFAULT_REVERB_SEND];
     pArt->cc91ToReverbSend = pDLSArt->values[PARAM_MIDI_CC91_TO_REVERB_SEND];
 #endif
 
-#ifdef _CHORUS
+#ifdef _CC_CHORUS
     pArt->chorusSend = pDLSArt->values[PARAM_DEFAULT_CHORUS_SEND];
     pArt->cc93ToChorusSend = pDLSArt->values[PARAM_MIDI_CC93_TO_CHORUS_SEND];
 #endif
@@ -2722,7 +2741,7 @@ static void Convert_art (SDLS_SYNTHESIZER_DATA *pDLSData, const S_DLS_ART_VALUES
  * Side Effects:
  *----------------------------------------------------------------------------
 */
-static EAS_I16 ConvertSampleRate (EAS_U32 sampleRate)
+EAS_I16 DLSConvertSampleRate (EAS_U32 sampleRate)
 {
     return (EAS_I16) (1200.0 * log10((double) sampleRate / (double) _OUTPUT_SAMPLE_RATE) / log10(2.0));
 }
@@ -2733,7 +2752,7 @@ static EAS_I16 ConvertSampleRate (EAS_U32 sampleRate)
  * Convert sustain level [0, 1000] to pitch/Fc multipler for EG2
  *----------------------------------------------------------------------------
 */
-static EAS_I16 ConvertSustain (EAS_I32 sustain)
+EAS_I16 DLSConvertSustain (EAS_I32 sustain)
 {
     /* check for sustain level of zero */
     if (sustain == 0)
@@ -2757,22 +2776,17 @@ static EAS_I16 ConvertSustain (EAS_I32 sustain)
 */
 EAS_I16 DLSConvertDelay (EAS_I32 timeCents)
 {
-    EAS_I32 temp;
-
     if (timeCents == ZERO_TIME_IN_CENTS)
         return 0;
 
     /* divide time by secs per frame to get number of frames */
-    temp = timeCents - DLS_RATE_CONVERT;
-
-    /* convert from time cents to 10-bit fraction */
-    temp = FMUL_15x15(temp, TIME_CENTS_TO_LOG2);
+    timeCents -= DLS_RATE_CONVERT;
 
     /* convert to frame count */
-    temp = EAS_LogToLinear16(temp - (15 << 10));
+    timeCents = EAS_Calculate2toX(timeCents - 15 * 1200);
 
-    if (temp < SYNTH_FULL_SCALE_EG1_GAIN)
-        return (EAS_I16) temp;
+    if (timeCents < SYNTH_FULL_SCALE_EG1_GAIN)
+        return (EAS_I16) timeCents;
     return SYNTH_FULL_SCALE_EG1_GAIN;
 
     // powf(2, (float)timeCents / 1200) * ((float)_OUTPUT_SAMPLE_RATE / BUFFER_SIZE_IN_MONO_SAMPLES);
@@ -2794,15 +2808,7 @@ EAS_I16 DLSConvertRate (EAS_I32 timeCents)
     /* divide frame rate by time in log domain to get rate */
     temp = DLS_RATE_CONVERT - timeCents;
 
-#if 1
     temp = EAS_Calculate2toX(temp);
-#else
-    /* convert from time cents to 10-bit fraction */
-    temp = FMUL_15x15(temp, TIME_CENTS_TO_LOG2);
-
-    /* convert to rate */
-    temp = EAS_LogToLinear16(temp);
-#endif
 
     if (temp < SYNTH_FULL_SCALE_EG1_GAIN)
         return (EAS_I16) temp;
@@ -2824,7 +2830,7 @@ EAS_I16 DLSConvertRate (EAS_I32 timeCents)
  * Side Effects:
  *----------------------------------------------------------------------------
 */
-static EAS_I16 ConvertPitchToPhaseInc (EAS_I32 pitchCents)
+EAS_I16 DLSConvertPitchToPhaseInc (EAS_I32 pitchCents)
 {
 
     /* check range */
@@ -2855,7 +2861,7 @@ static EAS_I16 ConvertPitchToPhaseInc (EAS_I32 pitchCents)
  * Side Effects:
  *----------------------------------------------------------------------------
 */
-static EAS_I8 ConvertPan (EAS_I32 pan)
+EAS_I8 DLSConvertPan (EAS_I32 pan)
 {
 
     /* multiply by conversion factor */
@@ -2868,27 +2874,23 @@ static EAS_I8 ConvertPan (EAS_I32 pan)
 }
 
 /*----------------------------------------------------------------------------
- * ConvertQ()
+ * DLSConvertQ()
  *----------------------------------------------------------------------------
- * Convert the DLS filter resonance to an index value used by the synth
- * that accesses tables of coefficients based on the Q.
+ * q: Resonance peak's relative gain to pass magnitude in 0.1dB steps
  *----------------------------------------------------------------------------
 */
-static EAS_U8 ConvertQ (EAS_I32 q)
+EAS_U16 DLSConvertQ (EAS_I32 q)
 {
-
     /* apply limits */
-    if (q <= 0)
+    if (q <= 0) {
         return 0;
+    }
 
-    /* convert to table index */
-    /*lint -e{704} use shift for performance */
-    q = (FILTER_Q_CONVERSION_FACTOR * q + 0x4000) >> 15;
+    if (q > FILTER_Q_MASK) {
+        return FILTER_Q_MASK;
+    }
 
-    /* apply upper limit */
-    if (q >= FILTER_RESONANCE_NUM_ENTRIES)
-        q = FILTER_RESONANCE_NUM_ENTRIES - 1;
-    return (EAS_U8) q;
+    return q;
 }
 
 #ifdef _DEBUG_DLS

@@ -31,14 +31,37 @@
 #include "eas.h"
 #include "eas_data.h"
 #include "eas_config.h"
+#include "eas_effects.h"
 #include "eas_report.h"
 #include "eas_midictrl.h"
 #include "eas_host.h"
 #include "eas_synth_protos.h"
 #include "eas_vm_protos.h"
+#include "eas_math.h"
 
 #ifdef DLS_SYNTHESIZER
 #include "eas_mdls.h"
+#endif
+
+// About CC reverb and chorus:
+// 1. There is only a single global reverb effect module instance per synth instance, likewise for the chorus effect.
+//    The effect module's instances are created in EAS_Init() and destroyed in EAS_Shutdown().
+//    The effect modules belong to the synth instance.
+//    VM keeps references of the modules (if needed) for convenience, but the ownership is not transferred.
+// 2. CC91 and CC93 are channel messages, which set send levels of the reverb and chorus effects for one of the 16 channels.
+//    Send levels of each channel could be different, however the configurations of the effects (which is the module data in implementation)
+//    are global, and same no matter if the effects are applied to the final mix or each channel.
+// 3. VMAddSamples applies the effects per channel, and EAS_MixEnginePost() applies the effects to the final mix.
+//    These two FX processes are EXCLUSIVE. In other words, ReverbProcess() and ChorusProcess() are never called twice through one EAS_Render() call.
+//
+
+#ifdef _CC_REVERB
+#include "eas_reverb.h"
+#include "eas_reverbdata.h"
+#endif
+#ifdef _CC_CHORUS
+#include "eas_chorus.h"
+#include "eas_chorusdata.h"
 #endif
 
 // #define _DEBUG_VM
@@ -268,6 +291,7 @@ EAS_RESULT VMInitialize (S_EAS_DATA *pEASData)
 {
     S_VOICE_MGR *pVoiceMgr;
     EAS_INT i;
+    EAS_RESULT result;
 
     /* check Configuration Module for data allocation */
     if (pEASData->staticMemoryModel)
@@ -307,9 +331,106 @@ EAS_RESULT VMInitialize (S_EAS_DATA *pEASData)
     pSecondarySynth->pfInitialize(pVoiceMgr);
 #endif
 
+#ifdef _CC_CHORUS
+    VMInitChorus(pEASData, pVoiceMgr);
+#endif
+
+#ifdef _CC_REVERB
+    VMInitReverb(pEASData, pVoiceMgr);
+#endif
+
     pEASData->pVoiceMgr = pVoiceMgr;
     return EAS_SUCCESS;
+
+error_cleanup:
+    if (!pEASData->staticMemoryModel) {
+        EAS_HWFree(pEASData->hwInstData, pVoiceMgr);
+    }
+    return result;
 }
+
+#ifdef _CC_REVERB
+EAS_RESULT VMInitReverb(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
+{
+    if (pEASData == NULL || pVoiceMgr == NULL)
+    {
+        return EAS_ERROR_INVALID_PARAMETER;
+    }
+
+    pVoiceMgr->reverbModule = pEASData->effectsModules[EAS_MODULE_REVERB];
+    if (pVoiceMgr->reverbModule.effect == NULL)
+    {
+        EAS_Report(_EAS_SEVERITY_ERROR, "VMInitReverb: Reverb module is not available in this build or EAS is not initalized\n");
+        return EAS_ERROR_INVALID_MODULE;
+    }
+    if (pVoiceMgr->reverbModule.effectData == NULL)
+    {
+        EAS_Report(_EAS_SEVERITY_ERROR, "VMInitReverb: Reverb module is not initalized\n");
+        pVoiceMgr->reverbModule.effect = NULL;
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+
+    // TODO: a reset function may be needed to reinitialize the effect
+
+    pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_BYPASS, EAS_FALSE);
+    pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_PRESET, REVERB_DEFAULT_ROOM_NUMBER);
+    // Dry audio is mixed by VMAddSamples, fx module's mix is not needed
+    pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_DRY, EAS_REVERB_DRY_MIN);
+
+    return EAS_SUCCESS;
+}
+
+void VMShutdownReverb(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
+{
+    if (pVoiceMgr->reverbModule.effect) {
+        pVoiceMgr->reverbModule.effect->pFSetParam(pVoiceMgr->reverbModule.effectData, EAS_PARAM_REVERB_PRESET, REVERB_DEFAULT_ROOM_NUMBER);
+    }
+    pVoiceMgr->reverbModule.effect = NULL;
+    pVoiceMgr->reverbModule.effectData = NULL;
+}
+#endif
+
+#ifdef _CC_CHORUS
+EAS_RESULT VMInitChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
+{
+    if (pEASData == NULL || pVoiceMgr == NULL)
+    {
+        return EAS_ERROR_INVALID_PARAMETER;
+    }
+
+    pVoiceMgr->chorusModule = pEASData->effectsModules[EAS_MODULE_CHORUS];
+    if (pVoiceMgr->chorusModule.effect == NULL)
+    {
+        EAS_Report(_EAS_SEVERITY_ERROR, "VMInitChorus: Chorus module is not available in this build or EAS is not initalized\n");
+        return EAS_ERROR_INVALID_MODULE;
+    }
+    if (pVoiceMgr->chorusModule.effectData == NULL)
+    {
+        EAS_Report(_EAS_SEVERITY_ERROR, "VMInitChorus: Chorus module is not initalized\n");
+        pVoiceMgr->chorusModule.effect = NULL;
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+
+    // TODO: a reset function may be needed to reinitialize the effect
+
+    pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_BYPASS, EAS_FALSE);
+    pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_PRESET, EAS_CHORUS_PRESET_DEFAULT);
+    // Dry audio is mixed by VMAddSamples, fx module's mix is not needed
+    pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_DRY, EAS_CHORUS_DRY_MIN);
+
+    return EAS_SUCCESS;
+}
+
+void VMShutdownChorus(S_EAS_DATA *pEASData, S_VOICE_MGR *pVoiceMgr)
+{
+    if (pVoiceMgr->chorusModule.effect) {
+        pVoiceMgr->chorusModule.effect->pFSetParam(pVoiceMgr->chorusModule.effectData, EAS_PARAM_CHORUS_PRESET, EAS_CHORUS_PRESET_DEFAULT);
+    }
+    pVoiceMgr->chorusModule.effect = NULL;
+    pVoiceMgr->chorusModule.effectData = NULL;
+}
+#endif
+
 
 /*----------------------------------------------------------------------------
  * VMInitMIDI()
@@ -389,6 +510,13 @@ EAS_RESULT VMInitMIDI (S_EAS_DATA *pEASData, S_SYNTH **ppSynth)
     pSynth->refCount = 1;
     pSynth->priority = DEFAULT_SYNTH_PRIORITY;
     pSynth->poolAlloc[0] = (EAS_U8) pEASData->pVoiceMgr->maxPolyphony;
+
+#ifdef _CC_REVERB
+    pSynth->reverbEnabled = EAS_TRUE;
+#endif
+#ifdef _CC_CHORUS
+    pSynth->chorusEnabled = EAS_TRUE;
+#endif
 
     VMInitializeAllChannels(pEASData->pVoiceMgr, pSynth);
 
@@ -552,12 +680,12 @@ void VMResetControllers (S_SYNTH *pSynth)
         pChannel->pan = DEFAULT_PAN;
         pChannel->expression = DEFAULT_EXPRESSION;
 
-#ifdef  _REVERB
-        pSynth->channels[i].reverbSend = DEFAULT_REVERB_SEND;
+#ifdef  _CC_REVERB
+        pSynth->reverbSendLevels[i] = DEFAULT_REVERB_SEND;
 #endif
 
-#ifdef  _CHORUS
-        pSynth->channels[i].chorusSend = DEFAULT_CHORUS_SEND;
+#ifdef  _CC_CHORUS
+        pSynth->chorusSendLevels[i] = DEFAULT_CHORUS_SEND;
 #endif
 
         pChannel->channelPressure = DEFAULT_CHANNEL_PRESSURE;
@@ -1463,7 +1591,7 @@ void VMCheckKeyGroup (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U16 keyGroup,
             {
                 /* check key group */
                 pRegion = GetRegionPtr(pSynth, pVoiceMgr->voices[voiceNum].regionIndex);
-                if (keyGroup == (pRegion->keyGroupAndFlags & 0x0f00))
+                if (keyGroup == (pRegion->keyGroupAndFlags & REGION_KEY_GROUP_MASK))
                 {
 #ifdef _DEBUG_VM
                     { /* dpp: EAS_ReportEx(_EAS_SEVERITY_INFO, "VMCheckKeyGroup: voice %d matches key group %d\n", voiceNum, keyGroup >> 8); */ }
@@ -1488,7 +1616,7 @@ void VMCheckKeyGroup (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U16 keyGroup,
             {
                 /* check key group */
                 pRegion = GetRegionPtr(pSynth, pVoiceMgr->voices[voiceNum].nextRegionIndex);
-                if (keyGroup == (pRegion->keyGroupAndFlags & 0x0f00))
+                if (keyGroup == (pRegion->keyGroupAndFlags & REGION_KEY_GROUP_MASK))
                 {
 #ifdef _DEBUG_VM
                     { /* dpp: EAS_ReportEx(_EAS_SEVERITY_INFO, "VMCheckKeyGroup: voice %d matches key group %d\n", voiceNum, keyGroup >> 8); */ }
@@ -1650,8 +1778,8 @@ void VMStartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U8 channel, EAS_
     {
 
         /* check for key group exclusivity */
-        keyGroup = pRegion->keyGroupAndFlags & 0x0f00;
-        if (keyGroup!= 0)
+        keyGroup = pRegion->keyGroupAndFlags & REGION_KEY_GROUP_MASK;
+        if (keyGroup != 0)
             VMCheckKeyGroup(pVoiceMgr, pSynth, keyGroup, channel);
 
         /* check polyphony limit and steal a voice if necessary */
@@ -1719,8 +1847,6 @@ void VMStartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U8 channel, EAS_
             channel, note, velocity); */ }
     }
 #endif
-
-    return;
 }
 
 /*----------------------------------------------------------------------------
@@ -2317,16 +2443,16 @@ void VMControlChange (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_U8 channel, E
         }
 
         break;
-#ifdef _REVERB
+#ifdef _CC_REVERB
     case MIDI_CONTROLLER_REVERB_SEND:
         /* we treat send as a 7-bit controller and only use the MSB */
-        pSynth->channels[channel].reverbSend = value;
+        pSynth->reverbSendLevels[channel] = value;
         break;
 #endif
-#ifdef _CHORUS
+#ifdef _CC_CHORUS
     case MIDI_CONTROLLER_CHORUS_SEND:
         /* we treat send as a 7-bit controller and only use the MSB */
-        pSynth->channels[channel].chorusSend = value;
+        pSynth->chorusSendLevels[channel] = value;
         break;
 #endif
     case MIDI_CONTROLLER_RESET_CONTROLLERS:
@@ -2882,37 +3008,86 @@ EAS_I32 VMAddSamples (S_VOICE_MGR *pVoiceMgr, EAS_I32 *pMixBuffer, EAS_I32 numSa
     EAS_INT voiceNum;
     EAS_BOOL done;
 
-#ifdef  _REVERB
-    EAS_PCM *pReverbSendBuffer;
-#endif  // ifdef    _REVERB
+    EAS_I32 synthBuffer[NUM_OUTPUT_CHANNELS * BUFFER_SIZE_IN_MONO_SAMPLES];
+    EAS_BOOL reverbProcess = EAS_FALSE;
+    EAS_BOOL chorusProcess = EAS_FALSE;
 
-#ifdef  _CHORUS
-    EAS_PCM *pChorusSendBuffer;
-#endif  // ifdef    _CHORUS
+    EAS_U16 sendLevel;
+
+#ifdef _CC_CHORUS
+    EAS_HWMemSet(pVoiceMgr->chorusSendBuffer, 0, sizeof(pVoiceMgr->chorusSendBuffer));
+#endif
+
+#ifdef _CC_REVERB
+    EAS_HWMemSet(pVoiceMgr->reverbSendBuffer, 0, sizeof(pVoiceMgr->reverbSendBuffer));
+#endif
 
     voicesRendered = 0;
     for (voiceNum = 0; voiceNum < MAX_SYNTH_VOICES; voiceNum++)
     {
+        S_SYNTH_VOICE* pSynthVoice = &pVoiceMgr->voices[voiceNum];
+        const EAS_U8 channel = pSynthVoice->channel;
 
         /* retarget stolen voices */
-        if ((pVoiceMgr->voices[voiceNum].voiceState == eVoiceStateStolen) && (pVoiceMgr->voices[voiceNum].gain <= 0))
+        // TODO: do we really need gain <= 0
+        if ((pSynthVoice->voiceState == eVoiceStateStolen) && (pSynthVoice->gain <= 0))
             VMRetargetStolenVoice(pVoiceMgr, voiceNum);
 
         /* get pointer to virtual synth */
-        pSynth = pVoiceMgr->pSynth[pVoiceMgr->voices[voiceNum].channel >> 4];
+        pSynth = pVoiceMgr->pSynth[channel >> 4];
 
         /* synthesize active voices */
-        if (pVoiceMgr->voices[voiceNum].voiceState != eVoiceStateFree)
+        if (pSynthVoice->voiceState != eVoiceStateFree)
         {
-            done = GetSynthPtr(voiceNum)->pfUpdateVoice(pVoiceMgr, pSynth, &pVoiceMgr->voices[voiceNum], GetAdjustedVoiceNum(voiceNum), pMixBuffer, numSamples);
+            done = GetSynthPtr(voiceNum)->pfUpdateVoice(pVoiceMgr, pSynth, &pVoiceMgr->voices[voiceNum], GetAdjustedVoiceNum(voiceNum), synthBuffer, numSamples);
             voicesRendered++;
+
+            // add the samples to the mix buffer and reverb and chorus buffer
+            for (EAS_INT i = 0; i < BUFFER_SIZE_IN_MONO_SAMPLES * NUM_OUTPUT_CHANNELS; i++) {
+                pMixBuffer[i] += synthBuffer[i];
+
+                // these effect modules have 16bit IO
+#ifdef _CC_REVERB
+#if defined(DLS_SYNTHESIZER)
+                if (pSynthVoice->regionIndex & FLAG_RGN_IDX_DLS_SYNTH) {
+                    const S_DLS_ARTICULATION* pDLSArt = &pSynth->pDLS->pDLSArticulations[pVoiceMgr->wtVoices[voiceNum].artIndex];
+                    sendLevel = pDLSArt->reverbSend * 128 / 1000;
+                    sendLevel += pSynth->reverbSendLevels[channel & 15] * pDLSArt->cc91ToReverbSend / 1000;
+                } else 
+#endif
+                {
+                    sendLevel = pSynth->reverbSendLevels[channel & 15];
+                }
+                if (pSynth->reverbEnabled && sendLevel != 0) {
+                    pVoiceMgr->reverbSendBuffer[i] += synthBuffer[i] * sendLevel / 128;
+                    reverbProcess = EAS_TRUE;
+                }
+#endif
+
+#ifdef _CC_CHORUS
+#if defined(DLS_SYNTHESIZER)
+                if (pSynthVoice->regionIndex & FLAG_RGN_IDX_DLS_SYNTH) {
+                    const S_DLS_ARTICULATION* pDLSArt = &pSynth->pDLS->pDLSArticulations[pVoiceMgr->wtVoices[voiceNum].artIndex];
+                    sendLevel = pDLSArt->chorusSend * 128 / 1000;
+                    sendLevel += pSynth->chorusSendLevels[channel & 15] * pDLSArt->cc93ToChorusSend / 1000;
+                } else 
+#endif
+                {
+                    sendLevel = pSynth->chorusSendLevels[channel & 15];
+                }
+                if (pSynth->chorusEnabled && sendLevel != 0) {
+                    pVoiceMgr->chorusSendBuffer[i] += synthBuffer[i] * sendLevel / 128;
+                    chorusProcess = EAS_TRUE;
+                }
+#endif
+            }
 
             /* voice is finished */
             if (done == EAS_TRUE)
             {
                 /* set gain of stolen voice to zero so it will be restarted */
-                if (pVoiceMgr->voices[voiceNum].voiceState == eVoiceStateStolen)
-                    pVoiceMgr->voices[voiceNum].gain = 0;
+                if (pSynthVoice->voiceState == eVoiceStateStolen)
+                    pSynthVoice->gain = 0;
 
                 /* or return it to the free voice pool */
                 else
@@ -2920,17 +3095,36 @@ EAS_I32 VMAddSamples (S_VOICE_MGR *pVoiceMgr, EAS_I32 *pMixBuffer, EAS_I32 numSa
             }
 
             /* if this voice is scheduled to be muted, set the mute flag */
-            if (pVoiceMgr->voices[voiceNum].voiceFlags & VOICE_FLAG_DEFER_MUTE)
+            if (pSynthVoice->voiceFlags & VOICE_FLAG_DEFER_MUTE)
             {
-                pVoiceMgr->voices[voiceNum].voiceFlags &= ~(VOICE_FLAG_DEFER_MUTE | VOICE_FLAG_DEFER_MIDI_NOTE_OFF);
+                pSynthVoice->voiceFlags &= ~(VOICE_FLAG_DEFER_MUTE | VOICE_FLAG_DEFER_MIDI_NOTE_OFF);
                 VMMuteVoice(pVoiceMgr, voiceNum);
             }
 
             /* if voice just started, advance state to play */
-            if (pVoiceMgr->voices[voiceNum].voiceState == eVoiceStateStart)
-                pVoiceMgr->voices[voiceNum].voiceState = eVoiceStatePlay;
+            if (pSynthVoice->voiceState == eVoiceStateStart)
+                pSynthVoice->voiceState = eVoiceStatePlay;
         }
     }
+
+#if defined (_CC_CHORUS)
+    if (chorusProcess && pVoiceMgr->chorusModule.effectData != NULL) {
+        pVoiceMgr->chorusModule.effect->pfProcess(pVoiceMgr->chorusModule.effectData, pVoiceMgr->chorusSendBuffer, pVoiceMgr->chorusSendBuffer, numSamples);
+        for (EAS_INT i = 0; i < BUFFER_SIZE_IN_MONO_SAMPLES * NUM_OUTPUT_CHANNELS; i++) {
+            pMixBuffer[i] = pMixBuffer[i] + pVoiceMgr->chorusSendBuffer[i];
+        }
+    }
+#endif
+    // GM2 specification says there is a connection from chorus output to reverb send
+    // but where is its CC controller
+#if defined (_CC_REVERB)
+    if (reverbProcess && pVoiceMgr->reverbModule.effectData != NULL) {
+        pVoiceMgr->reverbModule.effect->pfProcess(pVoiceMgr->reverbModule.effectData, pVoiceMgr->reverbSendBuffer, pVoiceMgr->reverbSendBuffer, numSamples);
+        for (EAS_INT i = 0; i < BUFFER_SIZE_IN_MONO_SAMPLES * NUM_OUTPUT_CHANNELS; i++) {
+            pMixBuffer[i] = pMixBuffer[i] + pVoiceMgr->reverbSendBuffer[i];
+        }
+    }
+#endif
 
     return voicesRendered;
 }
@@ -3525,7 +3719,7 @@ EAS_RESULT VMGetPriority (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, EAS_I32 *pPri
  *
  *----------------------------------------------------------------------------
 */
-void VMSetVolume (S_SYNTH *pSynth, EAS_U16 masterVolume)
+void VMSetVolume (S_SYNTH *pSynth, EAS_U32 masterVolume)
 {
     pSynth->masterVolume = masterVolume;
     pSynth->synthFlags |= SYNTH_FLAG_UPDATE_ALL_CHANNEL_PARAMETERS;
@@ -3555,16 +3749,16 @@ EAS_RESULT VMValidateEASLib (EAS_SNDLIB_HANDLE pEAS)
     {
         if (pEAS->identifier != _EAS_LIBRARY_VERSION)
         {
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sound library mismatch in sound library: Read 0x%08x, expected 0x%08x\n",
-                pEAS->identifier, _EAS_LIBRARY_VERSION); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sound library mismatch in sound library: Read 0x%08x, expected 0x%08x\n",
+                pEAS->identifier, _EAS_LIBRARY_VERSION); 
             return EAS_ERROR_SOUND_LIBRARY;
         }
 
         /* check sample rate */
         if ((pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK) != _OUTPUT_SAMPLE_RATE)
         {
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sample rate mismatch in sound library: Read %lu, expected %lu\n",
-                pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK, _OUTPUT_SAMPLE_RATE); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sample rate mismatch in sound library: Read %lu, expected %lu\n",
+                (unsigned long)pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK, (unsigned long)_OUTPUT_SAMPLE_RATE);
             return EAS_ERROR_SOUND_LIBRARY;
         }
 
@@ -3573,16 +3767,14 @@ EAS_RESULT VMValidateEASLib (EAS_SNDLIB_HANDLE pEAS)
 #ifdef _8_BIT_SAMPLES
         if (pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES)
         {
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 8-bit samples and found 16-bit\n",
-                pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK, _OUTPUT_SAMPLE_RATE); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 8-bit samples and found 16-bit\n");
             return EAS_ERROR_SOUND_LIBRARY;
         }
 #endif
 #ifdef _16_BIT_SAMPLES
         if ((pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES) == 0)
         {
-            { /* dpp: EAS_ReportEx(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 16-bit samples and found 8-bit\n",
-                pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK, _OUTPUT_SAMPLE_RATE); */ }
+            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 16-bit samples and found 8-bit\n");
             return EAS_ERROR_SOUND_LIBRARY;
         }
 #endif
@@ -3833,6 +4025,14 @@ void VMShutdown (S_EAS_DATA *pEASData)
         DLSCleanup(pEASData->hwInstData, pEASData->pVoiceMgr->pGlobalDLS);
         pEASData->pVoiceMgr->pGlobalDLS = NULL;
     }
+#endif
+
+#ifdef _CC_CHORUS
+    VMShutdownChorus(pEASData, pEASData->pVoiceMgr);
+#endif
+
+#ifdef _CC_REVERB
+    VMShutdownReverb(pEASData, pEASData->pVoiceMgr);
 #endif
 
     /* check Configuration Module for static memory allocation */

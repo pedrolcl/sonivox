@@ -44,6 +44,14 @@
 #include "eas_vm_protos.h"
 #include "eas_math.h"
 
+#ifdef _CC_CHORUS
+#include "eas_chorus.h"
+#endif
+
+#ifdef _CC_REVERB
+#include "eas_reverb.h"
+#endif
+
 #ifdef JET_INTERFACE
 #include "jet_data.h"
 #endif
@@ -98,7 +106,7 @@ static EAS_RESULT EAS_ParseEvents (S_EAS_DATA *pEASData, S_EAS_STREAM *pStream, 
  * value            - new value
  *----------------------------------------------------------------------------
 */
-EAS_RESULT EAS_SetStreamParameter (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_I32 param, EAS_I32 value)
+EAS_RESULT EAS_SetStreamParameter (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_I32 param, EAS_IPTR value)
 {
     S_FILE_PARSER_INTERFACE *pParserModule;
 
@@ -120,7 +128,7 @@ EAS_RESULT EAS_SetStreamParameter (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS
  * pValue           - pointer to variable to receive current setting
  *----------------------------------------------------------------------------
 */
-EAS_RESULT EAS_GetStreamParameter (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_I32 param, EAS_I32 *pValue)
+EAS_RESULT EAS_GetStreamParameter (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_I32 param, EAS_IPTR *pValue)
 {
     S_FILE_PARSER_INTERFACE *pParserModule;
 
@@ -161,7 +169,7 @@ EAS_BOOL EAS_StreamReady (S_EAS_DATA *pEASData, EAS_HANDLE pStream)
  * code in the parser.
  *----------------------------------------------------------------------------
 */
-EAS_RESULT EAS_IntSetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_INT param, EAS_I32 value)
+EAS_RESULT EAS_IntSetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_INT param, EAS_IPTR value)
 {
     S_SYNTH *pSynth;
 
@@ -171,7 +179,7 @@ EAS_RESULT EAS_IntSetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_IN
 
     /* get a pointer to the synth object and set it directly */
     /*lint -e{740} we are cheating by passing a pointer through this interface */
-    if (EAS_GetStreamParameter(pEASData, pStream, PARSER_DATA_SYNTH_HANDLE, (EAS_I32*) &pSynth) != EAS_SUCCESS)
+    if (EAS_GetStreamParameter(pEASData, pStream, PARSER_DATA_SYNTH_HANDLE, (EAS_IPTR*) &pSynth) != EAS_SUCCESS)
         return EAS_ERROR_INVALID_PARAMETER;
 
     if (pSynth == NULL)
@@ -207,8 +215,19 @@ EAS_RESULT EAS_IntSetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_IN
             break;
 
         case PARSER_DATA_VOLUME:
-            VMSetVolume(pSynth, (EAS_U16) value);
+            VMSetVolume(pSynth, value);
             break;
+    
+#ifdef _CC_CHORUS
+        case PARSER_DATA_CHORUS_ENABLED:
+            pSynth->chorusEnabled = (EAS_BOOL) value;
+            break;
+#endif
+#ifdef _CC_REVERB  
+        case PARSER_DATA_REVERB_ENABLED:
+            pSynth->reverbEnabled = (EAS_BOOL) value;
+            break;
+#endif
 
         default:
             EAS_Report(_EAS_SEVERITY_ERROR, "Invalid paramter %d in call to EAS_IntSetStrmParam", param);
@@ -227,8 +246,10 @@ EAS_RESULT EAS_IntSetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_IN
  * get the parameter directly on the synth.
  *----------------------------------------------------------------------------
 */
-EAS_RESULT EAS_IntGetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_INT param, EAS_I32 *pValue)
+EAS_RESULT EAS_IntGetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_INT param, EAS_IPTR *pValue)
 {
+    EAS_RESULT result;
+    EAS_I32 value;
     S_SYNTH *pSynth;
 
     /* try to set the parameter */
@@ -237,7 +258,7 @@ EAS_RESULT EAS_IntGetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_IN
 
     /* get a pointer to the synth object and retrieve data directly */
     /*lint -e{740} we are cheating by passing a pointer through this interface */
-    if (EAS_GetStreamParameter(pEASData, pStream, PARSER_DATA_SYNTH_HANDLE, (EAS_I32*) &pSynth) != EAS_SUCCESS)
+    if (EAS_GetStreamParameter(pEASData, pStream, PARSER_DATA_SYNTH_HANDLE, (EAS_IPTR*) &pSynth) != EAS_SUCCESS)
         return EAS_ERROR_INVALID_PARAMETER;
 
     if (pSynth == NULL)
@@ -246,13 +267,18 @@ EAS_RESULT EAS_IntGetStrmParam (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS_IN
     switch (param)
     {
         case PARSER_DATA_POLYPHONY:
-            return VMGetPolyphony(pEASData->pVoiceMgr, pSynth, pValue);
+            result = VMGetPolyphony(pEASData->pVoiceMgr, pSynth, &value);
+            *pValue = value;
+            return result;
 
         case PARSER_DATA_PRIORITY:
-            return VMGetPriority(pEASData->pVoiceMgr, pSynth, pValue);
+            result = VMGetPriority(pEASData->pVoiceMgr, pSynth, &value);
+            *pValue = value;
+            return result;
 
         case PARSER_DATA_TRANSPOSITION:
-            VMGetTranposition(pSynth, pValue);
+            VMGetTranposition(pSynth, &value);
+            *pValue = value;
             break;
 
         case PARSER_DATA_NOTE_COUNT:
@@ -414,6 +440,20 @@ EAS_PUBLIC EAS_RESULT EAS_Init (EAS_DATA_HANDLE *ppEASData)
     }
 #endif
 
+    /* initialize effects modules */
+    for (module = 0; module < NUM_EFFECTS_MODULES; module++)
+    {
+        pEASData->effectsModules[module].effect = EAS_CMEnumFXModules(module);
+        if (pEASData->effectsModules[module].effect != NULL)
+        {
+            if ((result = (*pEASData->effectsModules[module].effect->pfInit)(pEASData, &pEASData->effectsModules[module].effectData)) != EAS_SUCCESS)
+            {
+                EAS_Report(_EAS_SEVERITY_FATAL, "Initialization of effects module %d returned %ld\n", module, result);
+                return result;
+            }
+        }
+    }
+
     /* initailize the voice manager & synthesizer */
     if ((result = VMInitialize(pEASData)) != EAS_SUCCESS)
         return result;
@@ -423,20 +463,6 @@ EAS_PUBLIC EAS_RESULT EAS_Init (EAS_DATA_HANDLE *ppEASData)
     {
         EAS_Report(_EAS_SEVERITY_ERROR, "Error %ld starting up mix engine\n", result);
         return result;
-    }
-
-    /* initialize effects modules */
-    for (module = 0; module < NUM_EFFECTS_MODULES; module++)
-    {
-        pEASData->effectsModules[module].effect = EAS_CMEnumFXModules(module);
-        if (pEASData->effectsModules[module].effect != NULL)
-        {
-            if ((result = (*pEASData->effectsModules[module].effect->pfInit)(pEASData, &pEASData->effectsModules[module].effectData)) != EAS_SUCCESS)
-            {
-                EAS_Report(_EAS_SEVERITY_FATAL, "Initialization of effects module %d returned %d\n", module, result);
-                return result;
-            }
-        }
     }
 
     /* initialize PCM engine */
@@ -508,6 +534,9 @@ EAS_PUBLIC EAS_RESULT EAS_Shutdown (EAS_DATA_HANDLE pEASData)
             reportResult = result;
     }
 
+    /* shutdown the voice manager & synthesizer */
+    VMShutdown(pEASData);
+
     /* shutdown effects modules */
     for (i = 0; i < NUM_EFFECTS_MODULES; i++)
     {
@@ -515,15 +544,12 @@ EAS_PUBLIC EAS_RESULT EAS_Shutdown (EAS_DATA_HANDLE pEASData)
         {
             if ((result = (*pEASData->effectsModules[i].effect->pfShutdown)(pEASData, pEASData->effectsModules[i].effectData)) != EAS_SUCCESS)
             {
-                EAS_Report(_EAS_SEVERITY_FATAL, "Shutdown of effects module %d returned %d\n", i, result);
+                EAS_Report(_EAS_SEVERITY_FATAL, "Shutdown of effects module %d returned %ld\n", i, result);
                 if (reportResult == EAS_SUCCESS)
                     reportResult = result;
             }
         }
     }
-
-    /* shutdown the voice manager & synthesizer */
-    VMShutdown(pEASData);
 
 #ifdef _METRICS_ENABLED
     /* shutdown the metrics module */
@@ -786,7 +812,10 @@ EAS_PUBLIC EAS_RESULT EAS_GetFileType (S_EAS_DATA *pEASData, EAS_HANDLE pStream,
 {
     if (!EAS_StreamReady (pEASData, pStream))
         return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
-    return EAS_GetStreamParameter(pEASData, pStream, PARSER_DATA_FILE_TYPE, pFileType);
+    EAS_IPTR value = 0;
+    EAS_RESULT result = EAS_GetStreamParameter(pEASData, pStream, PARSER_DATA_FILE_TYPE, &value);
+    *pFileType = value;
+    return result;
 }
 
 /*----------------------------------------------------------------------------
@@ -871,7 +900,7 @@ EAS_PUBLIC EAS_RESULT EAS_Render (EAS_DATA_HANDLE pEASData, EAS_PCM *pOut, EAS_I
     /* no support for other buffer sizes yet */
     if (numRequested != BUFFER_SIZE_IN_MONO_SAMPLES)
     {
-        { EAS_Report(_EAS_SEVERITY_ERROR, "This library supports only %ld samples in buffer, host requested %ld samples\n",
+        { EAS_Report(_EAS_SEVERITY_ERROR, "This library supports only %d samples in buffer, host requested %d samples\n",
             (EAS_I32) BUFFER_SIZE_IN_MONO_SAMPLES, numRequested); }
         return EAS_BUFFER_SIZE_MISMATCH;
     }
@@ -1247,7 +1276,7 @@ static EAS_RESULT EAS_ParseEvents (S_EAS_DATA *pEASData, EAS_HANDLE pStream, EAS
 {
     S_FILE_PARSER_INTERFACE *pParserModule;
     EAS_RESULT result;
-    EAS_I32 parserState;
+    EAS_STATE parserState;
     EAS_BOOL done;
     EAS_INT yieldCount = YIELD_EVENT_COUNT;
     EAS_U32 time = 0;
@@ -1459,7 +1488,7 @@ EAS_PUBLIC EAS_RESULT EAS_RegisterMetaDataCallback (
     metadata.buffer = metaDataBuffer;
     metadata.bufferSize = metaDataBufSize;
     metadata.pUserData = pUserData;
-    return EAS_SetStreamParameter(pEASData, pStream, PARSER_DATA_METADATA_CB, (EAS_I32) &metadata);
+    return EAS_SetStreamParameter(pEASData, pStream, PARSER_DATA_METADATA_CB, (EAS_IPTR) &metadata);
 }
 
 /*----------------------------------------------------------------------------
@@ -1472,7 +1501,10 @@ EAS_PUBLIC EAS_RESULT EAS_GetNoteCount (EAS_DATA_HANDLE pEASData, EAS_HANDLE pSt
 {
     if (!EAS_StreamReady(pEASData, pStream))
         return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
-    return EAS_IntGetStrmParam(pEASData, pStream, PARSER_DATA_NOTE_COUNT, pNoteCount);
+    EAS_IPTR value = 0;
+    EAS_RESULT result = EAS_IntGetStrmParam(pEASData, pStream, PARSER_DATA_NOTE_COUNT, &value);
+    *pNoteCount = (EAS_I32) value;
+    return result;
 }
 
 /*----------------------------------------------------------------------------
@@ -1567,7 +1599,7 @@ EAS_PUBLIC EAS_RESULT EAS_OpenMIDIStream (EAS_DATA_HANDLE pEASData, EAS_HANDLE *
     /* use an existing synthesizer */
     else
     {
-        EAS_I32 value;
+        EAS_IPTR value;
         result = EAS_GetStreamParameter(pEASData, streamHandle, PARSER_DATA_SYNTH_HANDLE, &value);
         pMIDIStream->pSynth = (S_SYNTH*) value;
         VMIncRefCount(pMIDIStream->pSynth);
@@ -1761,7 +1793,10 @@ EAS_PUBLIC EAS_RESULT EAS_GetPolyphony (EAS_DATA_HANDLE pEASData, EAS_HANDLE pSt
 {
     if (!EAS_StreamReady(pEASData, pStream))
         return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
-    return EAS_IntGetStrmParam(pEASData, pStream, PARSER_DATA_POLYPHONY, pPolyphonyCount);
+    EAS_IPTR value = 0;
+    EAS_RESULT result = EAS_IntGetStrmParam(pEASData, pStream, PARSER_DATA_POLYPHONY, &value);
+    *pPolyphonyCount = (EAS_I32) value;
+    return result;
 }
 
 /*----------------------------------------------------------------------------
@@ -1858,7 +1893,11 @@ EAS_PUBLIC EAS_RESULT EAS_GetPriority (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStr
 {
     if (!EAS_StreamReady(pEASData, pStream))
         return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
-    return EAS_IntGetStrmParam(pEASData, pStream, PARSER_DATA_PRIORITY, pPriority);
+
+    EAS_IPTR value = 0;
+    EAS_RESULT result = EAS_IntGetStrmParam(pEASData, pStream, PARSER_DATA_PRIORITY, &value);
+    *pPriority = (EAS_I32) value;
+    return result;
 }
 
 /*----------------------------------------------------------------------------
@@ -1882,16 +1921,17 @@ EAS_PUBLIC EAS_RESULT EAS_GetPriority (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStr
 */
 EAS_PUBLIC EAS_RESULT EAS_SetVolume (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStream, EAS_I32 volume)
 {
-    EAS_I16 gain;
+    EAS_I32 gain;
 
     /* check range */
     if ((volume < 0) || (volume > EAS_MAX_VOLUME))
         return EAS_ERROR_PARAMETER_RANGE;
 
     /* stream volume */
+    // TODO: I did not find any code uses stream volume
     if (pStream != NULL)
     {
-        EAS_I32 gainOffset;
+        EAS_IPTR gainOffset;
         EAS_RESULT result;
 
         if (!EAS_StreamReady(pEASData, pStream))
@@ -1912,10 +1952,6 @@ EAS_PUBLIC EAS_RESULT EAS_SetVolume (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStrea
 
     /* master volume */
     pEASData->masterVolume = (EAS_U8) volume;
-#if (NUM_OUTPUT_CHANNELS == 1)
-    /* leave 3dB headroom for mono output */
-    volume -= 3;
-#endif
 
     gain = EAS_VolumeToGain(volume - STREAM_VOLUME_HEADROOM);
     pEASData->masterGain = gain;
@@ -2273,6 +2309,18 @@ EAS_PUBLIC EAS_RESULT EAS_GetParameter (EAS_DATA_HANDLE pEASData, EAS_I32 module
     if (pEASData->effectsModules[module].effectData == NULL)
         return EAS_ERROR_INVALID_MODULE;
 
+    if (module == EAS_MODULE_CHORUS && param == EAS_PARAM_CHORUS_OVERRIDE_CC)
+    {
+        *pValue = pEASData->pVoiceMgr->chorusModule.effectData != NULL;
+        return EAS_SUCCESS;
+    }
+
+    if (module == EAS_MODULE_REVERB && param == EAS_PARAM_REVERB_OVERRIDE_CC)
+    {
+        *pValue = pEASData->pVoiceMgr->reverbModule.effectData != NULL;
+        return EAS_SUCCESS;
+    }
+
     return (*pEASData->effectsModules[module].effect->pFGetParam)
         (pEASData->effectsModules[module].effectData, param, pValue);
 }
@@ -2304,6 +2352,38 @@ EAS_PUBLIC EAS_RESULT EAS_SetParameter (EAS_DATA_HANDLE pEASData, EAS_I32 module
 
     if (module >= NUM_EFFECTS_MODULES)
         return EAS_ERROR_INVALID_MODULE;
+
+    if (module == EAS_MODULE_CHORUS)
+    {
+        if (param == EAS_PARAM_CHORUS_OVERRIDE_CC) {
+            if (value != 0 && pEASData->pVoiceMgr->chorusModule.effectData != NULL)
+            {
+                VMShutdownChorus(pEASData, pEASData->pVoiceMgr);
+                return EAS_SUCCESS;
+            }
+            if (value == 0 && pEASData->pVoiceMgr->chorusModule.effectData == NULL)
+            {
+                return VMInitChorus(pEASData, pEASData->pVoiceMgr);
+            }
+            return EAS_SUCCESS;
+        }
+    }
+
+    if (module == EAS_MODULE_REVERB)
+    {
+        if (param == EAS_PARAM_REVERB_OVERRIDE_CC) {
+            if (value != 0 && pEASData->pVoiceMgr->reverbModule.effectData != NULL)
+            {
+                VMShutdownReverb(pEASData, pEASData->pVoiceMgr);
+                return EAS_SUCCESS;
+            }
+            if (value == 0 && pEASData->pVoiceMgr->reverbModule.effectData == NULL)
+            {
+                return VMInitReverb(pEASData, pEASData->pVoiceMgr);
+            }
+            return EAS_SUCCESS;
+        }
+    }
 
     if (pEASData->effectsModules[module].effectData == NULL)
         return EAS_ERROR_INVALID_MODULE;
@@ -2386,7 +2466,7 @@ EAS_PUBLIC EAS_RESULT EAS_SetSoundLibrary (EAS_DATA_HANDLE pEASData, EAS_HANDLE 
     {
         if (!EAS_StreamReady(pEASData, pStream))
             return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
-        return EAS_IntSetStrmParam(pEASData, pStream, PARSER_DATA_EAS_LIBRARY, (EAS_I32) pSndLib);
+        return EAS_IntSetStrmParam(pEASData, pStream, PARSER_DATA_EAS_LIBRARY, (EAS_IPTR) pSndLib);
     }
 
     return VMSetGlobalEASLib(pEASData->pVoiceMgr, pSndLib);
@@ -2476,7 +2556,7 @@ EAS_PUBLIC EAS_RESULT EAS_LoadDLSCollection (EAS_DATA_HANDLE pEASData, EAS_HANDL
 
         /* if a stream pStream is specified, point it to the DLS collection */
         if (pStream)
-            result = EAS_IntSetStrmParam(pEASData, pStream, PARSER_DATA_DLS_COLLECTION, (EAS_I32) pDLS);
+            result = EAS_IntSetStrmParam(pEASData, pStream, PARSER_DATA_DLS_COLLECTION, (EAS_IPTR) pDLS);
 
         /* global DLS load */
         else

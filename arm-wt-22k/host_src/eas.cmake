@@ -46,8 +46,6 @@ extern "C" {
 #define MAKE_LIB_VERSION(a,b,c,d) (((((((EAS_U32) a <<8) | (EAS_U32) b) << 8) | (EAS_U32) c) << 8) | (EAS_U32) d)
 #define LIB_VERSION MAKE_LIB_VERSION(@PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@PROJECT_VERSION_TWEAK@)
 
-#cmakedefine NEW_HOST_WRAPPER
-
 typedef struct
 {
     EAS_U32     libVersion;
@@ -102,7 +100,8 @@ typedef enum
 #define PCM_FLAGS_STREAMING     0x80000000  /* streaming mode */
 
 /* maximum volume setting */
-#define EAS_MAX_VOLUME          100
+#define EAS_MAX_VOLUME          196
+#define EAS_REF_VOLUME          100
 
 /*----------------------------------------------------------------------------
  * EAS_Init()

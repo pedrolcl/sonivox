@@ -103,7 +103,7 @@ typedef struct
 /*----------------------------------------------------------------------------
  * These macros define the various characteristics of the defined sample rates
  *----------------------------------------------------------------------------
- * DLS_ATTACK_TIME_CONVERT      log offset for conversion from time cents to attack rate
+ * DLS_RATE_CONVERT      log2(BUFFER_SIZE / SAMPLE_RATE) * 1200, secs per frame in 10-frac log2
  * DLS_LFO_FREQUENCY_CONVERT    pitch-cents offset for LFO frequency conversion
  *----------------------------------------------------------------------------
 */
@@ -145,28 +145,17 @@ typedef struct
 #endif
 
 /*
- * FILTER_Q_CONVERSION_FACTOR convers the 0.1dB steps in the DLS
- * file to our internal 0.75 dB steps. The value is calculated
- * as follows:
- *
- * 32768 / (10 * <step-size in dB>)
- *
- * FILTER_RESONANCE_NUM_ENTRIES is the number of entries in the table
-*/
-#define FILTER_Q_CONVERSION_FACTOR          4369
-#define FILTER_RESONANCE_NUM_ENTRIES        31
-
-/*
  * Multiplier to convert DLS gain units (10ths of a dB) to a
  * power-of-two exponent for conversion to linear gain using our
  * piece-wise linear approximator. Note that we ignore the lower
  * 16-bits of the DLS gain value. The result is a 10-bit fraction
  * that works with the EAS_LogToLinear16 function.
  *
- * DLS_GAIN_FACTOR = (2^18) / (200 * log10(2))
+ * float(DLS_GAIN_FACTOR) = 1 / 200 * log2(10) * (1 << 10)
+ * DLS_GAIN_FACTOR = float(DLS_GAIN_FACTOR) * (1 << DLS_GAIN_FACTOR_FRAC_BITS)
  */
-#define DLS_GAIN_FACTOR         4354
-#define DLS_GAIN_SHIFT          8
+#define DLS_GAIN_FACTOR                    17416
+#define DLS_GAIN_FACTOR_FRAC_BITS          10
 
 /*
  * Reciprocal of 10 for quick divide by 10's
@@ -289,6 +278,11 @@ EAS_RESULT DLSCleanup (EAS_HW_DATA_HANDLE hwInstData, S_DLS *pDLS);
 void DLSAddRef (S_DLS *pDLS);
 EAS_I16 DLSConvertDelay (EAS_I32 timeCents);
 EAS_I16 DLSConvertRate (EAS_I32 timeCents);
+EAS_U16 DLSConvertQ (EAS_I32 q);
+EAS_I8 DLSConvertPan (EAS_I32 pan);
+EAS_I16 DLSConvertPitchToPhaseInc (EAS_I32 pitchCents);
+EAS_I16 DLSConvertSustain (EAS_I32 sustain);
+EAS_I16 DLSConvertSampleRate (EAS_U32 sampleRate);
 
 #ifdef _STANDALONE_CONVERTER
 void DLSConvParams (S_DLS_PARAMS *pParams, EAS_BOOL set);

@@ -36,6 +36,7 @@
 #include "eas_wtsynth.h"
 #include "eas_pan.h"
 #include "eas_mdls.h"
+#include <string.h>
 #include "eas_dlssynth.h"
 
 #ifdef _METRICS_ENABLED
@@ -65,10 +66,12 @@ void DLS_MuteVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOICE *pVoi
         VOICE_FLAG_DEFER_MUTE);
 
     /* set the envelope state */
-    pVoiceMgr->wtVoices[voiceNum].eg1State = eEnvelopeStateRelease;
-    pWTVoice->eg1Increment = pDLSArt->eg1ShutdownTime;
-    pVoiceMgr->wtVoices[voiceNum].eg2State = eEnvelopeStateRelease;
-    pWTVoice->eg2Increment = pDLSArt->eg2.releaseTime;
+    // if it is already in release state, it still dies after shutdown time
+    pWTVoice->eg1State = eEnvelopeStateRelease;
+    pWTVoice->eg1Increment = -pDLSArt->eg1ShutdownTime;
+    
+    pWTVoice->eg2State = eEnvelopeStateRelease;
+    pWTVoice->eg2Increment = -pDLSArt->eg2.releaseTime;
 }
 
 /*----------------------------------------------------------------------------
@@ -86,19 +89,30 @@ void DLS_ReleaseVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOICE *p
     pWTVoice = &pVoiceMgr->wtVoices[voiceNum];
     pDLSArt = &pSynth->pDLS->pDLSArticulations[pWTVoice->artIndex];
 
-    /* if still in attack phase, convert units to log */
+    /* if still in attack phase, convert dB to linear */
     /*lint -e{732} eg1Value is never negative */
     /*lint -e{703} use shift for performance */
-    if (pWTVoice->eg1State == eEnvelopeStateAttack)
-        pWTVoice->eg1Value = (EAS_I16) ((EAS_flog2(pWTVoice->eg1Value) << 1) + 2048);
+    if (pWTVoice->eg1State == eEnvelopeStateAttack) {
+        pWTVoice->eg1Value = (EAS_I16) EAS_LogToLinear16((DLS_GAIN_FACTOR * 
+            (pWTVoice->eg1Value - SYNTH_FULL_SCALE_EG1_GAIN) * 960 / (1 << NUM_EG1_FRAC_BITS)
+        ) >> DLS_GAIN_FACTOR_FRAC_BITS); // full scale: 0dB, 0: -96dB
+    }
 
     /* release EG1 */
-    pWTVoice->eg1State = eEnvelopeStateRelease;
-    pWTVoice->eg1Increment = pDLSArt->eg1.releaseTime;
+    if (pWTVoice->eg1State != eEnvelopeStateRelease && 
+        pWTVoice->eg1State != eEnvelopeStateMuted)
+    {
+        pWTVoice->eg1State = eEnvelopeStateRelease;
+        pWTVoice->eg1Increment = -pDLSArt->eg1.releaseTime;
+    }
 
     /* release EG2 */
-    pWTVoice->eg2State = eEnvelopeStateRelease;
-    pWTVoice->eg2Increment = pDLSArt->eg2.releaseTime;
+    if (pWTVoice->eg2State != eEnvelopeStateRelease && 
+        pWTVoice->eg2State != eEnvelopeStateMuted)
+    {
+        pWTVoice->eg2State = eEnvelopeStateRelease;
+        pWTVoice->eg2Increment = -pDLSArt->eg2.releaseTime;
+    }
 }
 
 /*----------------------------------------------------------------------------
@@ -199,28 +213,21 @@ static EAS_I32 DLS_UpdateGain (S_WT_VOICE *pWTVoice, const S_DLS_ARTICULATION *p
 
     /* add total mod LFO effect */
     gain += FMUL_15x15(temp, pWTVoice->modLFO.lfoValue);
-    if (gain > 0)
-        gain = 0;
 
     /* convert to linear gain including EG1 */
-    if (pWTVoice->eg1State != eEnvelopeStateAttack)
+    // DAHDSR
+    // only attack is linear gain, others are in dB
+    if (pWTVoice->eg1State == eEnvelopeStateAttack)
     {
-        gain = (DLS_GAIN_FACTOR * gain) >> DLS_GAIN_SHIFT;
-        /*lint -e{702} use shift for performance */
-#if 1
-        gain += (pWTVoice->eg1Value - 32767) >> 1;
+        gain = (DLS_GAIN_FACTOR * gain) >> DLS_GAIN_FACTOR_FRAC_BITS;
         gain = EAS_LogToLinear16(gain);
-#else
-        gain = EAS_LogToLinear16(gain);
-        temp = EAS_LogToLinear16((pWTVoice->eg1Value - 32767) >> 1);
-        gain = FMUL_15x15(gain, temp);
-#endif
+        gain = FMUL_15x15(gain, pWTVoice->eg1Value);
     }
     else
     {
-        gain = (DLS_GAIN_FACTOR * gain) >> DLS_GAIN_SHIFT;
+        gain -= (SYNTH_FULL_SCALE_EG1_GAIN - pWTVoice->eg1Value) * 960 / (1 << NUM_EG1_FRAC_BITS); // full scale: 0dB, 0: -96dB
+        gain = (DLS_GAIN_FACTOR * gain) >> DLS_GAIN_FACTOR_FRAC_BITS;
         gain = EAS_LogToLinear16(gain);
-        gain = FMUL_15x15(gain, pWTVoice->eg1Value);
     }
 
     /* include MIDI channel gain */
@@ -229,9 +236,16 @@ static EAS_I32 DLS_UpdateGain (S_WT_VOICE *pWTVoice, const S_DLS_ARTICULATION *p
     /* include velocity */
     if (pDLSArt->filterQandFlags & FLAG_DLS_VELOCITY_SENSITIVE)
     {
-        temp = velocity << 8;
+        temp = velocity * 32768 / 127;
         temp = FMUL_15x15(temp, temp);
         gain = FMUL_15x15(gain, temp);
+    }
+
+    if (gain > SYNTH_FULL_SCALE_EG1_GAIN) {
+        return gain;
+    }
+    if (gain < 0) {
+        return 0;
     }
 
     /* return gain */
@@ -252,7 +266,11 @@ static void DLS_UpdateFilter (S_SYNTH_VOICE *pVoice, S_WT_VOICE *pWTVoice, S_WT_
     /* no need to calculate filter coefficients if it is bypassed */
     if (pDLSArt->filterCutoff == DEFAULT_DLS_FILTER_CUTOFF_FREQUENCY)
     {
+#ifdef _FLOAT_DCF
+        pIntFrame->frame.b02 = 0.0f;
+#else
         pIntFrame->frame.k = 0;
+#endif
         return;
     }
 
@@ -284,14 +302,15 @@ static void DLS_UpdateFilter (S_SYNTH_VOICE *pVoice, S_WT_VOICE *pWTVoice, S_WT_
     /*lint -e{702} use shift for performance */
     cutoff += (pVoice->note * pDLSArt->keyNumToFc) >> 7;
 
-    /* subtract the A5 offset and the sampling frequency */
-    cutoff -= FILTER_CUTOFF_FREQ_ADJUST + A5_PITCH_OFFSET_IN_CENTS;
-
-    /* limit the cutoff frequency */
-    if (cutoff > FILTER_CUTOFF_MAX_PITCH_CENTS)
-        cutoff = FILTER_CUTOFF_MAX_PITCH_CENTS;
-    else if (cutoff < FILTER_CUTOFF_MIN_PITCH_CENTS)
-        cutoff = FILTER_CUTOFF_MIN_PITCH_CENTS;
+    if (cutoff == 13500) // bypass filter
+    {
+#ifdef _FLOAT_DCF
+        pIntFrame->frame.b02 = 0.0f;
+#else
+        pIntFrame->frame.k = 0;
+#endif
+        return;
+    }
 
     WT_SetFilterCoeffs(pIntFrame, cutoff, pDLSArt->filterQandFlags & FILTER_Q_MASK);
 }
@@ -341,8 +360,7 @@ EAS_RESULT DLS_StartVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOIC
 #endif
 
     /* initialize the filter states */
-    pWTVoice->filter.z1 = 0;
-    pWTVoice->filter.z2 = 0;
+    memset(&pWTVoice->filter, 0, sizeof(S_FILTER_CONTROL));
 
     /* initialize the oscillator */
 #if defined (_8_BIT_SAMPLES)
@@ -439,6 +457,9 @@ EAS_BOOL DLS_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH_VOICE
     if ((pWTVoice->loopStart != WT_NOISE_GENERATOR) && (pWTVoice->loopStart == pWTVoice->loopEnd))
         done = WT_CheckSampleEnd(pWTVoice, &intFrame, EAS_FALSE);
 
+    if (intFrame.numSamples < BUFFER_SIZE_IN_MONO_SAMPLES)
+        memset(pMixBuffer + intFrame.numSamples * NUM_OUTPUT_CHANNELS, 0, (BUFFER_SIZE_IN_MONO_SAMPLES - intFrame.numSamples) * NUM_OUTPUT_CHANNELS * sizeof(EAS_I32));
+
     WT_ProcessVoice(pWTVoice, &intFrame);
 
     /* clear flag */
@@ -484,6 +505,7 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
     {
         /* initial state */
         case eEnvelopeStateInit:
+            // init -> delay
             *pState = eEnvelopeStateDelay;
             *pValue = 0;
             *pIncrement = pEnvParams->delayTime;
@@ -492,68 +514,85 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
             /*lint -e{825} falls through to next case */
 
         case eEnvelopeStateDelay:
-            if (*pIncrement)
+            if (*pIncrement) // remaining delay time
             {
-                *pIncrement = *pIncrement - 1;
+                *pIncrement -= 1;
                 return;
             }
-
+            // delay -> attack
             /* calculate attack rate */
             *pState = eEnvelopeStateAttack;
             if (pEnvParams->attackTime != ZERO_TIME_IN_CENTS)
             {
                 /*lint -e{702} use shift for performance */
-                temp = pEnvParams->attackTime + ((pEnvParams->velToAttack * pVoice->velocity) >> 7);
+                temp = pEnvParams->attackTime + (pEnvParams->velToAttack * pVoice->velocity) / 128;
                 *pIncrement = DLSConvertRate(temp);
+                if (*pIncrement == 0) {
+                    *pIncrement = 1; // ensure no infinite attack
+                }
                 return;
             }
 
+            // no attack, fall through to hold
             *pValue = SYNTH_FULL_SCALE_EG1_GAIN;
             /*lint -e{825} falls through to next case */
 
         case eEnvelopeStateAttack:
-            if (*pValue < SYNTH_FULL_SCALE_EG1_GAIN)
+            if (*pValue < SYNTH_FULL_SCALE_EG1_GAIN) // check attack level
             {
                 temp = *pValue + *pIncrement;
                 *pValue = (EAS_I16) (temp < SYNTH_FULL_SCALE_EG1_GAIN ? temp : SYNTH_FULL_SCALE_EG1_GAIN);
                 return;
             }
 
+            // attack -> hold
             /* calculate hold time */
             *pState = eEnvelopeStateHold;
             if (pEnvParams->holdTime != ZERO_TIME_IN_CENTS)
             {
                 /*lint -e{702} use shift for performance */
-                temp = pEnvParams->holdTime + ((pEnvParams->keyNumToHold * pVoice->note) >> 7);
+                temp = pEnvParams->holdTime + (pEnvParams->keyNumToHold * pVoice->note) / 128;
                 *pIncrement = DLSConvertDelay(temp);
-                return;
+                if (*pIncrement != 0) {
+                    return;
+                }
             }
-            else
-                *pIncrement = 0;
+
+            // no hold
+            *pIncrement = 0;
             /*lint -e{825} falls through to next case */
 
         case eEnvelopeStateHold:
-            if (*pIncrement)
+            if (*pIncrement) // remaining hold time
             {
-                *pIncrement = *pIncrement - 1;
+                *pIncrement -= 1;
                 return;
             }
 
+            // hold -> decay
             /* calculate decay rate */
             *pState = eEnvelopeStateDecay;
             if (pEnvParams->decayTime != ZERO_TIME_IN_CENTS)
             {
-                /*lint -e{702} use shift for performance */
-                temp = pEnvParams->decayTime + ((pEnvParams->keyNumToDecay * pVoice->note) >> 7);
-                *pIncrement = DLSConvertRate(temp);
+                temp = pEnvParams->decayTime + (pEnvParams->keyNumToDecay * pVoice->note) / 128;
+                temp = DLSConvertDelay(temp);
+                if (temp == 0) {
+                    // very small decay time, regard it as no decay
+                    goto nodecay;
+                }
+                *pIncrement = (SYNTH_FULL_SCALE_EG1_GAIN - pEnvParams->sustainLevel) / temp;
+                if (*pIncrement == 0) {
+                    *pIncrement = 1; // ensure no infinite decay
+                }
                 return;
             }
-
-//          *pValue = pEnvParams->sustainLevel;
+nodecay:
+            // no decay, fall to sustain
+            *pValue = pEnvParams->sustainLevel;
             /*lint -e{825} falls through to next case */
 
         case eEnvelopeStateDecay:
-            if (*pValue > pEnvParams->sustainLevel)
+            if (*pValue > pEnvParams->sustainLevel) // check decay level
             {
                 temp = *pValue - *pIncrement;
                 *pValue = (EAS_I16) (temp > pEnvParams->sustainLevel ? temp : pEnvParams->sustainLevel);
@@ -561,21 +600,33 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
             }
 
             *pState = eEnvelopeStateSustain;
-            *pValue = pEnvParams->sustainLevel;
             /*lint -e{825} falls through to next case */
 
         case eEnvelopeStateSustain:
             return;
 
         case eEnvelopeStateRelease:
+            // calculate release rate
+            if (*pIncrement == 0) { // this is release time = 0
+                *pState = eEnvelopeStateMuted; // no release, mute
+                *pValue = 0;
+                return;
+            } else if (*pIncrement < 0) { // this is release time
+                temp = *pValue / (-*pIncrement);
+                if (temp <= 0) {
+                    temp = 1; // ensure no infinite release
+                }
+                *pIncrement = (EAS_I16) temp;
+            }
+
             temp = *pValue - *pIncrement;
-            if (temp <= 0)
-            {
+            if (temp <= 0) {
                 *pState = eEnvelopeStateMuted;
                 *pValue = 0;
             }
-            else
+            else {
                 *pValue = (EAS_I16) temp;
+            }
             break;
 
         case eEnvelopeStateMuted:

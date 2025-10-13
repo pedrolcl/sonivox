@@ -83,8 +83,8 @@ typedef struct s_region_tag
 
 /*
  * Bit fields for m_nKeyGroupAndFlags
- * Bits 0-2 are mode bits in FM synth
- * Bits 8-11 are the key group
+ * Bits 0-7 are flags
+ * Bits 8-14 are the key group
  */
 #define REGION_FLAG_IS_LOOPED                   0x01
 #define REGION_FLAG_USE_WAVE_GENERATOR          0x02
@@ -94,6 +94,7 @@ typedef struct s_region_tag
 #define REGION_FLAG_OFF_CHIP                    0x20
 #define REGION_FLAG_NON_SELF_EXCLUSIVE          0x40
 #define REGION_FLAG_LAST_REGION                 0x8000
+#define REGION_KEY_GROUP_MASK                   0x7f00
 
 /*----------------------------------------------------------------------------
  * Envelope data structure
@@ -194,14 +195,14 @@ typedef struct s_dls_articulation_tag
     EAS_U16         pad;
 
     EAS_I8          pan;
-    EAS_U8          filterQandFlags;
+    EAS_U16         filterQandFlags;
 
-#ifdef _REVERB
+#ifdef _CC_REVERB
     EAS_I16         reverbSend;
     EAS_I16         cc91ToReverbSend;
 #endif
 
-#ifdef _CHORUS
+#ifdef _CC_CHORUS
     EAS_I16         chorusSend;
     EAS_I16         cc93ToChorusSend;
 #endif
@@ -210,8 +211,8 @@ typedef struct s_dls_articulation_tag
 /* flags in filterQandFlags
  * NOTE: Q is stored in bottom 5 bits
  */
-#define FLAG_DLS_VELOCITY_SENSITIVE     0x80
-#define FILTER_Q_MASK                   0x1f
+#define FLAG_DLS_VELOCITY_SENSITIVE     0x8000
+#define FILTER_Q_MASK                   0x7fff
 
 /*----------------------------------------------------------------------------
  * Wavetable region data structure
@@ -221,7 +222,7 @@ typedef struct s_wt_region_tag
 {
     S_REGION    region;
     EAS_I16     tuning;
-    EAS_I16     gain;
+    EAS_I16     gain; // DLS: (in centibels, or 0.1 dB); WT: EG1 (.15) frac
     EAS_U32     loopStart; // in samples
     EAS_U32     loopEnd; // in samples, past end
     EAS_U16     waveIndex;
@@ -325,6 +326,10 @@ typedef struct s_bank_tag
 #define LIB_FORMAT_16_BIT_SAMPLES       0x00200000
 
 #ifdef DLS_SYNTHESIZER
+enum {
+    DLSLIB_TYPE_DLS = 0x00,
+    DLSLIB_TYPE_SF2 = 0x10
+};
 /*----------------------------------------------------------------------------
  * DLS data structure
  *
@@ -352,6 +357,7 @@ typedef struct s_eas_dls_tag
     EAS_U16             numDLSArticulations;
     EAS_U16             numDLSSamples;
     EAS_U8              refCount;
+    EAS_U8              libType;
 } S_DLS;
 #endif
 

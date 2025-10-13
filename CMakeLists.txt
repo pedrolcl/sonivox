@@ -18,20 +18,12 @@ cmake_minimum_required(VERSION 3.14)
 
 project( sonivox
     LANGUAGES C CXX
-    VERSION 3.6.16.0
+    VERSION 4.0.0.0
 )
 
 # GoogleTest requires at least C++14
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-
-set(LUCKYOS Android Darwin Linux Windows)
-if (${CMAKE_SYSTEM_NAME} IN_LIST LUCKYOS)
-  message(STATUS "Enabling by default the NEW_HOST_WRAPPER option for ${CMAKE_SYSTEM_NAME}")
-  set(IS_LUCKY TRUE)
-else()
-  set(IS_LUCKY FALSE)
-endif()
 
 option(USE_44KHZ "Output 44100 Hz audio sample rate (instead of 22050 Hz)" TRUE)
 option(USE_16BITS_SAMPLES "Use 16 bits samples (instead of 8 bit)" TRUE)
@@ -40,7 +32,8 @@ option(BUILD_SONIVOX_SHARED "Build the shared library" TRUE)
 option(BUILD_EXAMPLE "Build and install the example program" TRUE)
 option(BUILD_TESTING "Build the unit tests" TRUE)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Whether to create position-independent targets" TRUE)
-option(NEW_HOST_WRAPPER "Use the new host wrapper" ${IS_LUCKY})
+option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
+option(SF2_SUPPORT "Enable SF2 support and float DCF" TRUE)
 set(MAX_VOICES 64 CACHE STRING "Maximum number of voices")
 
 include(CMakeDependentOption)
@@ -131,12 +124,20 @@ list(APPEND SOURCES
   arm-wt-22k/lib_src/eas_xmfdata.c
 #arm-wt-22k/lib_src/jet.c
   arm-wt-22k/lib_src/wt_200k_G.c
+  arm-wt-22k/src/rmidi.c
 )
 
 if (NEW_HOST_WRAPPER)
     list(APPEND SOURCES arm-wt-22k/src/hostmm_ng.c)
 else()
     list(APPEND SOURCES arm-wt-22k/host_src/eas_hostmm.c)
+endif()
+
+if (SF2_SUPPORT)
+    list(APPEND SOURCES arm-wt-22k/lib_src/eas_sf2.c arm-wt-22k/lib_src/eas_filter_float.c)
+else()
+    message(STATUS "SF2 support disabled.")
+    list(APPEND SOURCES arm-wt-22k/lib_src/eas_filter.c)
 endif()
 
 configure_file(arm-wt-22k/host_src/eas.cmake libsonivox/eas.h @ONLY)
@@ -169,6 +170,7 @@ target_compile_definitions( sonivox-objects PRIVATE
   #_OTA_PARSER
   _XMF_PARSER
   #JET_INTERFACE
+  _RMID_PARSER
 )
 
 include(TestBigEndian)
@@ -194,6 +196,10 @@ if(ZLIB_FOUND)
     target_compile_definitions( sonivox-objects PRIVATE _ZLIB_UNPACKER )
 endif()
 
+if (SF2_SUPPORT)
+    target_compile_definitions( sonivox-objects PRIVATE _SF2_SUPPORT _FLOAT_DCF )
+endif()
+
 target_include_directories( sonivox-objects PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox
     arm-wt-22k/host_src
@@ -201,7 +207,7 @@ target_include_directories( sonivox-objects PRIVATE
     fakes
 )
 
-if (CMAKE_COMPILER_IS_GNUCC)
+if (CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
     target_compile_options( sonivox-objects PRIVATE
         -Wno-unused-parameter
         -Wno-unused-value
@@ -209,6 +215,7 @@ if (CMAKE_COMPILER_IS_GNUCC)
         -Wno-unused-function
         -Wno-misleading-indentation
         -Wno-attributes
+        -Wformat
     )
 endif()
 
