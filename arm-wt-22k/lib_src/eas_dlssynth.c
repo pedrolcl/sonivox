@@ -580,7 +580,7 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
                     // very small decay time, regard it as no decay
                     goto nodecay;
                 }
-                *pIncrement = (SYNTH_FULL_SCALE_EG1_GAIN - pEnvParams->sustainLevel) / temp;
+                *pIncrement = SYNTH_FULL_SCALE_EG1_GAIN / temp;
                 if (*pIncrement == 0) {
                     *pIncrement = 1; // ensure no infinite decay
                 }
