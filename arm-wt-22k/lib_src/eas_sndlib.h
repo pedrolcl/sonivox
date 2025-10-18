@@ -287,7 +287,7 @@ typedef struct s_fm_region_tag
 */
 typedef struct s_program_tag
 {
-    EAS_U32 locale;
+    EAS_U32 locale; // 0xdmmllpp d=0(melodic)/1(drums) (only exist in DLS programs), mm=bank MSB, ll=bank LSB, pp=program
     EAS_U16 regionIndex;
 } S_PROGRAM;
 
