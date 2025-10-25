@@ -9,7 +9,8 @@ on:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  INSTALL_LOCATION: SonivoxV3
+  INSTALL_LOCATION: SonivoxV4
+  TEMP: temp
 
 jobs:
   build:
@@ -45,35 +46,20 @@ jobs:
           ninja:p
           gtest:p
 
-    - name: '${{ matrix.icon }} Temp Directory'
-      run: mkdir temp
+    - name: '${{ matrix.icon }} TEMP Environment Variable'
+      run: |
+        mkdir temp
 
-    - name: '${{ matrix.icon }} Restore DLS Cache'
-      uses: actions/cache/restore@v4
-      id: cache
+    - name: '${{ matrix.icon }} Downloading a DLS file for testing'
+      uses: ethanjli/cached-download-action@6bee1d546f48427140e81ed759b343229c93b7c5
       with:
-        key: soundfont.dls
-        path: temp/soundfont.dls
-        enableCrossOsArchive: true
-
-    - name: '${{ matrix.icon }} Copy soundfont to TEMP'
-      if: steps.cache.outputs.cache-hit == 'true'
-      run: cp temp/soundfont.dls $TEMP
+        url: http://www.ronimusic.com/sf2/Airfont_340.dls
+        destination: temp/soundfont.dls
+        cache-key: cached.soundfont.dls
+        enable-cross-os-archive: true
 
     - name: '${{ matrix.icon }} Configure CMake'
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} -G Ninja
-
-    - name: '${{ matrix.icon }} Copy from TEMP'
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: cp $TEMP/soundfont.dls temp/soundfont.dls
-
-    - name: '${{ matrix.icon }} Store DLS Cache'
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        key: soundfont.dls
-        path: temp/soundfont.dls
-        enableCrossOsArchive: true
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build build --config ${{env.BUILD_TYPE}}

@@ -13,8 +13,8 @@ jobs:
     name: FreeBSD CI
     env:
       BUILD_TYPE: RelWithDebInfo
-      INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
-      TEMP: ${{github.workspace}}/temp/
+      INSTALL_LOCATION: ${{github.workspace}}/SonivoxV4
+      TEMP: ${{github.workspace}}/temp
 
     steps:
     - uses: actions/checkout@v4
@@ -22,13 +22,13 @@ jobs:
       run: |
         mkdir -p ${{github.workspace}}/temp
 
-    - name: Restore DLS Cache
-      uses: actions/cache/restore@v4
-      id: cache
+    - name: Downloading a DLS file for testing
+      uses: ethanjli/cached-download-action@v0.1.3
       with:
-        key: soundfont.dls
-        path: temp/soundfont.dls
-        enableCrossOsArchive: true
+        url: http://www.ronimusic.com/sf2/Airfont_340.dls
+        destination: ${{env.TEMP}}/soundfont.dls
+        cache-key: cached.soundfont.dls
+        enable-cross-os-archive: true
 
     - name: FreeBSD test
       id: test
@@ -50,19 +50,11 @@ jobs:
           ctest -C ${{env.BUILD_TYPE}} --verbose
           cd ${{github.workspace}}
           cmake --install ${{github.workspace}}/build
-          tar cvf SonivoxV3.tar SonivoxV3
-
-    - name: Store DLS Cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        key: soundfont.dls
-        path: temp/soundfont.dls
-        enableCrossOsArchive: true
+          tar cvf SonivoxV4.tar SonivoxV4
 
     - uses: actions/upload-artifact@v4
       with:
-        name: SonivoxV3-freebsd
-        path: SonivoxV3.tar
+        name: SonivoxV4-freebsd
+        path: SonivoxV4.tar
         retention-days: 90
         overwrite: true
