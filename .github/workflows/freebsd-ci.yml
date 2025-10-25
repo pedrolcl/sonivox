@@ -13,7 +13,7 @@ jobs:
     name: FreeBSD CI
     env:
       BUILD_TYPE: RelWithDebInfo
-      INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
+      INSTALL_LOCATION: ${{github.workspace}}/SonivoxV4
       TEMP: ${{github.workspace}}/temp
 
     steps:
@@ -50,11 +50,11 @@ jobs:
           ctest -C ${{env.BUILD_TYPE}} --verbose
           cd ${{github.workspace}}
           cmake --install ${{github.workspace}}/build
-          tar cvf SonivoxV3.tar SonivoxV3
+          tar cvf SonivoxV4.tar SonivoxV4
 
     - uses: actions/upload-artifact@v4
       with:
-        name: SonivoxV3-freebsd
-        path: SonivoxV3.tar
+        name: SonivoxV4-freebsd
+        path: SonivoxV4.tar
         retention-days: 90
         overwrite: true

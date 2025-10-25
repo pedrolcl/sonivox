@@ -9,7 +9,7 @@ on:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
+  INSTALL_LOCATION: ${{github.workspace}}/SonivoxV4
   TEMP: ${{github.workspace}}/temp
 
 jobs:
@@ -64,12 +64,12 @@ jobs:
     - name: '${{ matrix.icon }} Create Archive'
       run: |
         cd ${{github.workspace}}
-        tar cvf SonivoxV3.tar SonivoxV3
+        tar cvf SonivoxV4.tar SonivoxV4
 
     - name: '${{ matrix.icon }} Upload Artifacts'
       uses: actions/upload-artifact@v4
       with:
-        name: SonivoxV3-Linux-${{matrix.arch}}-${{matrix.format}}
-        path: SonivoxV3.tar
+        name: SonivoxV4-Linux-${{matrix.arch}}-${{matrix.format}}
+        path: SonivoxV4.tar
         retention-days: 90
         overwrite: true

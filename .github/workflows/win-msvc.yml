@@ -9,7 +9,7 @@ on:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
+  INSTALL_LOCATION: ${{github.workspace}}/SonivoxV4
   TEMP: ${{github.workspace}}/temp
 
 jobs:
@@ -58,7 +58,7 @@ jobs:
     - name: '${{ matrix.icon }} Upload Artifacts'
       uses: actions/upload-artifact@v4
       with:
-        name: SonivoxV3-msvc-${{matrix.arch}}
+        name: SonivoxV4-msvc-${{matrix.arch}}
         path: ${{env.INSTALL_LOCATION}}
         retention-days: 90
         overwrite: true

@@ -9,7 +9,7 @@ on:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  INSTALL_LOCATION: SonivoxV3
+  INSTALL_LOCATION: SonivoxV4
   TEMP: temp
 
 jobs:
