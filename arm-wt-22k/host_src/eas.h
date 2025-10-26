@@ -35,6 +35,7 @@
 #ifndef _EAS_H
 #define _EAS_H
 
+#include "eas_options.h"
 #include "eas_types.h"
 #include "eas_version.h"
 

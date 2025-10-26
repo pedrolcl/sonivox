@@ -37,6 +37,7 @@
 #endif
 
 #include "eas_report.h"
+#include "eas_options.h"
 
 static int severityLevel = 9999;
 

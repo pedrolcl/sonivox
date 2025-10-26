@@ -34,10 +34,50 @@ option(BUILD_TESTING "Build the unit tests" TRUE)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Whether to create position-independent targets" TRUE)
 option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
 option(SF2_SUPPORT "Enable SF2 support and float DCF" TRUE)
-set(MAX_VOICES 64 CACHE STRING "Maximum number of voices")
 
 include(CMakeDependentOption)
 cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the example program" FALSE "BUILD_EXAMPLE" FALSE)
+
+set(MAX_SYNTH_VOICES 64 CACHE STRING "Maximum number of voices")
+mark_as_advanced(MAX_SYNTH_VOICES)
+
+# Not yet configurable options. Please don't modify:
+set(UNIFIED_DEBUG_MESSAGES ON)
+set(NUM_OUTPUT_CHANNELS 2)
+set(EAS_WT_SYNTH ON)
+set(EAS_FM_SYNTH OFF)
+set(_FILTER_ENABLED ON)
+set(DLS_SYNTHESIZER ON)
+set(_REVERB_ENABLED ON)
+set(_CHORUS_ENABLED ON)
+set(_IMELODY_PARSER OFF)
+set(_RTTTL_PARSER OFF)
+set(_OTA_PARSER OFF)
+set(_XMF_PARSER ON)
+set(JET_INTERFACE OFF)
+set(_RMID_PARSER ON)
+
+set(_METRICS_ENABLED OFF)
+set(MMAPI_SUPPORT OFF)
+set(EXTERNAL_AUDIO OFF)
+
+#derived options:
+if (USE_16BITS_SAMPLES)
+    set(_16_BIT_SAMPLES ON)
+else()
+    set(_8_BIT_SAMPLES ON)
+endif()
+
+if (USE_44KHZ)
+    set(_SAMPLE_RATE_44100 ON)
+else()
+    set(_SAMPLE_RATE_22050 ON)
+endif()
+
+if (SF2_SUPPORT)
+    set(_SF2_SUPPORT ON)
+    set(_FLOAT_DCF ON)
+endif()
 
 include(GNUInstallDirs)
 
@@ -78,6 +118,10 @@ if (ZLIB_FOUND)
     list(APPEND PRIVATE_LIST "-lz")
 else()
     message(STATUS "ZLIB not found. Disabling XMF ZLIB Unpacker support.")
+endif()
+
+if(ZLIB_FOUND)
+    set(_ZLIB_UNPACKER ON)
 endif()
 
 list(APPEND SOURCES
@@ -141,6 +185,7 @@ else()
 endif()
 
 configure_file(arm-wt-22k/host_src/eas_version.cmake libsonivox/eas_version.h @ONLY)
+configure_file(arm-wt-22k/host_src/eas_options.cmake libsonivox/eas_options.h @ONLY)
 
 list(APPEND HEADERS
     arm-wt-22k/host_src/eas.h
@@ -149,57 +194,19 @@ list(APPEND HEADERS
     arm-wt-22k/host_src/eas_types.h
     arm-wt-22k/host_src/eas_report.h
     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_version.h
+    ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_options.h
     #arm-wt-22k/host_src/jet.h
 )
 
 include ( CheckIncludeFile )
 check_include_file ( getopt.h HAVE_GETOPT_H )
 
-add_library( sonivox-objects OBJECT ${SOURCES} ${HEADERS} )
-
-target_compile_definitions( sonivox-objects PRIVATE
-  UNIFIED_DEBUG_MESSAGES
-  EAS_WT_SYNTH
-  NUM_OUTPUT_CHANNELS=2
-  MAX_SYNTH_VOICES=${MAX_VOICES}
-  _FILTER_ENABLED
-  DLS_SYNTHESIZER
-  _REVERB_ENABLED
-  _CHORUS_ENABLED
-  #_IMELODY_PARSER
-  #_RTTTL_PARSER
-  #_OTA_PARSER
-  _XMF_PARSER
-  #JET_INTERFACE
-  _RMID_PARSER
-)
+add_library( sonivox-objects OBJECT ${SOURCES} ${HEADERS}
+    arm-wt-22k/host_src/eas_options.cmake
+    arm-wt-22k/host_src/eas_version.cmake )
 
 include(TestBigEndian)
-test_big_endian(BIG_ENDIAN)
-
-if (BIG_ENDIAN)
-    target_compile_definitions( sonivox-objects PRIVATE EAS_BIG_ENDIAN )
-endif()
-
-if (USE_16BITS_SAMPLES)
-    target_compile_definitions( sonivox-objects PRIVATE _16_BIT_SAMPLES )
-else()
-    target_compile_definitions( sonivox-objects PRIVATE _8_BIT_SAMPLES )
-endif()
-
-if(USE_44KHZ)
-    target_compile_definitions( sonivox-objects PRIVATE _SAMPLE_RATE_44100 )
-else()
-    target_compile_definitions( sonivox-objects PRIVATE _SAMPLE_RATE_22050 )
-endif()
-
-if(ZLIB_FOUND)
-    target_compile_definitions( sonivox-objects PRIVATE _ZLIB_UNPACKER )
-endif()
-
-if (SF2_SUPPORT)
-    target_compile_definitions( sonivox-objects PRIVATE _SF2_SUPPORT _FLOAT_DCF )
-endif()
+test_big_endian(EAS_BIG_ENDIAN)
 
 target_include_directories( sonivox-objects PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox
@@ -314,7 +321,6 @@ if (BUILD_TESTING)
 
     add_executable( SonivoxTest
         test/SonivoxTest.cpp
-        arm-wt-22k/host_src/eas_version.cmake
     )
 
     if(USE_44KHZ)

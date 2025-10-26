@@ -30,6 +30,8 @@
 #ifndef _EAS_SYNTHCFG_H
 #define _EAS_SYNTHCFG_H
 
+#include "eas_options.h"
+
 // TODO: we may need a better way to handle these fx
 #ifdef _CHORUS_ENABLED
 #define _CC_CHORUS

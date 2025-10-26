@@ -29,6 +29,7 @@
 
 /* includes */
 #include "eas.h"
+#include "eas_options.h"
 #include "eas_data.h"
 #include "eas_config.h"
 #include "eas_effects.h"

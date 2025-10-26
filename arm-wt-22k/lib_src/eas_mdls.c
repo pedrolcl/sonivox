@@ -116,6 +116,7 @@
 
 #include "log/log.h"
 
+#include "eas_options.h"
 #include "eas_data.h"
 #include "eas_host.h"
 #include "eas_mdls.h"

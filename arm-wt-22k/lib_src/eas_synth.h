@@ -32,8 +32,9 @@
 
 #include "eas_audioconst.h"
 #include "eas_effects.h"
-#include "eas_types.h"
+#include "eas_options.h"
 #include "eas_sndlib.h"
+#include "eas_types.h"
 
 #ifdef _WT_SYNTH
 #include "eas_wtsynth.h"
