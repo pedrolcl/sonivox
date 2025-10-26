@@ -661,7 +661,7 @@ EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle,
         waveLenSize = (EAS_I32) (dls.waveCount * sizeof(EAS_U32));
 
         /* calculate final memory size */
-        size = (EAS_I32) sizeof(S_EAS) + instSize + rgnPoolSize + artPoolSize + (2 * waveLenSize) + (EAS_I32) dls.wavePoolSize;
+        size = (EAS_I32) sizeof(S_DLS) + instSize + rgnPoolSize + artPoolSize + (2 * waveLenSize) + (EAS_I32) dls.wavePoolSize;
         if (size <= 0) {
             EAS_HWFree(dls.hwInstData, dls.wsmpData);
             return EAS_ERROR_FILE_FORMAT;
@@ -678,7 +678,7 @@ EAS_RESULT DLSParser (EAS_HW_DATA_HANDLE hwInstData, EAS_FILE_HANDLE fileHandle,
         EAS_HWMemSet(dls.pDLS, 0, size);
         dls.pDLS->refCount = 1;
         dls.pDLS->libType = DLSLIB_TYPE_DLS;
-        p = PtrOfs(dls.pDLS, sizeof(S_EAS));
+        p = PtrOfs(dls.pDLS, sizeof(S_DLS));
 
         /* setup pointer to programs */
         dls.pDLS->numDLSPrograms = (EAS_U16) dls.instCount;
@@ -1078,42 +1078,39 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
             size = dataSize << 1;
     }
 
+#if defined(_16_BIT_SAMPLES)
     switch (p->fmtTag)
     {
         case WAVE_FORMAT_MPEGLAYER3:
-#if defined(_16_BIT_SAMPLES)
             if ((result = Parse_mp3_data(pDLSData, dataPos, dataSize, NULL, &size)) != EAS_SUCCESS)
                 return result;
             break;
-#else
-            return EAS_ERROR_UNRECOGNIZED_FORMAT;
+    }
 #endif
-        }
 
     if (p->loopLength)
         size += bitDepth / 8; // reserved for copying *loopStart to 1 beyond loopEnd, see WT_Interpolate
 
-        /* for first pass, add size to wave pool size and return */
-        if (pDLSData->pDLS == NULL) {
-            pDLSData->wavePoolSize += (EAS_U32) size;
-            return EAS_SUCCESS;
-        }
-
-        /* allocate memory and read in the sample data */
-        pSample = (EAS_U8 *) pDLSData->pDLS->pDLSSamples + pDLSData->wavePoolOffset;
-        pDLSData->pDLS->pDLSSampleOffsets[waveIndex] = pDLSData->wavePoolOffset;
-        pDLSData->pDLS->pDLSSampleLen[waveIndex] = (EAS_U32) size;
-        pDLSData->wavePoolOffset += (EAS_U32) size;
-        if (pDLSData->wavePoolOffset > pDLSData->wavePoolSize) {
-            EAS_Report(_EAS_SEVERITY_ERROR, "Wave pool exceeded allocation\n");
-            return EAS_ERROR_SOUND_LIBRARY;
-        }
-
-        if ((result = Parse_data(pDLSData, dataPos, dataSize, p, pSample, (EAS_U32) size))
-            != EAS_SUCCESS)
-            return result;
-
+    /* for first pass, add size to wave pool size and return */
+    if (pDLSData->pDLS == NULL) {
+        pDLSData->wavePoolSize += (EAS_U32) size;
         return EAS_SUCCESS;
+    }
+
+    /* allocate memory and read in the sample data */
+    pSample = (EAS_U8 *) pDLSData->pDLS->pDLSSamples + pDLSData->wavePoolOffset;
+    pDLSData->pDLS->pDLSSampleOffsets[waveIndex] = pDLSData->wavePoolOffset;
+    pDLSData->pDLS->pDLSSampleLen[waveIndex] = (EAS_U32) size;
+    pDLSData->wavePoolOffset += (EAS_U32) size;
+    if (pDLSData->wavePoolOffset > pDLSData->wavePoolSize) {
+        EAS_Report(_EAS_SEVERITY_ERROR, "Wave pool exceeded allocation\n");
+        return EAS_ERROR_SOUND_LIBRARY;
+    }
+
+    if ((result = Parse_data(pDLSData, dataPos, dataSize, p, pSample, (EAS_U32) size)) != EAS_SUCCESS)
+        return result;
+
+    return EAS_SUCCESS;
 }
 
 /*----------------------------------------------------------------------------
@@ -1243,18 +1240,26 @@ static EAS_RESULT Parse_fmt (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSM
     /* get format tag */
     if ((result = EAS_HWGetWord(pDLSData->hwInstData, pDLSData->fileHandle, &wtemp, EAS_FALSE)) != EAS_SUCCESS)
         return result;
+#if defined(_8_BIT_SAMPLES)
+    if (wtemp != WAVE_FORMAT_PCM)
+    {
+        EAS_Report(_EAS_SEVERITY_ERROR, "Unsupported DLS sample format %04x\n", wtemp);
+        return EAS_ERROR_UNRECOGNIZED_FORMAT;
+    }
+#elif defined(_16_BIT_SAMPLES)
     switch(wtemp)
     {
         case WAVE_FORMAT_PCM:
         case WAVE_FORMAT_ALAW:
         case WAVE_FORMAT_MULAW:
         case WAVE_FORMAT_MPEGLAYER3:
-            p->fmtTag = wtemp;
             break;
         default:
             EAS_Report(_EAS_SEVERITY_ERROR, "Unsupported DLS sample format %04x\n", wtemp);
             return EAS_ERROR_UNRECOGNIZED_FORMAT;
     }
+#endif
+    p->fmtTag = wtemp;
 
     /* get number of channels */
     if ((result = EAS_HWGetWord(pDLSData->hwInstData, pDLSData->fileHandle, &wtemp, EAS_FALSE)) != EAS_SUCCESS)
@@ -1369,7 +1374,7 @@ static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     if (pWsmp->loopLength)
     {
         if (sampleLen < sizeof(EAS_SAMPLE)
-            || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen)
+            || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen - sizeof(EAS_SAMPLE))
         {
             return EAS_FAILURE;
         }
@@ -1447,7 +1452,7 @@ handle_loop:
     if (pWsmp->loopLength)
     {
         if (sampleLen < sizeof(EAS_SAMPLE)
-            || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen)
+            || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen - sizeof(EAS_SAMPLE))
         {
             EAS_Report(_EAS_SEVERITY_ERROR, "wsmp contains invalid loop region\n");
             return EAS_FAILURE;
@@ -2029,7 +2034,7 @@ static EAS_RESULT Parse_rgn (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I
         {
             EAS_U32 sampleLen = pDLSData->pDLS->pDLSSampleLen[waveIndex];
             if (sampleLen < sizeof(EAS_SAMPLE)
-                || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen)
+                || (pWsmp->loopStart + pWsmp->loopLength) * sizeof(EAS_SAMPLE) > sampleLen - sizeof(EAS_SAMPLE))
             {
                 return EAS_FAILURE;
             }
