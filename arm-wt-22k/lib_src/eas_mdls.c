@@ -102,6 +102,8 @@
  * structures.
 */
 
+#include "eas_options.h"
+
 #ifndef _FILTER_ENABLED
 #error "Filter must be enabled if DLS_SYNTHESIZER is enabled"
 #endif

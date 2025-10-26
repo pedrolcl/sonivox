@@ -31,8 +31,9 @@
 #ifndef _EAS_CHORUS_H
 #define _EAS_CHORUS_H
 
-#include "eas_types.h"
 #include "eas_audioconst.h"
+#include "eas_options.h"
+#include "eas_types.h"
 
 //defines for chorus
 

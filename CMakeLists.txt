@@ -184,6 +184,12 @@ else()
     list(APPEND SOURCES arm-wt-22k/lib_src/eas_filter.c)
 endif()
 
+include(TestBigEndian)
+test_big_endian(EAS_BIG_ENDIAN)
+
+include ( CheckIncludeFile )
+check_include_file ( getopt.h HAVE_GETOPT_H )
+
 configure_file(arm-wt-22k/host_src/eas_version.cmake libsonivox/eas_version.h @ONLY)
 configure_file(arm-wt-22k/host_src/eas_options.cmake libsonivox/eas_options.h @ONLY)
 
@@ -198,15 +204,9 @@ list(APPEND HEADERS
     #arm-wt-22k/host_src/jet.h
 )
 
-include ( CheckIncludeFile )
-check_include_file ( getopt.h HAVE_GETOPT_H )
-
 add_library( sonivox-objects OBJECT ${SOURCES} ${HEADERS}
     arm-wt-22k/host_src/eas_options.cmake
     arm-wt-22k/host_src/eas_version.cmake )
-
-include(TestBigEndian)
-test_big_endian(EAS_BIG_ENDIAN)
 
 target_include_directories( sonivox-objects PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox
@@ -322,12 +322,6 @@ if (BUILD_TESTING)
     add_executable( SonivoxTest
         test/SonivoxTest.cpp
     )
-
-    if(USE_44KHZ)
-        target_compile_definitions( SonivoxTest PRIVATE _SAMPLE_RATE_44100 )
-    else()
-        target_compile_definitions( SonivoxTest PRIVATE _SAMPLE_RATE_22050 )
-    endif()
 
     target_include_directories( SonivoxTest PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}

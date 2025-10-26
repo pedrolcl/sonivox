@@ -1,4 +1,4 @@
-#if defined(_FILTER_ENABLED) && !defined(_FLOAT_DCF)
+#include "eas_options.h"
 #include "eas_wtengine.h"
 #include "eas_report.h"
 #include "eas_audioconst.h"
@@ -7,6 +7,8 @@
 
 #include "log/log.h"
 #include <cutils/log.h>
+
+#if defined(_FILTER_ENABLED) && !defined(_FLOAT_DCF)
 
 /* adjust the filter cutoff frequency to the sample rate */
 #if defined (_SAMPLE_RATE_8000)
