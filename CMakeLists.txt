@@ -41,7 +41,7 @@ cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the example program" 
 
 include(GNUInstallDirs)
 
-set(PROJECT_RELEASE_DATE "April 13, 2025")
+# set(PROJECT_RELEASE_DATE "April 13, 2025")
 
 if (BUILD_TESTING)
     find_package(GTest CONFIG)
@@ -140,15 +140,16 @@ else()
     list(APPEND SOURCES arm-wt-22k/lib_src/eas_filter.c)
 endif()
 
-configure_file(arm-wt-22k/host_src/eas.cmake libsonivox/eas.h @ONLY)
+configure_file(arm-wt-22k/host_src/eas_version.cmake libsonivox/eas_version.h @ONLY)
 
 list(APPEND HEADERS
-    ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas.h
+    arm-wt-22k/host_src/eas.h
     arm-wt-22k/host_src/eas_chorus.h
     arm-wt-22k/host_src/eas_reverb.h
     arm-wt-22k/host_src/eas_types.h
     arm-wt-22k/host_src/eas_report.h
-#arm-wt-22k/host_src/jet.h
+    ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_version.h
+    #arm-wt-22k/host_src/jet.h
 )
 
 include ( CheckIncludeFile )
@@ -313,6 +314,7 @@ if (BUILD_TESTING)
 
     add_executable( SonivoxTest
         test/SonivoxTest.cpp
+        arm-wt-22k/host_src/eas_version.cmake
     )
 
     if(USE_44KHZ)
