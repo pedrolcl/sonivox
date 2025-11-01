@@ -109,10 +109,7 @@ typedef enum
 #define EAS_CONST const
 #endif
 
-/* definition for public interface functions */
-#ifndef EAS_PUBLIC
-#define EAS_PUBLIC
-#endif
+/* EAS_PUBLIC definition for public interface functions is now in eas_visibility.h */
 
 /* boolean values */
 typedef unsigned EAS_BOOL;

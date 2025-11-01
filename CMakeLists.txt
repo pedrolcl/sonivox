@@ -25,6 +25,11 @@ project( sonivox
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED TRUE)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN yes)
+
 option(USE_44KHZ "Output 44100 Hz audio sample rate (instead of 22050 Hz)" TRUE)
 option(USE_16BITS_SAMPLES "Use 16 bits samples (instead of 8 bit)" TRUE)
 option(BUILD_SONIVOX_STATIC "Build the static library" TRUE)
@@ -201,6 +206,7 @@ list(APPEND HEADERS
     arm-wt-22k/host_src/eas_report.h
     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_version.h
     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_options.h
+    ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_visibility.h
     #arm-wt-22k/host_src/jet.h
 )
 
@@ -252,6 +258,16 @@ if (BUILD_SONIVOX_SHARED)
     add_library( sonivox::sonivox ALIAS sonivox )
     list( APPEND SONIVOX_TARGETS sonivox )
 endif()
+
+target_compile_definitions(sonivox PRIVATE sonivox_EXPORTS)
+
+include(GenerateExportHeader)
+generate_export_header( sonivox
+  EXPORT_FILE_NAME     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_visibility.h
+  EXPORT_MACRO_NAME    EAS_PUBLIC
+  NO_EXPORT_MACRO_NAME EAS_PRIVATE
+  INCLUDE_GUARD_NAME   EAS_VISIBILITY_H
+)
 
 if(IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
     set(sonivox_libdir "${CMAKE_INSTALL_LIBDIR}")
@@ -360,14 +376,14 @@ if (BUILD_TESTING)
     if (NOT EXISTS ${SOUNDFONT})
         message(STATUS "Downloading DLS file for testing to ${SOUNDFONT}")
         file(DOWNLOAD "http://www.ronimusic.com/sf2/Airfont_340.dls" ${SOUNDFONT})
-    endif()
 
-    file(SIZE ${SOUNDFONT} SOUNDFONTSIZE)
-    file(MD5 ${SOUNDFONT} SOUNDFONTHASH)
-    message(STATUS "DLS file ${SOUNDFONT} size: ${SOUNDFONTSIZE}")
-    message(STATUS "DLS file ${SOUNDFONT} MD5 hash: ${SOUNDFONTHASH}")
-    if (NOT (SOUNDFONTSIZE EQUAL 81362584 AND SOUNDFONTHASH STREQUAL "40c0cd4ad29ae411a8fc3d6681002a2b"))
-        message(FATAL_ERROR "The downloaded DLS file is corrupted.")
+        file(SIZE ${SOUNDFONT} SOUNDFONTSIZE)
+        file(MD5 ${SOUNDFONT} SOUNDFONTHASH)
+        message(STATUS "DLS file ${SOUNDFONT} size: ${SOUNDFONTSIZE}")
+        message(STATUS "DLS file ${SOUNDFONT} MD5 hash: ${SOUNDFONTHASH}")
+        if (NOT (SOUNDFONTSIZE EQUAL 81362584 AND SOUNDFONTHASH STREQUAL "40c0cd4ad29ae411a8fc3d6681002a2b"))
+            message(FATAL_ERROR "The downloaded DLS file is corrupted.")
+        endif()
     endif()
 
     include( GoogleTest )
