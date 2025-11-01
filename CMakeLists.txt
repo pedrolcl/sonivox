@@ -32,8 +32,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN yes)
 
 option(USE_44KHZ "Output 44100 Hz audio sample rate (instead of 22050 Hz)" TRUE)
 option(USE_16BITS_SAMPLES "Use 16 bits samples (instead of 8 bit)" TRUE)
-option(BUILD_SONIVOX_STATIC "Build the static library" TRUE)
-option(BUILD_SONIVOX_SHARED "Build the shared library" TRUE)
+option(BUILD_SHARED_LIBS "Build the shared library" TRUE)
 option(BUILD_EXAMPLE "Build and install the example program" TRUE)
 option(BUILD_TESTING "Build the unit tests" TRUE)
 option(CMAKE_POSITION_INDEPENDENT_CODE "Whether to create position-independent targets" TRUE)
@@ -210,11 +209,11 @@ list(APPEND HEADERS
     #arm-wt-22k/host_src/jet.h
 )
 
-add_library( sonivox-objects OBJECT ${SOURCES} ${HEADERS}
+add_library( sonivox ${SOURCES} ${HEADERS}
     arm-wt-22k/host_src/eas_options.cmake
     arm-wt-22k/host_src/eas_version.cmake )
 
-target_include_directories( sonivox-objects PRIVATE
+target_include_directories( sonivox PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox
     arm-wt-22k/host_src
     arm-wt-22k/lib_src
@@ -222,7 +221,7 @@ target_include_directories( sonivox-objects PRIVATE
 )
 
 if (CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
-    target_compile_options( sonivox-objects PRIVATE
+    target_compile_options( sonivox PRIVATE
         -Wno-unused-parameter
         -Wno-unused-value
         -Wno-unused-variable
@@ -233,46 +232,30 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
     )
 endif()
 
-if (BUILD_SONIVOX_STATIC)
-    target_compile_definitions ( sonivox-objects PRIVATE SONIVOX_OBJECTS_STATIC_DEFINE)
-else()    
-    target_compile_definitions( sonivox-objects PRIVATE sonivox_objects_EXPORTS)
+if (BUILD_SHARED_LIBS)
+    target_compile_definitions( sonivox PRIVATE sonivox_EXPORTS )
+else()
+    target_compile_definitions ( sonivox PUBLIC SONIVOX_STATIC_DEFINE )
 endif()
 
 include(GenerateExportHeader)
-generate_export_header( sonivox-objects
+generate_export_header( sonivox
   EXPORT_FILE_NAME     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_visibility.h
   EXPORT_MACRO_NAME    EAS_PUBLIC
   NO_EXPORT_MACRO_NAME EAS_PRIVATE
   INCLUDE_GUARD_NAME   EAS_VISIBILITY_H
 )
 
-if (BUILD_SONIVOX_STATIC)
-    add_library( sonivox-static STATIC $<TARGET_OBJECTS:sonivox-objects> )
-    target_compile_definitions ( sonivox-static PUBLIC SONIVOX_OBJECTS_STATIC_DEFINE)
-    target_include_directories( sonivox-static PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
-    set_target_properties( sonivox-static PROPERTIES VERSION ${PROJECT_VERSION} )
-    set_target_properties( sonivox-static PROPERTIES PUBLIC_HEADER "${HEADERS}")
-    target_link_libraries( sonivox-static ${DEPLIBS} )
-    add_library( sonivox::sonivox-static ALIAS sonivox-static)
-    list( APPEND SONIVOX_TARGETS sonivox-static )
-endif()
-
-if (BUILD_SONIVOX_SHARED)
-    add_library( sonivox SHARED $<TARGET_OBJECTS:sonivox-objects> )
-    target_include_directories( sonivox PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
-    set_target_properties( sonivox PROPERTIES VERSION ${PROJECT_VERSION} )
-    set_target_properties( sonivox PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
-    set_target_properties( sonivox PROPERTIES PUBLIC_HEADER "${HEADERS}" )
-    target_link_libraries( sonivox PRIVATE ${DEPLIBS} )
-    #target_link_options( sonivox PRIVATE "LINKER:-z,defs" )
-    add_library( sonivox::sonivox ALIAS sonivox )
-    list( APPEND SONIVOX_TARGETS sonivox )
-endif()
+target_include_directories( sonivox PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
+set_target_properties( sonivox PROPERTIES VERSION ${PROJECT_VERSION} )
+set_target_properties( sonivox PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
+set_target_properties( sonivox PROPERTIES PUBLIC_HEADER "${HEADERS}" )
+target_link_libraries( sonivox PRIVATE ${DEPLIBS} )
+#target_link_options( sonivox PRIVATE "LINKER:-z,defs" )
+add_library( sonivox::sonivox ALIAS sonivox )
+list( APPEND SONIVOX_TARGETS sonivox )
 
 if(IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
     set(sonivox_libdir "${CMAKE_INSTALL_LIBDIR}")
@@ -286,16 +269,9 @@ else()
 endif()
 
 list(JOIN PRIVATE_LIST " " PRIVATE_LIBS)
-if (BUILD_SONIVOX_STATIC)
-    configure_file(sonivox-static.pc.in ${CMAKE_CURRENT_BINARY_DIR}/sonivox-static.pc @ONLY)
-    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivox-static.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
-endif()
-if (BUILD_SONIVOX_SHARED)
-    configure_file(sonivox.pc.in ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc @ONLY)
-    install( FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
-endif()
+configure_file(sonivox.pc.in ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc @ONLY)
+install( FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
 
 install( TARGETS ${SONIVOX_TARGETS}
     EXPORT sonivox-targets
@@ -305,29 +281,35 @@ install( TARGETS ${SONIVOX_TARGETS}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/sonivox
 )
 
+if (BUILD_SHARED_LIBS)
+    set(type shared)
+else ()
+    set(type static)
+endif ()
+
 install( EXPORT sonivox-targets
-        FILE ${PROJECT_NAME}-targets.cmake
-        NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    FILE ${PROJECT_NAME}-${type}-targets.cmake
+    NAMESPACE ${PROJECT_NAME}::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
 )
 
 export( EXPORT sonivox-targets
-        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-targets.cmake"
-        NAMESPACE ${PROJECT_NAME}::
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-${type}-targets.cmake"
+    NAMESPACE ${PROJECT_NAME}::
 )
 
 include( CMakePackageConfigHelpers )
 
 write_basic_package_version_file(
-        ${PROJECT_NAME}-config-version.cmake
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY AnyNewerVersion
+    ${PROJECT_NAME}-config-version.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file(
-        ${PROJECT_NAME}-config.cmake.in
-        ${PROJECT_NAME}-config.cmake
-        INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_NAME}-config.cmake.in
+    ${PROJECT_NAME}-config.cmake
+    INSTALL_DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 install( FILES
@@ -357,17 +339,8 @@ if (BUILD_TESTING)
 
     target_link_libraries( SonivoxTest PRIVATE
         GTest::gtest_main
+        sonivox
     )
-
-    if (BUILD_SONIVOX_STATIC)
-        target_link_libraries( SonivoxTest PRIVATE
-            sonivox-static
-        )
-    elseif (BUILD_SONIVOX_SHARED)
-        target_link_libraries( SonivoxTest PRIVATE
-            sonivox
-        )
-    endif()
 
     if(DEFINED ENV{TEMP})
         set(TEMPDIR "$ENV{TEMP}")
@@ -399,7 +372,4 @@ endif()
 if (BUILD_EXAMPLE)
     set(sonivox_DIR ${CMAKE_CURRENT_BINARY_DIR})
     add_subdirectory(example)
-    install( TARGETS sonivoxrender
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
 endif()

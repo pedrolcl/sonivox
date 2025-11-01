@@ -21,11 +21,11 @@ if (NOT HAVE_GETOPT_H)
     target_include_directories( sonivoxrender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port )
 endif()
 
-if (BUILD_SONIVOX_STATIC)
-    target_link_libraries ( sonivoxrender sonivox::sonivox-static )
-elseif (BUILD_SONIVOX_SHARED)
-    target_link_libraries ( sonivoxrender sonivox::sonivox )
-endif()
+target_link_libraries ( sonivoxrender sonivox::sonivox )
+
+install( TARGETS sonivoxrender
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 if (BUILD_MANPAGE)
     if(NOT EXISTS ${PANDOC_EXECUTABLE})
