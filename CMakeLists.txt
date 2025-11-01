@@ -234,7 +234,22 @@ if (CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
 endif()
 
 if (BUILD_SONIVOX_STATIC)
+    target_compile_definitions ( sonivox-objects PRIVATE SONIVOX_OBJECTS_STATIC_DEFINE)
+else()    
+    target_compile_definitions( sonivox-objects PRIVATE sonivox_objects_EXPORTS)
+endif()
+
+include(GenerateExportHeader)
+generate_export_header( sonivox-objects
+  EXPORT_FILE_NAME     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_visibility.h
+  EXPORT_MACRO_NAME    EAS_PUBLIC
+  NO_EXPORT_MACRO_NAME EAS_PRIVATE
+  INCLUDE_GUARD_NAME   EAS_VISIBILITY_H
+)
+
+if (BUILD_SONIVOX_STATIC)
     add_library( sonivox-static STATIC $<TARGET_OBJECTS:sonivox-objects> )
+    target_compile_definitions ( sonivox-static PUBLIC SONIVOX_OBJECTS_STATIC_DEFINE)
     target_include_directories( sonivox-static PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
@@ -258,16 +273,6 @@ if (BUILD_SONIVOX_SHARED)
     add_library( sonivox::sonivox ALIAS sonivox )
     list( APPEND SONIVOX_TARGETS sonivox )
 endif()
-
-target_compile_definitions(sonivox PRIVATE sonivox_EXPORTS)
-
-include(GenerateExportHeader)
-generate_export_header( sonivox
-  EXPORT_FILE_NAME     ${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas_visibility.h
-  EXPORT_MACRO_NAME    EAS_PUBLIC
-  NO_EXPORT_MACRO_NAME EAS_PRIVATE
-  INCLUDE_GUARD_NAME   EAS_VISIBILITY_H
-)
 
 if(IS_ABSOLUTE ${CMAKE_INSTALL_LIBDIR})
     set(sonivox_libdir "${CMAKE_INSTALL_LIBDIR}")
