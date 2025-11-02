@@ -103,6 +103,10 @@ if (BUILD_TESTING)
         # For Windows: Prevent overriding the parent project's compiler/linker settings
         set( gtest_force_shared_crt ON CACHE BOOL "" FORCE )
         FetchContent_MakeAvailable( googletest )
+        if ( WIN32 )
+            set_target_properties( gtest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+            set_target_properties( gtest_main PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+        endif()
     endif()
 endif()
 
