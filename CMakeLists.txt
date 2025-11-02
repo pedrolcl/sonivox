@@ -41,7 +41,7 @@ option(ZLIB_SUPPORT "Enable XMF ZLIB Unpacker support" TRUE)
 
 include(CMakeDependentOption)
 cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the example program" FALSE "BUILD_EXAMPLE" FALSE)
-cmake_dependent_option(MP3_SUPPORT "Enable XMF MP3 Decoder support" TRUE "USE_16BITS_SAMPLES" FALSE)
+cmake_dependent_option(MP3_SUPPORT "Enable MP3 Decoder support" TRUE "USE_16BITS_SAMPLES" FALSE)
 
 set(MAX_SYNTH_VOICES 64 CACHE STRING "Maximum number of voices")
 mark_as_advanced(MAX_SYNTH_VOICES)
@@ -122,6 +122,7 @@ if (UNIX AND NOT APPLE AND NOT EMSCRIPTEN)
     endif()
 endif()
 
+set(_ZLIB_UNPACKER OFF)
 if (ZLIB_SUPPORT)
     find_package(ZLIB)
     if (ZLIB_FOUND)
@@ -131,7 +132,6 @@ if (ZLIB_SUPPORT)
         set(_ZLIB_UNPACKER ON)
     else()
         message(STATUS "ZLIB not found. Disabling XMF ZLIB Unpacker support.")
-        set(_ZLIB_UNPACKER OFF)
     endif()
 endif()
 
@@ -204,7 +204,7 @@ check_include_file ( getopt.h HAVE_GETOPT_H )
 configure_file(arm-wt-22k/host_src/eas_version.cmake libsonivox/eas_version.h @ONLY)
 configure_file(arm-wt-22k/host_src/eas_options.cmake libsonivox/eas_options.h @ONLY)
 
-list(APPEND HEADERS
+list(APPEND PUBLIC_HEADERS
     arm-wt-22k/host_src/eas.h
     arm-wt-22k/host_src/eas_chorus.h
     arm-wt-22k/host_src/eas_reverb.h
@@ -216,15 +216,61 @@ list(APPEND HEADERS
     #arm-wt-22k/host_src/jet.h
 )
 
-add_library( sonivox ${SOURCES} ${HEADERS}
-    arm-wt-22k/host_src/eas_options.cmake
-    arm-wt-22k/host_src/eas_version.cmake )
+list(APPEND PRIVATE_HEADERS
+    arm-wt-22k/host_src/eas_build.h
+    arm-wt-22k/host_src/eas_config.h
+    arm-wt-22k/host_src/eas_debugmsgs.h
+    arm-wt-22k/host_src/eas_host.h
+    arm-wt-22k/host_src/eas_wave.h
+    arm-wt-22k/lib_src/dls.h
+    arm-wt-22k/lib_src/dls2.h
+    arm-wt-22k/lib_src/eas_ctype.h
+    arm-wt-22k/lib_src/eas_imelodydata.h
+    arm-wt-22k/lib_src/eas_midi.h
+    arm-wt-22k/lib_src/eas_otadata.h
+    arm-wt-22k/lib_src/eas_pan.h
+    arm-wt-22k/lib_src/eas_pcm.h
+    arm-wt-22k/lib_src/eas_pcmdata.h
+    arm-wt-22k/lib_src/eas_rtttldata.h
+    arm-wt-22k/lib_src/eas_smfdata.h
+    arm-wt-22k/lib_src/eas_synth_protos.h
+    arm-wt-22k/lib_src/eas_wavefile.h
+    arm-wt-22k/lib_src/eas_xmf.h
+    arm-wt-22k/lib_src/jet_data.h
+    arm-wt-22k/lib_src/eas_tcdata.h
+    arm-wt-22k/lib_src/eas_reverbdata.h
+    arm-wt-22k/lib_src/minimp3.h
+    arm-wt-22k/lib_src/pcm_aulaw.h
+    arm-wt-22k/lib_src/eas_effects.h
+    arm-wt-22k/lib_src/eas_xmfdata.h
+    arm-wt-22k/lib_src/eas_data.h
+    arm-wt-22k/lib_src/eas_dlssynth.h
+    arm-wt-22k/lib_src/eas_math.h
+    arm-wt-22k/lib_src/eas_mdls.h
+    arm-wt-22k/lib_src/eas_midictrl.h
+    arm-wt-22k/lib_src/eas_miditypes.h
+    arm-wt-22k/lib_src/eas_mixer.h
+    arm-wt-22k/lib_src/eas_parser.h
+    arm-wt-22k/lib_src/eas_sf2.h
+    arm-wt-22k/lib_src/eas_smf.h
+    arm-wt-22k/lib_src/eas_vm_protos.h
+    arm-wt-22k/lib_src/eas_wt_IPC_frame.h
+    arm-wt-22k/lib_src/eas_wtengine.h
+    arm-wt-22k/lib_src/eas_wtsynth.h
+    arm-wt-22k/lib_src/eas_synthcfg.h
+    arm-wt-22k/lib_src/eas_sndlib.h
+    arm-wt-22k/lib_src/eas_synth.h
+    arm-wt-22k/lib_src/eas_audioconst.h
+    arm-wt-22k/lib_src/eas_chorusdata.h
+    arm-wt-22k/lib_src/eas_filter.h
+)
 
-target_include_directories( sonivox PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}/libsonivox
-    arm-wt-22k/host_src
-    arm-wt-22k/lib_src
-    fakes
+add_library( sonivox
+    ${SOURCES}
+    ${PUBLIC_HEADERS}
+    ${PRIVATE_HEADERS}
+    arm-wt-22k/host_src/eas_options.cmake
+    arm-wt-22k/host_src/eas_version.cmake
 )
 
 if (CMAKE_C_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
@@ -254,11 +300,14 @@ generate_export_header( sonivox
 )
 
 target_include_directories( sonivox PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/include/libsonivox;${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/host_src>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/lib_src>"
+    "$<BUILD_INTERFACE:$<$<NOT:$<PLATFORM_ID:Android>>:${CMAKE_CURRENT_SOURCE_DIR}/fakes>>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
 set_target_properties( sonivox PROPERTIES VERSION ${PROJECT_VERSION} )
 set_target_properties( sonivox PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
-set_target_properties( sonivox PROPERTIES PUBLIC_HEADER "${HEADERS}" )
+set_target_properties( sonivox PROPERTIES PUBLIC_HEADER "${PUBLIC_HEADERS}" )
 target_link_libraries( sonivox PRIVATE ${DEPLIBS} )
 #target_link_options( sonivox PRIVATE "LINKER:-z,defs" )
 add_library( sonivox::sonivox ALIAS sonivox )
@@ -331,16 +380,19 @@ if (BUILD_TESTING)
 
     add_executable( SonivoxTest
         test/SonivoxTest.cpp
+        test/SonivoxTestEnvironment.h
     )
 
     target_include_directories( SonivoxTest PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}
-        arm-wt-22k/include
-        fakes
+        ${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/fakes
     )
 
     if (NOT HAVE_GETOPT_H)
-        target_sources( SonivoxTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/getopt_port/getopt.c )
+        target_sources( SonivoxTest PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/getopt_port/getopt.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/getopt_port/getopt.h )
         target_include_directories( SonivoxTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/getopt_port )
     endif()
 

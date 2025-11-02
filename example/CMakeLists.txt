@@ -17,7 +17,9 @@
 add_executable ( sonivoxrender sonivoxrender.c )
 
 if (NOT HAVE_GETOPT_H)
-    target_sources( sonivoxrender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port/getopt.c )
+    target_sources( sonivoxrender PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port/getopt.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port/getopt.h )
     target_include_directories( sonivoxrender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port )
 endif()
 
