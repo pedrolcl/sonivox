@@ -4,6 +4,7 @@
 #cmakedefine UNIFIED_DEBUG_MESSAGES
 #cmakedefine EAS_WT_SYNTH
 #cmakedefine EAS_FM_SYNTH
+#cmakedefine EAS_HYBRID_SYNTH
 #cmakedefine NUM_OUTPUT_CHANNELS @NUM_OUTPUT_CHANNELS@
 #cmakedefine MAX_SYNTH_VOICES @MAX_SYNTH_VOICES@
 #cmakedefine _FILTER_ENABLED
@@ -30,5 +31,6 @@
 #cmakedefine _ZLIB_UNPACKER
 #cmakedefine _SF2_SUPPORT
 #cmakedefine _FLOAT_DCF
+#cmakedefine MP3_SUPPORT
 
 #endif // EAS_OPTIONS_CMAKE

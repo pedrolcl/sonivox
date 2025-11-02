@@ -132,7 +132,7 @@
 #include "eas_sf2.h"
 #endif
 
-#if defined(_16_BIT_SAMPLES)
+#if defined(_16_BIT_SAMPLES) && defined(MP3_SUPPORT)
 // for mp3 decoding
 #define MINIMP3_IMPLEMENTATION
 #define MINIMP3_ONLY_MP3
@@ -438,7 +438,7 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
 static EAS_RESULT Parse_wsmp (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSMP_DATA *p);
 static EAS_RESULT Parse_fmt (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, S_WSMP_DATA *p);
 static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, S_WSMP_DATA *p, EAS_SAMPLE *pSample, EAS_U32 sampleLen);
-#if defined(_16_BIT_SAMPLES)
+#if defined(_16_BIT_SAMPLES) && defined(MP3_SUPPORT)
 static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, EAS_SAMPLE *pSample, EAS_I32 *sampleLen);
 #endif
 static EAS_RESULT Parse_lins(SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size);
@@ -1081,7 +1081,7 @@ static EAS_RESULT Parse_wave (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
             size = dataSize << 1;
     }
 
-#if defined(_16_BIT_SAMPLES)
+#if defined(_16_BIT_SAMPLES) && defined(MP3_SUPPORT)
     switch (p->fmtTag)
     {
         case WAVE_FORMAT_MPEGLAYER3:
@@ -1396,13 +1396,14 @@ static EAS_RESULT Parse_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_
     EAS_I32 i;
     EAS_I16 *p;
 
+#if defined(MP3_SUPPORT)
     if (pWsmp->fmtTag == WAVE_FORMAT_MPEGLAYER3)
     {
         if ((result = Parse_mp3_data(pDLSData, pos, size, pSample, NULL)) != EAS_SUCCESS)
             return result;
         goto handle_loop;
     }
-
+#endif
     /* seek to start of chunk */
     if ((result = EAS_HWFileSeek(pDLSData->hwInstData, pDLSData->fileHandle, pos)) != EAS_SUCCESS)
         return result;
@@ -1488,7 +1489,7 @@ handle_loop:
  *
  *----------------------------------------------------------------------------
 */
-#if defined(_16_BIT_SAMPLES)
+#if defined(_16_BIT_SAMPLES) && defined(MP3_SUPPORT)
 static EAS_RESULT Parse_mp3_data (SDLS_SYNTHESIZER_DATA *pDLSData, EAS_I32 pos, EAS_I32 size, EAS_SAMPLE *pSample, EAS_I32 *sampleLen)
 {
     EAS_RESULT result;
