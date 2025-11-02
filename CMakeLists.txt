@@ -303,7 +303,7 @@ target_include_directories( sonivox PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/libsonivox>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/host_src>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/arm-wt-22k/lib_src>"
-    "$<BUILD_INTERFACE:$<$<NOT:$<PLATFORM_ID:Android>>:${CMAKE_CURRENT_SOURCE_DIR}/fakes>>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fakes>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/sonivox>" )
 set_target_properties( sonivox PROPERTIES VERSION ${PROJECT_VERSION} )
 set_target_properties( sonivox PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
