@@ -11,6 +11,7 @@
 #cmakedefine DLS_SYNTHESIZER
 #cmakedefine _REVERB_ENABLED
 #cmakedefine _CHORUS_ENABLED
+#cmakedefine _STATIC_MEMORY
 #cmakedefine _IMELODY_PARSER
 #cmakedefine _RTTTL_PARSER
 #cmakedefine _OTA_PARSER

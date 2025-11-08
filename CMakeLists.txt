@@ -33,15 +33,15 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN yes)
 option(USE_44KHZ "Output 44100 Hz audio sample rate (instead of 22050 Hz)" TRUE)
 option(USE_16BITS_SAMPLES "Use 16 bits samples (instead of 8 bit)" TRUE)
 option(BUILD_SHARED_LIBS "Build the shared library" TRUE)
-option(BUILD_EXAMPLE "Build and install the example program" TRUE)
-option(BUILD_TESTING "Build the unit tests" TRUE)
 option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
 option(SF2_SUPPORT "Enable SF2 support and float DCF" TRUE)
 option(ZLIB_SUPPORT "Enable XMF ZLIB Unpacker support" TRUE)
 
 include(CMakeDependentOption)
-cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the example program" FALSE "BUILD_EXAMPLE" FALSE)
 cmake_dependent_option(MP3_SUPPORT "Enable MP3 Decoder support" TRUE "USE_16BITS_SAMPLES" FALSE)
+cmake_dependent_option(BUILD_TESTING "Build the unit tests" TRUE "NOT ANDROID" FALSE)
+cmake_dependent_option(BUILD_APPLICATION "Build and install the CLI program" TRUE "NOT ANDROID" FALSE)
+cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the CLI program" FALSE "BUILD_APPLICATION" FALSE)
 
 set(MAX_SYNTH_VOICES 64 CACHE STRING "Maximum number of voices")
 mark_as_advanced(MAX_SYNTH_VOICES)
@@ -57,6 +57,7 @@ set(_FILTER_ENABLED ON)
 set(DLS_SYNTHESIZER ON)
 set(_REVERB_ENABLED ON)
 set(_CHORUS_ENABLED ON)
+set(_STATIC_MEMORY OFF)
 set(_IMELODY_PARSER OFF)
 set(_RTTTL_PARSER OFF)
 set(_OTA_PARSER OFF)
@@ -142,41 +143,29 @@ list(APPEND SOURCES
   arm-wt-22k/host_src/eas_report.c
 #arm-wt-22k/host_src/eas_wave.c
   arm-wt-22k/lib_src/eas_chorus.c
-  arm-wt-22k/lib_src/eas_chorusdata.c
-  arm-wt-22k/lib_src/eas_data.c
   arm-wt-22k/lib_src/eas_dlssynth.c
   arm-wt-22k/lib_src/eas_flog.c
 #arm-wt-22k/lib_src/eas_ima_tables.c
 #arm-wt-22k/lib_src/eas_imaadpcm.c
 #arm-wt-22k/lib_src/eas_imelody.c
-#arm-wt-22k/lib_src/eas_imelodydata.c
   arm-wt-22k/lib_src/eas_math.c
   arm-wt-22k/lib_src/eas_mdls.c
   arm-wt-22k/lib_src/eas_midi.c
-  arm-wt-22k/lib_src/eas_mididata.c
   arm-wt-22k/lib_src/eas_mixbuf.c
   arm-wt-22k/lib_src/eas_mixer.c
 #arm-wt-22k/lib_src/eas_ota.c
-#arm-wt-22k/lib_src/eas_otadata.c
   arm-wt-22k/lib_src/eas_pan.c
   arm-wt-22k/lib_src/eas_pcm.c
-  arm-wt-22k/lib_src/eas_pcmdata.c
   arm-wt-22k/lib_src/eas_public.c
   arm-wt-22k/lib_src/eas_reverb.c
-  arm-wt-22k/lib_src/eas_reverbdata.c
 #arm-wt-22k/lib_src/eas_rtttl.c
-#arm-wt-22k/lib_src/eas_rtttldata.c
   arm-wt-22k/lib_src/eas_smf.c
-  arm-wt-22k/lib_src/eas_smfdata.c
-  arm-wt-22k/lib_src/eas_tcdata.c
   arm-wt-22k/lib_src/eas_tonecontrol.c
   arm-wt-22k/lib_src/eas_voicemgt.c
 #arm-wt-22k/lib_src/eas_wavefile.c
-#arm-wt-22k/lib_src/eas_wavefiledata.c
   arm-wt-22k/lib_src/eas_wtengine.c
   arm-wt-22k/lib_src/eas_wtsynth.c
   arm-wt-22k/lib_src/eas_xmf.c
-  arm-wt-22k/lib_src/eas_xmfdata.c
 #arm-wt-22k/lib_src/jet.c
   arm-wt-22k/lib_src/wt_200k_G.c
   arm-wt-22k/src/rmidi.c
@@ -193,6 +182,23 @@ if (SF2_SUPPORT)
 else()
     message(STATUS "SF2 support disabled.")
     list(APPEND SOURCES arm-wt-22k/lib_src/eas_filter.c)
+endif()
+
+if (_STATIC_MEMORY)
+    list(APPEND SOURCES
+        arm-wt-22k/lib_src/eas_chorusdata.c
+        arm-wt-22k/lib_src/eas_data.c
+        #arm-wt-22k/lib_src/eas_imelodydata.c
+        arm-wt-22k/lib_src/eas_mididata.c
+        #arm-wt-22k/lib_src/eas_otadata.c
+        arm-wt-22k/lib_src/eas_pcmdata.c
+        arm-wt-22k/lib_src/eas_reverbdata.c
+        #arm-wt-22k/lib_src/eas_rtttldata.c
+        arm-wt-22k/lib_src/eas_smfdata.c
+        arm-wt-22k/lib_src/eas_tcdata.c
+        #arm-wt-22k/lib_src/eas_wavefiledata.c
+        arm-wt-22k/lib_src/eas_xmfdata.c
+    )
 endif()
 
 include(TestBigEndian)
@@ -427,8 +433,8 @@ if (BUILD_TESTING)
     gtest_discover_tests( SonivoxTest EXTRA_ARGS "-P${CMAKE_CURRENT_SOURCE_DIR}/test/res/" DISCOVERY_TIMEOUT 300 )
 endif()
 
-# Example program
-if (BUILD_EXAMPLE)
+# CLI program
+if (BUILD_APPLICATION)
     set(sonivox_DIR ${CMAKE_CURRENT_BINARY_DIR})
     add_subdirectory(example)
 endif()

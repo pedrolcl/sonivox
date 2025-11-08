@@ -34,10 +34,9 @@ The build system has the following options:
 
 * `USE_44KHZ`: Renders 44100 Hz audio (ON by default). If set to OFF will output 22050 Hz audio.
 * `USE_16BITS_SAMPLES`: Uses 16 bits samples (instead of 8 bit). ON by default. The rendered audio uses always 16 bits.
-* `BUILD_SONIVOX_STATIC` and `BUILD_SONIVOX_SHARED`: to control the generation and install of both the static and shared libraries from the sources. Both options are ON by default (at least one must be selected).
+* `BUILD_SHARED_LIBS`: to control the generation and install of both the static or shared libraries from the sources. (ON by default).
 * `BUILD_TESTING`: ON by default, to control if the unit tests are built, which require Google Test.
-* `BUILD_EXAMPLE`: ON by default, to build and install the example program.
-* `CMAKE_POSITION_INDEPENDENT_CODE`: Whether to create position-independent targets. ON By default.
+* `BUILD_APPLICATION`: ON by default, to build and install the CLI program.
 * `NEW_HOST_WRAPPER`: Uses the new CRT-based host wrapper for faster file loading. ON by default.
 * `MAX_VOICES`: Maximum number of voices. 64 by default.
 
