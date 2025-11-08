@@ -316,6 +316,7 @@ set_target_properties( sonivox PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
 set_target_properties( sonivox PROPERTIES PUBLIC_HEADER "${PUBLIC_HEADERS}" )
 target_link_libraries( sonivox PRIVATE ${DEPLIBS} )
 #target_link_options( sonivox PRIVATE "LINKER:-z,defs" )
+target_link_options( sonivox PUBLIC "LINKER:--build-id=none" )
 add_library( sonivox::sonivox ALIAS sonivox )
 list( APPEND SONIVOX_TARGETS sonivox )
 
