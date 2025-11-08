@@ -42,7 +42,7 @@
 // This value is calculated based on the original code (FM << 6, WT << 10)
 // so FM should >> 4 to match WT level
 // which is about -24 dB
-#define FM_OUTPUT_GAIN_ATTEN 4
+#define FM_OUTPUT_GAIN_ATTEN 0
 
 /* output level to mix buffer (3 = -24dB) */
 #define FM_GAIN_SHIFT 3
@@ -79,8 +79,8 @@ typedef struct
 typedef struct
 {
 	S_FM_ENG_OPER	oper[4];		/* operator data */
-    EAS_I16			op1Out;			/* op1 output for feedback loop */
-    EAS_I16			op3Out;			/* op3 output for feedback loop */
+    EAS_I32			op1Out;			/* op1 output for feedback loop */
+    EAS_I32			op3Out;			/* op3 output for feedback loop */
     EAS_U16			voiceGain;		/* LFO + channel parameters */
 #if (NUM_OUTPUT_CHANNELS == 2)
 	EAS_U16			gainLeft;		/* left gain multiplier */
@@ -122,7 +122,7 @@ extern EAS_BOOL FM_EndFrame (EAS_FRAME_BUFFER_HANDLE pFrameBuffe, EAS_I32 *pMixB
 
 /* FM engine prototypes */
 extern void FM_ConfigVoice (EAS_I32 voiceNum, S_FM_VOICE_CONFIG *vCfg, EAS_FRAME_BUFFER_HANDLE pFrameBuffer);
-extern void FM_ProcessVoice (EAS_I32 voiceNum, S_FM_VOICE_FRAME *pFrame, EAS_I32 numSamplesToAdd, EAS_PCM *pTempBuffer, EAS_PCM *pBuffer, EAS_I32 *pMixBuffer, EAS_FRAME_BUFFER_HANDLE pFrameBuffer);
+extern void FM_ProcessVoice (EAS_I32 voiceNum, S_FM_VOICE_FRAME *pFrame, EAS_I32 numSamplesToAdd, EAS_I32 *pTempBuffer, EAS_I32 *pBuffer, EAS_I32 *pMixBuffer, EAS_FRAME_BUFFER_HANDLE pFrameBuffer);
 
 #endif
 /* #ifndef _FMENGINE_H */

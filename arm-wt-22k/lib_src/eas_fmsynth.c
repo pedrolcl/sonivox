@@ -902,7 +902,7 @@ static EAS_BOOL FM_UpdateVoice (S_VOICE_MGR *pVoiceMgr, S_SYNTH *pSynth, S_SYNTH
 #ifdef FM_OFFBOARD	
 	FM_ProcessVoice(voiceNum, &vFrame, numSamples, pVoiceMgr->operMixBuffer, pVoiceMgr->voiceBuffer, pMixBuffer, pVoiceMgr->pFrameBuffer);
 #else
-	FM_ProcessVoice(voiceNum, &vFrame, numSamples, pVoiceMgr->operMixBuffer, pVoiceMgr->voiceBuffer, pMixBuffer, NULL);
+	FM_ProcessVoice(voiceNum, &vFrame, numSamples, pVoiceMgr->operMixBuffer, pVoiceMgr->operOutputBuffer, pMixBuffer, NULL);
 #endif
 
 	return done;

@@ -362,7 +362,8 @@ typedef struct s_voice_mgr_tag
     EAS_PCM                 voiceBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
 
 #ifdef _FM_SYNTH
-    EAS_PCM                 operMixBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
+    EAS_I32                 operOutputBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
+    EAS_I32                 operMixBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
     S_FM_VOICE              fmVoices[NUM_FM_VOICES];
 #endif
 

@@ -48,7 +48,7 @@ extern const EAS_U8 fmScaleTable[16];
 static S_FM_ENG_VOICE voices[NUM_FM_VOICES];
 
 /* local prototypes */
-void FM_SynthMixVoice (S_FM_ENG_VOICE *p,  EAS_U16 gainTarget, EAS_I32 numSamplesToAdd, EAS_PCM *pInputBuffer, EAS_I32 *pBuffer);
+void FM_SynthMixVoice (S_FM_ENG_VOICE *p,  EAS_U16 gainTarget, EAS_I32 numSamplesToAdd, EAS_I32 *pInputBuffer, EAS_I32 *pBuffer);
 
 /* used in development environment */
 #if defined(_SATURATION_MONITOR)
@@ -272,13 +272,13 @@ static void FM_CalculatePan (EAS_I16 pan, EAS_U16 *pGainLeft, EAS_U16 *pGainRigh
 void FM_Operator (
 		S_FM_ENG_OPER *p,
 		EAS_I32 numSamplesToAdd,
-		EAS_PCM *pBuffer,
-		EAS_PCM *pModBuffer,
+		EAS_I32 *pBuffer,
+		EAS_I32 *pModBuffer,
 		EAS_BOOL mix,
 		EAS_U16 gainTarget,
 		EAS_I16 pitch,
 		EAS_U8 feedback, 
-		EAS_I16 *pLastOutput)
+		EAS_I32 *pLastOutput)
 {
 	EAS_I32 gain;
 	EAS_I32 gainInc;
@@ -344,12 +344,12 @@ void FM_Operator (
 		if (mix)
 		{
 			temp2 += *pBuffer;
-			*pBuffer++ = FM_Saturate(temp2);
+			*pBuffer++ = temp2;
 		}
 		
 		/* output to buffer */
 		else
-			*pBuffer++ = (EAS_I16) temp2;
+			*pBuffer++ = temp2;
 
 		/* increment gain */
 		gain += gainInc;
@@ -362,7 +362,7 @@ void FM_Operator (
 
 	/* save last output for feedback in next frame */
 	if (pLastOutput)
-		*pLastOutput = (EAS_I16) temp;
+		*pLastOutput = temp;
 }
 
 /*----------------------------------------------------------------------------
@@ -384,11 +384,11 @@ void FM_Operator (
 void FM_NoiseOperator (
 		S_FM_ENG_OPER *p,
 		EAS_I32 numSamplesToAdd,
-		EAS_PCM *pBuffer,
+		EAS_I32 *pBuffer,
 		EAS_BOOL mix,
 		EAS_U16 gainTarget,
 		EAS_U8 feedback, 
-		EAS_I16 *pLastOutput)
+		EAS_I32 *pLastOutput)
 {
 	EAS_I32 gain;
 	EAS_I32 gainInc;
@@ -442,12 +442,12 @@ void FM_NoiseOperator (
 		if (mix)
 		{
 			temp2 += *pBuffer;
-			*pBuffer++ = FM_Saturate(temp2);
+			*pBuffer++ = temp2;
 		}
 		
 		/* output to buffer */
 		else
-			*pBuffer++ = (EAS_I16) temp2;
+			*pBuffer++ = temp2;
 
 		/* increment gain */
 		gain += gainInc;
@@ -460,7 +460,7 @@ void FM_NoiseOperator (
 	
 	/* save last output for feedback in next frame */
 	if (pLastOutput)
-		*pLastOutput = (EAS_I16) temp;
+		*pLastOutput = temp;
 }
 
 /*----------------------------------------------------------------------------
@@ -547,14 +547,14 @@ void FM_ProcessVoice (
 		EAS_I32 voiceNum,
 		S_FM_VOICE_FRAME *pFrame,
 		EAS_I32 numSamplesToAdd, 
-		EAS_PCM *pTempBuffer, 
-		EAS_PCM *pBuffer,
+		EAS_I32 *pTempBuffer, 
+		EAS_I32 *pBuffer,
 		EAS_I32 *pMixBuffer,
 		EAS_FRAME_BUFFER_HANDLE pFrameBuffer)
 {
 	S_FM_ENG_VOICE *p;
-	EAS_PCM *pOutBuf;
-	EAS_PCM *pMod;
+	EAS_I32 *pOutBuf;
+	EAS_I32 *pMod;
 	EAS_BOOL mix;
 	EAS_U8 feedback1; 
 	EAS_U8 feedback3;
@@ -734,7 +734,7 @@ void FM_ProcessVoice (
  *
  *----------------------------------------------------------------------------
 */
-void FM_SynthMixVoice(S_FM_ENG_VOICE *p,  EAS_U16 nGainTarget, EAS_I32 numSamplesToAdd, EAS_PCM *pInputBuffer, EAS_I32 *pBuffer)
+void FM_SynthMixVoice(S_FM_ENG_VOICE *p,  EAS_U16 nGainTarget, EAS_I32 numSamplesToAdd, EAS_I32 *pInputBuffer, EAS_I32 *pBuffer)
 {
 	EAS_I32 nGain;
 	EAS_I32 nGainInc;
