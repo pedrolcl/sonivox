@@ -27,6 +27,7 @@ target_link_libraries ( sonivoxrender sonivox::sonivox )
 
 install( TARGETS sonivoxrender
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT sonivox_application
 )
 
 if (BUILD_MANPAGE)
@@ -63,4 +64,5 @@ endif()
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivoxrender.1
     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+    COMPONENT sonivox_application
 )

@@ -315,8 +315,10 @@ set_target_properties( sonivox PROPERTIES VERSION ${PROJECT_VERSION} )
 set_target_properties( sonivox PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} )
 set_target_properties( sonivox PROPERTIES PUBLIC_HEADER "${PUBLIC_HEADERS}" )
 target_link_libraries( sonivox PRIVATE ${DEPLIBS} )
+if (NOT APPLE)
+    target_link_options( sonivox PUBLIC "LINKER:--build-id=none" )
+endif()
 #target_link_options( sonivox PRIVATE "LINKER:-z,defs" )
-target_link_options( sonivox PUBLIC "LINKER:--build-id=none" )
 add_library( sonivox::sonivox ALIAS sonivox )
 list( APPEND SONIVOX_TARGETS sonivox )
 
@@ -334,14 +336,21 @@ endif()
 list(JOIN PRIVATE_LIST " " PRIVATE_LIBS)
 configure_file(sonivox.pc.in ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc @ONLY)
 install( FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    COMPONENT sonivox_development
+)
 
 install( TARGETS ${SONIVOX_TARGETS}
     EXPORT sonivox-targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            COMPONENT sonivox_runtime
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            COMPONENT sonivox_development
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            COMPONENT sonivox_runtime
+            NAMELINK_COMPONENT sonivox_development
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/sonivox
+            COMPONENT sonivox_development
 )
 
 if (BUILD_SHARED_LIBS)
@@ -354,6 +363,7 @@ install( EXPORT sonivox-targets
     FILE ${PROJECT_NAME}-${type}-targets.cmake
     NAMESPACE ${PROJECT_NAME}::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    COMPONENT sonivox_development
 )
 
 export( EXPORT sonivox-targets
@@ -379,6 +389,7 @@ install( FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+        COMPONENT sonivox_development
 )
 
 # Unit testing
@@ -439,3 +450,38 @@ if (BUILD_APPLICATION)
     set(sonivox_DIR ${CMAKE_CURRENT_BINARY_DIR})
     add_subdirectory(example)
 endif()
+
+# CPack support
+set ( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Sonivox EAS synthesizer" )
+set ( CPACK_PACKAGE_VENDOR "https://github.com/pedrolcl/sonivox" )
+set ( CPACK_PACKAGE_DESCRIPTION_FILE "${sonivox_SOURCE_DIR}/README.md" )
+set ( CPACK_RESOURCE_FILE_LICENSE "${sonivox_SOURCE_DIR}/LICENSE" )
+set ( CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR} )
+set ( CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR} )
+set ( CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH} )
+set ( CPACK_PACKAGE_EXECUTABLES "sonivoxrender" "Sonivox CLI" )
+
+# source packages
+set ( CPACK_SOURCE_IGNORE_FILES "/.git/;/build/;~$;${CPACK_SOURCE_IGNORE_FILES}" )
+set ( CPACK_SOURCE_PACKAGE_FILE_NAME "sonivox-${PROJECT_VERSION}" )
+set ( CPACK_SOURCE_STRIP_FILES OFF )
+
+# binary packages
+include ( InstallRequiredSystemLibraries )
+set ( CPACK_PACKAGE_NAME sonivox )
+set ( CPACK_STRIP_FILES ON )
+
+include ( CPack )
+
+cpack_add_component(sonivox_runtime
+  DISPLAY_NAME "Runtime Library"
+  DESCRIPTION "Shared library (DLL) needed to run Sonivox programs")
+cpack_add_component(sonivox_application
+  DISPLAY_NAME "Sonivox CLI Program"
+  DESCRIPTION "Sonivox Command Line Interface Program"
+  DEPENDS sonivox_runtime)
+cpack_add_component(sonivox_development
+  DISPLAY_NAME "C Headers and import library"
+  DESCRIPTION "C headers and import library for using Sonivox library"
+  DEPENDS sonivox_runtime)
+
