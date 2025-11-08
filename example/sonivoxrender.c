@@ -26,6 +26,7 @@
 #include <eas_reverb.h>
 #include <eas_chorus.h>
 #include <eas_report.h>
+#include <private/eas_sndlib.h>
 
 #if defined(_MSC_VER)
 #include <io.h>
@@ -34,8 +35,8 @@
 #endif
 
 // actually they have type of S_EAS
-extern const void* easSoundLib_hybrid; 
-extern const void* easSoundLib_fm;
+extern S_EAS easlib_hybrid_22khz_mcu; 
+extern S_EAS easlib_fm_gmdblib_3;
 
 const char *dls_path = NULL;
 enum {
@@ -119,10 +120,10 @@ int initializeLibrary(void)
     case SNDLIB_WT:
         break;
     case SNDLIB_FM:
-        EAS_SetSoundLibrary(mEASDataHandle, NULL, (EAS_SNDLIB_HANDLE)&easSoundLib_fm);
+        EAS_SetSoundLibrary(mEASDataHandle, NULL, &easlib_fm_gmdblib_3);
         break;
     case SNDLIB_HYBRID:
-        EAS_SetSoundLibrary(mEASDataHandle, NULL, (EAS_SNDLIB_HANDLE)&easSoundLib_hybrid);
+        EAS_SetSoundLibrary(mEASDataHandle, NULL, &easlib_hybrid_22khz_mcu);
         break;
     default:
         fprintf(stderr, "invalid sound library: %d\n", sndlib_type);

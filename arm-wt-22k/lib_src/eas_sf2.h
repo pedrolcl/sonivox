@@ -2,6 +2,7 @@
 
 #include "eas_types.h"
 #include "eas_sndlib.h"
+#include "eas_dlslib.h"
 
 #ifdef _SF2_SUPPORT
 // Usually it is not needed to directly call this function, DLSParser will invoke it

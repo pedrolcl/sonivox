@@ -36,6 +36,10 @@
 #include "eas_sndlib.h"
 #include "eas_synthcfg.h"
 
+#ifdef DLS_SYNTHESIZER
+#include "eas_dlslib.h"
+#endif
+
 #ifdef _WT_SYNTH
 #include "eas_wtsynth.h"
 #endif

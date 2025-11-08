@@ -5115,7 +5115,7 @@ static const EAS_U32 eas_sampleOffsets[] =
  * S_EAS (hybrid)
  *----------------------------------------------------------------------------
 */
-const S_EAS easSoundLib_hybrid = 
+const S_EAS easlib_hybrid_22khz_mcu = 
 {
 	0x01534145,
 	0x00105622,

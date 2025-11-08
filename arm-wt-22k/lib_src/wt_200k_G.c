@@ -106,7 +106,7 @@ static const S_BANK eas_banks[] =
 #define SAMPLE_RATE	0x5622
 #endif
 
-const S_EAS easSoundLib = {
+const S_EAS easlib_wt_200k_g = {
     0x01534145,
 
 #if defined (_8_BIT_SAMPLES)

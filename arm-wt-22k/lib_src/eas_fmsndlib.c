@@ -1646,7 +1646,7 @@ static const S_BANK banks[] =
  * S_EAS
  *----------------------------------------------------------------------------
 */
-const S_EAS easSoundLib_fm =
+const S_EAS easlib_fm_gmdblib_3 =
 {
 	0x01534145,
 	0x00105622,

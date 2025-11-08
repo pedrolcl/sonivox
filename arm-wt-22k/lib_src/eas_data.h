@@ -44,6 +44,10 @@
 #include "eas_miditypes.h"
 #include "eas_effects.h"
 
+#ifdef DLS_SYNTHESIZER
+#include "eas_dlslib.h"
+#endif
+
 #ifdef AUX_MIXER
 #include "eas_auxmixdata.h"
 #endif
