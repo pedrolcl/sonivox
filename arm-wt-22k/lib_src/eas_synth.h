@@ -308,6 +308,7 @@ typedef struct s_synth_tag
 {
     struct s_eas_data_tag   *pEASData;
     const S_EAS             *pEAS;
+    EAS_BOOL                isHybridLibrary;
 
 #ifdef DLS_SYNTHESIZER
     S_DLS                   *pDLS;

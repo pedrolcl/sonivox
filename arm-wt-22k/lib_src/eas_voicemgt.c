@@ -73,6 +73,14 @@
 #define WORKLOAD_AMOUNT_KEY_GROUP           10
 #define WORKLOAD_AMOUNT_POLY_LIMIT          10
 
+// The output gain logic of FM synth (FM_SynthMixVoice) is rewritten in #80
+// This factor is used to scale the FM ouput to match origial level
+// to balance FM and WT output for hybrid synth
+// This value is calculated based on the original code (FM << 6, WT << 10)
+// so FM should >> 4 to match WT level
+// which is about -24 dB
+#define FM_OUTPUT_GAIN_ATTEN 4
+
 /* pointer to base sound library */
 extern S_EAS easlib_wt_200k_g;
 
@@ -3048,6 +3056,11 @@ EAS_I32 VMAddSamples (S_VOICE_MGR *pVoiceMgr, EAS_I32 *pMixBuffer, EAS_I32 numSa
 
             // add the samples to the mix buffer and reverb and chorus buffer
             for (EAS_INT i = 0; i < BUFFER_SIZE_IN_MONO_SAMPLES * NUM_OUTPUT_CHANNELS; i++) {
+#if defined(_HYBRID_SYNTH)
+                if (pSynth->isHybridLibrary && voiceNum >= NUM_PRIMARY_VOICES) {
+                    synthBuffer[i] >>= FM_OUTPUT_GAIN_ATTEN;
+                }
+#endif
                 pMixBuffer[i] += synthBuffer[i];
 
                 // these effect modules have 16bit IO
@@ -3843,6 +3856,7 @@ EAS_RESULT VMSetEASLib (S_SYNTH *pSynth, EAS_SNDLIB_HANDLE pEAS)
         return result;
 
     pSynth->pEAS = pEAS;
+    pSynth->isHybridLibrary = (pEAS->pWTRegions != NULL && pEAS->pFMRegions != NULL);
     return EAS_SUCCESS;
 }
 

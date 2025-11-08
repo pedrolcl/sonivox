@@ -760,8 +760,8 @@ void FM_SynthMixVoice(S_FM_ENG_VOICE *p,  EAS_U16 nGainTarget, EAS_I32 numSample
 		/*lint -e{704} <use shift for performance> */
 		nTemp = FMUL_15x15(nTemp, nGain / (1 << 16));
 
-		*pBuffer++ = FMUL_15x15(nTemp, p->gainLeft) >> FM_OUTPUT_GAIN_ATTEN;
-		*pBuffer++ = FMUL_15x15(nTemp, p->gainRight) >> FM_OUTPUT_GAIN_ATTEN;
+		*pBuffer++ = FMUL_15x15(nTemp, p->gainLeft);
+		*pBuffer++ = FMUL_15x15(nTemp, p->gainRight);
 #else
 		/*lint -e{704} <use shift for performance> */
 		nTemp = FMUL_15x15(nTemp, nGain / (1 << 16));

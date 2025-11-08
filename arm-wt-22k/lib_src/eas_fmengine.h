@@ -36,14 +36,6 @@
 #define FM_OFFBOARD
 #endif
 
-// The output gain logic of FM synth (FM_SynthMixVoice) is rewritten in #80
-// This factor is used to scale the FM ouput to match origial level
-// to balance FM and WT output for hybrid synth
-// This value is calculated based on the original code (FM << 6, WT << 10)
-// so FM should >> 4 to match WT level
-// which is about -24 dB
-#define FM_OUTPUT_GAIN_ATTEN 0
-
 /* output level to mix buffer (3 = -24dB) */
 #define FM_GAIN_SHIFT 3
 #define FM_MONO_GAIN_SHIFT 9
