@@ -14,7 +14,7 @@
   limitations under the License.
 ]=========================================================================]
 
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.21)
 
 project( sonivox
     LANGUAGES C CXX
@@ -342,6 +342,7 @@ install( FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivox.pc
 
 install( TARGETS ${SONIVOX_TARGETS}
     EXPORT sonivox-targets
+    RUNTIME_DEPENDENCY_SET sonivox-dependencies
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
             COMPONENT sonivox_runtime
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -449,6 +450,13 @@ endif()
 if (BUILD_APPLICATION)
     set(sonivox_DIR ${CMAKE_CURRENT_BINARY_DIR})
     add_subdirectory(example)
+endif()
+
+if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+    install(RUNTIME_DEPENDENCY_SET sonivox-dependencies
+        COMPONENT sonivox_runtime
+        #PRE_EXCLUDE_REGEXES $<$<BOOL:$<PLATFORM_ID:Linux>>:libm.* libc.* ld-linux.*>
+    )
 endif()
 
 # CPack support

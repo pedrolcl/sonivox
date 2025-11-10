@@ -26,6 +26,7 @@ endif()
 target_link_libraries ( sonivoxrender sonivox::sonivox )
 
 install( TARGETS sonivoxrender
+    RUNTIME_DEPENDENCY_SET sonivox-dependencies
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT sonivox_application
 )
