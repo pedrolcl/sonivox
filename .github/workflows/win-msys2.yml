@@ -36,7 +36,7 @@ jobs:
       uses: repolevedavaj/install-nsis@v1.1.0
 
     - name: '${{ matrix.icon }} Setup MSYS2'
-      uses: @v2msys2/setup-msys2
+      uses: msys2/setup-msys2@v2
       with:
         release: false
         msystem: ${{matrix.sys}}
