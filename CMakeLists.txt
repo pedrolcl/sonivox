@@ -453,9 +453,12 @@ if (BUILD_APPLICATION)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+    message(STATUS "DEPENDENCY_DIRS: ${DEPENDENCY_DIRS}")
     install(RUNTIME_DEPENDENCY_SET sonivox-dependencies
         COMPONENT sonivox_runtime
-        #PRE_EXCLUDE_REGEXES $<$<BOOL:$<PLATFORM_ID:Linux>>:libm.* libc.* ld-linux.*>
+        PRE_INCLUDE_REGEXES $<$<BOOL:${_ZLIB_UNPACKER}>:.*zlib.*>
+        PRE_EXCLUDE_REGEXES .*
+        DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR} ${DEPENDENCY_DIRS}
     )
 endif()
 
