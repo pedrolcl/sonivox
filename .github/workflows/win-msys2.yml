@@ -65,12 +65,12 @@ jobs:
         enable-cross-os-archive: true
 
     - name: '${{ matrix.icon }} Configure CMake'
-      run: >-
+      run: >
         cmake -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-          -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
-          -DDEPENDENCY_DIRS=${{steps.msys2.outputs.msys2-location}}/${{matrix.sys}}/bin
-          -DCPACK_SYSTEM_NAME=${{matrix.sys}}
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
+        -DDEPENDENCY_DIRS=${{steps.msys2.outputs.msys2-location}}/${{matrix.sys}}/bin
+        -DCPACK_SYSTEM_NAME=${{matrix.sys}}
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build build --config ${{env.BUILD_TYPE}}
