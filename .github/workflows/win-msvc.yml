@@ -77,8 +77,8 @@ jobs:
 
     - name: '${{ matrix.icon }} Upload Installer'
       uses: actions/upload-artifact@v4
-       with:
-         name: SonivoxV4-msvc-installer-${{matrix.arch}}
-         path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.arch}}.exe
-         retention-days: 90
-         overwrite: true
+      with:
+        name: SonivoxV4-msvc-installer-${{matrix.arch}}
+        path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.arch}}.exe
+        retention-days: 90
+        overwrite: true
