@@ -69,7 +69,8 @@ jobs:
         cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
           -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} \
-          -DDEPENDENCY_DIRS=${{steps.msys2.outputs.msys2-location}}/${{matrix.sys}}/bin
+          -DDEPENDENCY_DIRS=${{steps.msys2.outputs.msys2-location}}/${{matrix.sys}}/bin \
+          -DCPACK_SYSTEM_NAME=${{matrix.sys}}
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build build --config ${{env.BUILD_TYPE}}
@@ -94,3 +95,11 @@ jobs:
         path: ${{env.INSTALL_LOCATION}}.tar
         retention-days: 90
         overwrite: true
+
+    - name: '${{ matrix.icon }} Upload Installer'
+      uses: actions/upload-artifact@v4
+       with:
+         name: SonivoxV4-msys2-installer-${{matrix.sys}}
+         path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.sys}}.exe
+         retention-days: 90
+         overwrite: true
