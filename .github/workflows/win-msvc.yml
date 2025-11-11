@@ -48,10 +48,10 @@ jobs:
         enable-cross-os-archive: true
 
     - name: '${{ matrix.icon }} Configure CMake'
-      run: |
-        cmake -G Ninja -B ${{github.workspace}}/build \
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-          -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} \
+      run: >-
+        cmake -G Ninja -B ${{github.workspace}}/build
+          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
           -DCPACK_SYSTEM_NAME=${{matrix.arch}}
 
     - name: '${{ matrix.icon }} Build'
