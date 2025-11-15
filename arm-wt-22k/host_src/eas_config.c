@@ -39,7 +39,7 @@
 
 #include "eas.h"
 #include "eas_config.h"
-
+#include "eas_options.h"
 
 #ifdef _MFI_PARSER
 /*----------------------------------------------------------------------------

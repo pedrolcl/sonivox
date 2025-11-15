@@ -31,6 +31,8 @@
 #ifndef _EAS_AUDIOCONST_H
 #define _EAS_AUDIOCONST_H
 
+#include "eas_options.h"
+
 /*----------------------------------------------------------------------------
  * These macros define the various characteristics of the defined sample rates
  *----------------------------------------------------------------------------

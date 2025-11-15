@@ -47,7 +47,7 @@
 #include <string.h>
 
 typedef struct {
-    void* ptr;
+    char* ptr;
     int size;
 } MemSpan;
 

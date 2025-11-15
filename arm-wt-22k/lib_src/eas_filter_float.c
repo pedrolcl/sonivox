@@ -1,13 +1,15 @@
-#if defined(_FILTER_ENABLED) && defined(_FLOAT_DCF)
-#include "eas_wtengine.h"
-#include "eas_report.h"
-#include "eas_audioconst.h"
-
 #include "log/log.h"
 #include <cutils/log.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+#include "eas_options.h"
+#include "eas_wtengine.h"
+#include "eas_report.h"
+#include "eas_audioconst.h"
+
+#if defined(_FILTER_ENABLED) && defined(_FLOAT_DCF)
 
 /*----------------------------------------------------------------------------
  * WT_VoiceFilter

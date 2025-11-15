@@ -17,15 +17,19 @@
 add_executable ( sonivoxrender sonivoxrender.c )
 
 if (NOT HAVE_GETOPT_H)
-    target_sources( sonivoxrender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port/getopt.c )
+    target_sources( sonivoxrender PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port/getopt.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port/getopt.h )
     target_include_directories( sonivoxrender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../getopt_port )
 endif()
 
-if (BUILD_SONIVOX_STATIC)
-    target_link_libraries ( sonivoxrender sonivox::sonivox-static )
-elseif (BUILD_SONIVOX_SHARED)
-    target_link_libraries ( sonivoxrender sonivox::sonivox )
-endif()
+target_link_libraries ( sonivoxrender sonivox::sonivox )
+
+install( TARGETS sonivoxrender
+    RUNTIME_DEPENDENCY_SET sonivox-dependencies
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT sonivox_application
+)
 
 if (BUILD_MANPAGE)
     if(NOT EXISTS ${PANDOC_EXECUTABLE})
@@ -61,4 +65,5 @@ endif()
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sonivoxrender.1
     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
+    COMPONENT sonivox_application
 )

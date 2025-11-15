@@ -46,6 +46,7 @@
  * limitations under the License.
  */
 
+#include "eas_options.h"
 #include "eas_sndlib.h"
 
 /*----------------------------------------------------------------------------

@@ -2687,7 +2687,7 @@ EAS_PUBLIC EAS_RESULT EAS_SetFrameBuffer (EAS_DATA_HANDLE pEASData, EAS_FRAME_BU
  * Returns EAS_EOF if end-of-file is reached
  *----------------------------------------------------------------------------
 */
-EAS_RESULT EAS_SearchFile (S_EAS_DATA *pEASData, EAS_FILE_HANDLE fileHandle, const EAS_U8 *searchString, EAS_I32 len, EAS_I32 *pOffset)
+EAS_PUBLIC EAS_RESULT EAS_SearchFile (S_EAS_DATA *pEASData, EAS_FILE_HANDLE fileHandle, const EAS_U8 *searchString, EAS_I32 len, EAS_I32 *pOffset)
 {
     EAS_RESULT result;
     EAS_INT index;
