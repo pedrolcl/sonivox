@@ -36,8 +36,12 @@ The build system has the following options:
 * `USE_16BITS_SAMPLES`: Uses 16 bits samples (instead of 8 bit). ON by default. The rendered audio uses always 16 bits.
 * `BUILD_SHARED_LIBS`: to control the generation and install of both the static or shared libraries from the sources. (ON by default).
 * `BUILD_TESTING`: ON by default, to control if the unit tests are built, which require Google Test.
-* `BUILD_APPLICATION`: ON by default, to build and install the CLI program.
+* `BUILD_APPLICATION`: ON by default, to build and install the CLI program. ON by default.
 * `NEW_HOST_WRAPPER`: Uses the new CRT-based host wrapper for faster file loading. ON by default.
+* `SF2_SUPPORT`: Enable SF2 support and float DCF. ON by default.
+* `ZLIB_SUPPORT`: Enable XMF ZLIB Unpacker support. ON by default.
+* `BUILD_MANPAGE`: Build the manpage of the CLI program. OFF by default.
+
 * `MAX_VOICES`: Maximum number of voices. 64 by default.
 
 See also the [CMake documentation](https://cmake.org/cmake/help/latest/index.html) for common build options.
