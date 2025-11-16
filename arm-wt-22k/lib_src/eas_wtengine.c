@@ -32,6 +32,7 @@
  * includes
  *------------------------------------
 */
+#include "eas_options.h"
 #include "eas_report.h"
 #include "log/log.h"
 #include <cutils/log.h>

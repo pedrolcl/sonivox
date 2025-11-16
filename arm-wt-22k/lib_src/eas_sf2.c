@@ -6,10 +6,12 @@
 // SF3 (https://github.com/FluidSynth/fluidsynth/wiki/SoundFont3Format) is recognized (with the sample link flag correctly set),
 // though not supported, and will not load.
 
+#include "eas_options.h"
 #include "eas_sf2.h"
 #include "eas_host.h"
 #include "eas_report.h"
 #include "eas_mdls.h"
+
 #include <stdlib.h>
 #include <string.h>
 

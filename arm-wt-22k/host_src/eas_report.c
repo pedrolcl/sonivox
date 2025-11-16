@@ -37,6 +37,7 @@
 #endif
 
 #include "eas_report.h"
+#include "eas_options.h"
 
 static int severityLevel = 9999;
 
@@ -139,7 +140,7 @@ S_DEBUG_MESSAGES debugMessages[] =
  * messages to stdout. Modify this as needed for your system.
  *----------------------------------------------------------------------------
 */
-void EAS_ReportEx (int severity, unsigned long hashCode, int serialNum, ...)
+EAS_PUBLIC void EAS_ReportEx (int severity, unsigned long hashCode, int serialNum, ...)
 {
     va_list vargs;
     int i;
@@ -181,7 +182,7 @@ void EAS_ReportEx (int severity, unsigned long hashCode, int serialNum, ...)
  * messages to stdout. Modify this as needed for your system.
  *----------------------------------------------------------------------------
 */
-void EAS_Report (int severity, const char *fmt, ...)
+EAS_PUBLIC void EAS_Report (int severity, const char *fmt, ...)
 {
     va_list vargs;
 
@@ -211,7 +212,7 @@ void EAS_Report (int severity, const char *fmt, ...)
  * messages to stdout. Modify this as needed for your system.
  *----------------------------------------------------------------------------
 */
-void EAS_ReportX (int severity, const char *fmt, ...)
+EAS_PUBLIC void EAS_ReportX (int severity, const char *fmt, ...)
 {
     va_list vargs;
 
@@ -241,7 +242,7 @@ void EAS_ReportX (int severity, const char *fmt, ...)
  *----------------------------------------------------------------------------
 */
 
-void EAS_SetDebugLevel (int severity)
+EAS_PUBLIC void EAS_SetDebugLevel (int severity)
 {
     severityLevel = severity;
 } /* end EAS_SetDebugLevel */
@@ -252,7 +253,7 @@ void EAS_SetDebugLevel (int severity)
  * Redirect debugger output to the specified file.
  *----------------------------------------------------------------------------
 */
-void EAS_SetDebugFile (void *file, int flushAfterWrite)
+EAS_PUBLIC void EAS_SetDebugFile (void *file, int flushAfterWrite)
 {
     debugFile = (FILE*) file;
     flush = flushAfterWrite;

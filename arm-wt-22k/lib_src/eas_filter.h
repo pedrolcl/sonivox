@@ -1,4 +1,5 @@
 #pragma once
+#include "eas_options.h"
 #include "eas_types.h"
 
 typedef struct s_wt_int_frame_tag S_WT_INT_FRAME;

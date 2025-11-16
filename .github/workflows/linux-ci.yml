@@ -9,8 +9,8 @@ on:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
-  TEMP: ${{github.workspace}}/temp/
+  INSTALL_LOCATION: ${{github.workspace}}/SonivoxV4
+  TEMP: ${{github.workspace}}/temp
 
 jobs:
   build:
@@ -40,24 +40,16 @@ jobs:
       run: |
         mkdir -p ${{github.workspace}}/temp
 
-    - name: '${{ matrix.icon }} Restore DLS Cache'
-      uses: actions/cache/restore@v4
-      id: cache
+    - name: '${{ matrix.icon }} Downloading a DLS file for testing'
+      uses: ethanjli/cached-download-action@v0.1.3
       with:
-        key: soundfont.dls
-        path: temp/soundfont.dls
-        enableCrossOsArchive: true
+        url: http://www.ronimusic.com/sf2/Airfont_340.dls
+        destination: ${{env.TEMP}}/soundfont.dls
+        cache-key: cached.soundfont.dls
+        enable-cross-os-archive: true
 
     - name: '${{ matrix.icon }} Configure CMake with USE_44KHZ=${{ matrix.USE_44KHZ }} and USE_16BITS_SAMPLES=${{ matrix.USE_16BITS_SAMPLES }}'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} -DUSE_44KHZ=${{ matrix.USE_44KHZ }} -DUSE_16BITS_SAMPLES=${{ matrix.USE_16BITS_SAMPLES }}
-
-    - name: '${{ matrix.icon }} Store DLS Cache'
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        key: soundfont.dls
-        path: temp/soundfont.dls
-        enableCrossOsArchive: true
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
@@ -72,12 +64,12 @@ jobs:
     - name: '${{ matrix.icon }} Create Archive'
       run: |
         cd ${{github.workspace}}
-        tar cvf SonivoxV3.tar SonivoxV3
+        tar cvf SonivoxV4.tar SonivoxV4
 
     - name: '${{ matrix.icon }} Upload Artifacts'
       uses: actions/upload-artifact@v4
       with:
-        name: SonivoxV3-Linux-${{matrix.arch}}-${{matrix.format}}
-        path: SonivoxV3.tar
+        name: SonivoxV4-Linux-${{matrix.arch}}-${{matrix.format}}
+        path: SonivoxV4.tar
         retention-days: 90
         overwrite: true

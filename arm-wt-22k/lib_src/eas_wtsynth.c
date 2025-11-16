@@ -31,6 +31,7 @@
 #include "log/log.h"
 #include <cutils/log.h>
 
+#include "eas_options.h"
 #include "eas_data.h"
 #include "eas_report.h"
 #include "eas_host.h"

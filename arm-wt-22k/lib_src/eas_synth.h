@@ -32,9 +32,10 @@
 
 #include "eas_audioconst.h"
 #include "eas_effects.h"
-#include "eas_types.h"
+#include "eas_options.h"
 #include "eas_sndlib.h"
 #include "eas_synthcfg.h"
+#include "eas_types.h"
 
 #ifdef DLS_SYNTHESIZER
 #include "eas_dlslib.h"

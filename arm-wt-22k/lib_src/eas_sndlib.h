@@ -30,6 +30,8 @@
 #ifndef _EAS_SNDLIB_H
 #define _EAS_SNDLIB_H
 
+#include "eas_options.h"
+#include "eas_synthcfg.h"
 #include "eas_types.h"
 
 /*----------------------------------------------------------------------------

@@ -28,6 +28,7 @@
 */
 
 // includes
+#include "eas_options.h"
 #include "eas_data.h"
 #include "eas_report.h"
 #include "eas_host.h"
@@ -36,8 +37,8 @@
 #include "eas_wtsynth.h"
 #include "eas_pan.h"
 #include "eas_mdls.h"
-#include <string.h>
 #include "eas_dlssynth.h"
+#include <string.h>
 
 #ifdef _METRICS_ENABLED
 #include "eas_perf.h"
@@ -580,7 +581,7 @@ static void DLS_UpdateEnvelope (S_SYNTH_VOICE *pVoice, S_SYNTH_CHANNEL *pChannel
                     // very small decay time, regard it as no decay
                     goto nodecay;
                 }
-                *pIncrement = (SYNTH_FULL_SCALE_EG1_GAIN - pEnvParams->sustainLevel) / temp;
+                *pIncrement = SYNTH_FULL_SCALE_EG1_GAIN / temp;
                 if (*pIncrement == 0) {
                     *pIncrement = 1; // ensure no infinite decay
                 }

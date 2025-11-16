@@ -1,7 +1,9 @@
 // hostmm_ng.c
 // This implements EAS Host Wrapper, using C runtime library, with better performance
 
+#include "eas_options.h"
 #include "eas_host.h"
+
 #include <fcntl.h>
 #include <limits.h>
 #include <stdint.h>

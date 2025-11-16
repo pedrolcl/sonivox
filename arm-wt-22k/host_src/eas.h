@@ -35,16 +35,15 @@
 #ifndef _EAS_H
 #define _EAS_H
 
+#include "eas_options.h"
 #include "eas_types.h"
+#include "eas_version.h"
+#include "eas_visibility.h"
 
 /* for C++ linkage */
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* library version macro */
-#define MAKE_LIB_VERSION(a,b,c,d) (((((((EAS_U32) a <<8) | (EAS_U32) b) << 8) | (EAS_U32) c) << 8) | (EAS_U32) d)
-#define LIB_VERSION MAKE_LIB_VERSION(@PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,@PROJECT_VERSION_TWEAK@)
 
 typedef struct
 {
@@ -1052,7 +1051,11 @@ EAS_PUBLIC EAS_RESULT EAS_GetMIDIControllers (EAS_DATA_HANDLE pEASData, EAS_HAND
  * Returns EAS_EOF if end-of-file is reached
  *----------------------------------------------------------------------------
 */
-EAS_RESULT EAS_SearchFile (EAS_DATA_HANDLE pEASData, EAS_FILE_HANDLE fileHandle, const EAS_U8 *searchString, EAS_I32 len, EAS_I32 *pOffset);
+EAS_PUBLIC EAS_RESULT EAS_SearchFile(EAS_DATA_HANDLE pEASData,
+                                     EAS_FILE_HANDLE fileHandle,
+                                     const EAS_U8 *searchString,
+                                     EAS_I32 len,
+                                     EAS_I32 *pOffset);
 
 #ifdef __cplusplus
 } /* end extern "C" */

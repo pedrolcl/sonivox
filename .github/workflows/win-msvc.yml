@@ -9,8 +9,8 @@ on:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  INSTALL_LOCATION: ${{github.workspace}}/SonivoxV3
-  TEMP: ${{github.workspace}}/temp/
+  INSTALL_LOCATION: ${{github.workspace}}/SonivoxV4
+  TEMP: ${{github.workspace}}/temp
 
 jobs:
   build:
@@ -26,6 +26,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: '${{ matrix.icon }} Install NSIS'
+      uses: repolevedavaj/install-nsis@v1.1.0
+      with:
+        nsis-version: '3.11'
+
     - name: '${{ matrix.icon }} Setup MSVC'
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -34,24 +39,20 @@ jobs:
     - name: '${{ matrix.icon }} Temp Environment Variable'
       run: mkdir temp
 
-    - name: '${{ matrix.icon }} Restore DLS Cache'
-      uses: actions/cache/restore@v4
-      id: cache
+    - name: '${{ matrix.icon }} Downloading a DLS file for testing'
+      uses: ethanjli/cached-download-action@v0.1.3
       with:
-        key: soundfont.dls
-        path: temp/soundfont.dls
-        enableCrossOsArchive: true
+        url: http://www.ronimusic.com/sf2/Airfont_340.dls
+        destination: ${{env.TEMP}}/soundfont.dls
+        cache-key: cached.soundfont.dls
+        enable-cross-os-archive: true
 
     - name: '${{ matrix.icon }} Configure CMake'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}} -G Ninja
-
-    - name: '${{ matrix.icon }} Store DLS Cache'
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        key: soundfont.dls
-        path: temp/soundfont.dls
-        enableCrossOsArchive: true
+      run: >
+        cmake -G Ninja -B ${{github.workspace}}/build
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
+        -DCPACK_SYSTEM_NAME=${{matrix.arch}}
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
@@ -60,13 +61,24 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ctest -C ${{env.BUILD_TYPE}} --verbose
 
+    - name: '${{ matrix.icon }} Package'
+      run: cmake --build ${{github.workspace}}/build --target package
+
     - name: '${{ matrix.icon }} Install'
       run: cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: '${{ matrix.icon }} Upload Artifacts'
       uses: actions/upload-artifact@v4
       with:
-        name: SonivoxV3-msvc-${{matrix.arch}}
+        name: SonivoxV4-msvc-${{matrix.arch}}
         path: ${{env.INSTALL_LOCATION}}
+        retention-days: 90
+        overwrite: true
+
+    - name: '${{ matrix.icon }} Upload Installer'
+      uses: actions/upload-artifact@v4
+      with:
+        name: SonivoxV4-msvc-installer-${{matrix.arch}}
+        path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.arch}}.exe
         retention-days: 90
         overwrite: true
