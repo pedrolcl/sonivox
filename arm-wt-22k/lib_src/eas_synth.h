@@ -69,6 +69,10 @@
 #if !defined(NUM_SECONDARY_VOICES)
 #define NUM_SECONDARY_VOICES    (MAX_SYNTH_VOICES - NUM_PRIMARY_VOICES)
 #endif
+#else
+#ifndef NUM_PRIMARY_VOICES
+#define NUM_PRIMARY_VOICES      MAX_SYNTH_VOICES
+#endif
 #endif
 
 #if defined(EAS_WT_SYNTH)
