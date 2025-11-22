@@ -114,18 +114,18 @@ extern const S_SYNTH_INTERFACE fmSynth;
 
 typedef S_SYNTH_INTERFACE *S_SYNTH_INTERFACE_HANDLE;
 
+/* wavetable drums on MCU, FM melodic on DSP */
+#if defined(_HYBRID_SYNTH)
+const S_SYNTH_INTERFACE *const pPrimarySynth = &wtSynth;
+const S_SYNTH_INTERFACE *const pSecondarySynth = &fmSynth;
+
 /* wavetable on MCU */
-#if defined(EAS_WT_SYNTH)
+#elif defined(_WT_SYNTH)
 const S_SYNTH_INTERFACE *const pPrimarySynth = &wtSynth;
 
 /* FM on MCU */
-#elif defined(EAS_FM_SYNTH)
+#elif defined(_FM_SYNTH)
 const S_SYNTH_INTERFACE *const pPrimarySynth = &fmSynth;
-
-/* wavetable drums on MCU, FM melodic on DSP */
-#elif defined(EAS_HYBRID_SYNTH)
-const S_SYNTH_INTERFACE *const pPrimarySynth = &wtSynth;
-const S_SYNTH_INTERFACE *const pSecondarySynth = &fmSynth;
 
 /* wavetable drums on MCU, wavetable melodic on DSP */
 #elif defined(EAS_SPLIT_WT_SYNTH)
@@ -315,8 +315,8 @@ EAS_RESULT VMInitialize (S_EAS_DATA *pEASData)
     EAS_HWMemSet(pVoiceMgr, 0, sizeof(S_VOICE_MGR));
 
     /* initialize non-zero variables */
-    pVoiceMgr->pGlobalEAS = (S_EAS*) &easlib_wt_200k_g; // by default
-    pVoiceMgr->maxPolyphony = (EAS_U16) MAX_SYNTH_VOICES;
+    pVoiceMgr->pGlobalEAS = EAS_GetSoundLibrary(pEASData, EAS_GetDefaultSoundLibrary(EAS_SNDLIB_DEFAULT));
+    pVoiceMgr->maxPolyphony = MAX_SYNTH_VOICES;
 
 #if defined(_HYBRID_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
     pVoiceMgr->maxPolyphonyPrimary = NUM_PRIMARY_VOICES;
@@ -3058,8 +3058,13 @@ EAS_I32 VMAddSamples (S_VOICE_MGR *pVoiceMgr, EAS_I32 *pMixBuffer, EAS_I32 numSa
             // add the samples to the mix buffer and reverb and chorus buffer
             for (EAS_INT i = 0; i < BUFFER_SIZE_IN_MONO_SAMPLES * NUM_OUTPUT_CHANNELS; i++) {
 #if defined(_HYBRID_SYNTH)
-                if (pSynth->isHybridLibrary && voiceNum >= NUM_PRIMARY_VOICES) {
-                    synthBuffer[i] >>= FM_OUTPUT_GAIN_ATTEN;
+                // The attenuation here goes in two directions
+                if (pSynth->isHybridLibrary && voiceNum < NUM_PRIMARY_VOICES) {
+                    if (voiceNum < NUM_PRIMARY_VOICES) { // WT voice
+                        synthBuffer[i] <<= FM_OUTPUT_GAIN_ATTEN / 2;
+                    } else { // FM voice
+                        synthBuffer[i] >>= FM_OUTPUT_GAIN_ATTEN / 2;
+                    }
                 }
 #endif
                 pMixBuffer[i] += synthBuffer[i];
@@ -3762,43 +3767,46 @@ void VMSetPitchBendRange (S_SYNTH *pSynth, EAS_INT channel, EAS_I16 pitchBendRan
 */
 EAS_RESULT VMValidateEASLib (EAS_SNDLIB_HANDLE pEAS)
 {
-    /* validate the sound library */
-    if (pEAS)
+    if (pEAS == NULL)
     {
-        if (pEAS->identifier != _EAS_LIBRARY_VERSION)
+        EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sound library is NULL\n");
+        return EAS_ERROR_INVALID_HANDLE;
+    }
+
+    /* validate the sound library */
+    if (pEAS->identifier != _EAS_LIBRARY_VERSION)
+    {
+        EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sound library mismatch in sound library: Read 0x%08x, expected 0x%08x\n",
+            pEAS->identifier, _EAS_LIBRARY_VERSION); 
+        return EAS_ERROR_SOUND_LIBRARY;
+    }
+
+    if (pEAS->pWTRegions != NULL) {
+        /* check sample rate */
+        if ((pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK) != _OUTPUT_SAMPLE_RATE)
         {
-            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sound library mismatch in sound library: Read 0x%08x, expected 0x%08x\n",
-                pEAS->identifier, _EAS_LIBRARY_VERSION); 
+            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sample rate mismatch in sound library: Read %lu, expected %lu\n",
+                (unsigned long)pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK, (unsigned long)_OUTPUT_SAMPLE_RATE);
             return EAS_ERROR_SOUND_LIBRARY;
         }
 
-        if (pEAS->pWTRegions != NULL) {
-            /* check sample rate */
-            if ((pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK) != _OUTPUT_SAMPLE_RATE)
-            {
-                EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Sample rate mismatch in sound library: Read %lu, expected %lu\n",
-                    (unsigned long)pEAS->libAttr & LIBFORMAT_SAMPLE_RATE_MASK, (unsigned long)_OUTPUT_SAMPLE_RATE);
-                return EAS_ERROR_SOUND_LIBRARY;
-            }
-
 #ifdef _WT_SYNTH
-            /* check sample bit depth */
+        /* check sample bit depth */
 #ifdef _8_BIT_SAMPLES
-            if (pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES)
-            {
-                EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 8-bit samples and found 16-bit\n");
-                return EAS_ERROR_SOUND_LIBRARY;
-            }
+        if (pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES)
+        {
+            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 8-bit samples and found 16-bit\n");
+            return EAS_ERROR_SOUND_LIBRARY;
+        }
 #endif
 #ifdef _16_BIT_SAMPLES
-            if ((pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES) == 0)
-            {
-                EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 16-bit samples and found 8-bit\n");
-                return EAS_ERROR_SOUND_LIBRARY;
-            }
-#endif
-#endif
+        if ((pEAS->libAttr & LIB_FORMAT_16_BIT_SAMPLES) == 0)
+        {
+            EAS_Report(_EAS_SEVERITY_ERROR, "VMValidateEASLib: Expected 16-bit samples and found 8-bit\n");
+            return EAS_ERROR_SOUND_LIBRARY;
         }
+#endif
+#endif
     }
 
     return EAS_SUCCESS;

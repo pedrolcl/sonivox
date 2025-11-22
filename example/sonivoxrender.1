@@ -15,7 +15,7 @@ audio
 [\f[B]\-V|\-\-Verbosity\f[R] \f[I]0..5\f[R]]
 [\f[B]\-R|\-\-reverb\-post\-mix\f[R]]
 [\f[B]\-C|\-\-chorus\-post\-mix\f[R]] [\f[B]\-s|\-\-sndlib\f[R]
-\f[I]0..2\f[R]] \f[I]midi_file\f[R]
+\f[I]1..3\f[R]] \f[I]midi_file\f[R]
 .SH DESCRIPTION
 This program is a MIDI file renderer based on the sonivox synthesizer
 library.
@@ -70,15 +70,15 @@ See also \f[B]\-\-reverb\-post\-mix\f[R].
 EAS sound library to use:
 .RS
 .IP \(bu 2
-0: wt_200k_G (default) \- WT\-only bank, used in Android devices.
+1: wt_200k_G (default) \- WT\-only bank, used in Android devices.
 Also named \(lqCommon\(rq.
 Support 22050 Hz and 44100 Hz sample rates, 8\-bit and 16\-bit samples.
 .IP \(bu 2
-1: GMdblib\-3 \- FM\-only bank.
+2: GMdblib\-3 \- FM\-only bank.
 Support all sample rates.
 Sample bit depth does not matter here.
 .IP \(bu 2
-2: hybrid_22khz_mcu \- Hybrid bank.
+3: hybrid_22khz_mcu \- Hybrid bank.
 Use WT synth for drums and FM for melodic instruments.
 This bank is a combination of \f[CR]GMdblib\-3\f[R] and
 \f[CR]Sonic_20Khz_Drums\f[R].

@@ -7,7 +7,7 @@
 
 # SYNOPSIS
 
-| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _soundfont_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..196_] [**-V|-\-Verbosity** _0..5_] [**-R|-\-reverb-post-mix**] [**-C|-\-chorus-post-mix**] [**-s|-\-sndlib** _0..2_] _midi_file_
+| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _soundfont_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..196_] [**-V|-\-Verbosity** _0..5_] [**-R|-\-reverb-post-mix**] [**-C|-\-chorus-post-mix**] [**-s|-\-sndlib** _1..3_] _midi_file_
 
 # DESCRIPTION
 
@@ -68,10 +68,10 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 
 :   EAS sound library to use:
 
-    * 0: wt_200k_G (default) - WT-only bank, used in Android devices. Also named "Common".
+    * 1: wt_200k_G (default) - WT-only bank, used in Android devices. Also named "Common".
         Support 22050 Hz and 44100 Hz sample rates, 8-bit and 16-bit samples.
-    * 1: GMdblib-3 - FM-only bank. Support all sample rates. Sample bit depth does not matter here.
-    * 2: hybrid_22khz_mcu - Hybrid bank. Use WT synth for drums and FM for melodic instruments.
+    * 2: GMdblib-3 - FM-only bank. Support all sample rates. Sample bit depth does not matter here.
+    * 3: hybrid_22khz_mcu - Hybrid bank. Use WT synth for drums and FM for melodic instruments.
         This bank is a combination of `GMdblib-3` and `Sonic_20Khz_Drums`.
         Support 22050 Hz sample rate and 8-bit samples only.
 

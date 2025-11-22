@@ -93,6 +93,9 @@
 #if !defined(NUM_SECONDARY_VOICES)
 #define NUM_SECONDARY_VOICES    (MAX_SYNTH_VOICES - NUM_PRIMARY_VOICES)
 #endif
+
+#define NUM_WT_VOICES           NUM_PRIMARY_VOICES
+#define NUM_FM_VOICES           NUM_SECONDARY_VOICES
 #endif
 
 #endif

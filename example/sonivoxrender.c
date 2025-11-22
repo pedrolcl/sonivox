@@ -26,7 +26,6 @@
 #include <eas_reverb.h>
 #include <eas_chorus.h>
 #include <eas_report.h>
-#include <private/eas_sndlib.h>
 
 #if defined(_MSC_VER)
 #include <io.h>
@@ -34,17 +33,9 @@
 #define alloca _alloca
 #endif
 
-// actually they have type of S_EAS
-extern S_EAS easlib_hybrid_22khz_mcu; 
-extern S_EAS easlib_fm_gmdblib_3;
 
 const char *dls_path = NULL;
-enum {
-    SNDLIB_WT = 0,
-    SNDLIB_FM,
-    SNDLIB_HYBRID,
-    SNDLIB_END
-} sndlib_type = SNDLIB_WT;
+const char *sndlib_name = NULL;
 EAS_I32 playback_gain = 100;
 EAS_I32 reverb_type = 0;
 EAS_I32 reverb_wet = 32767;
@@ -115,20 +106,20 @@ int initializeLibrary(void)
         return ok;
     }
 
-    switch (sndlib_type)
-    {
-    case SNDLIB_WT:
-        break;
-    case SNDLIB_FM:
-        EAS_SetSoundLibrary(mEASDataHandle, NULL, &easlib_fm_gmdblib_3);
-        break;
-    case SNDLIB_HYBRID:
-        EAS_SetSoundLibrary(mEASDataHandle, NULL, &easlib_hybrid_22khz_mcu);
-        break;
-    default:
-        fprintf(stderr, "invalid sound library: %d\n", sndlib_type);
+    if (sndlib_name == NULL) {
+        sndlib_name = EAS_GetDefaultSoundLibrary(EAS_SNDLIB_WT);
+        if (sndlib_name == NULL) {
+            fprintf(stderr, "Failed to get default sound library name\n");
+            ok = EXIT_FAILURE;
+            return ok;
+        }
+    }
+    EAS_Report(_EAS_SEVERITY_DETAIL, "Using sound library: %s\n", sndlib_name);
+    result = EAS_SetSoundLibrary(mEASDataHandle, NULL, EAS_GetSoundLibrary(mEASDataHandle, sndlib_name));
+    if (result != EAS_SUCCESS) {
+        fprintf(stderr, "Failed to set sound library: %s\n", sndlib_name);
         ok = EXIT_FAILURE;
-        goto cleanup;
+        return ok;
     }
 
     if (dls_path != NULL) {
@@ -393,7 +384,7 @@ int main (int argc, char **argv)
                 "Usage: %s [-h|--help] [-v|--version] [-d|--dls soundfont] [-r|--reverb 0..4] "
                 "[-w|--wet 0..32767] [-n|--dry 0..32767] "
                 "[-c|--chorus 0..4] [-l|--level 0..32767] [-g|--gain 0..196] [-V|--Verbosity "
-                "0..5] [-R|--reverb-post-mix] [-C|--chorus-post-mix] [-s|--sndlib 0..2] file.mid ...\n"
+                "0..5] [-R|--reverb-post-mix] [-C|--chorus-post-mix] [-s|--sndlib 1..3] file.mid ...\n"
                 "Render standard MIDI files into raw PCM audio.\n"
                 "Options:\n"
                 "\t-h, --help\t\tthis help message.\n"
@@ -474,13 +465,15 @@ int main (int argc, char **argv)
                 return EXIT_FAILURE;
             }
             break;
-        case 's':
-            sndlib_type = atoi(optarg);
-            if ((sndlib_type < SNDLIB_WT) || (sndlib_type >= SNDLIB_END)) {
+        case 's': {
+            int sndlib_type = atoi(optarg);
+            sndlib_name = EAS_GetDefaultSoundLibrary(sndlib_type);
+            if ((sndlib_type < EAS_SNDLIB_WT) || (sndlib_type > EAS_SNDLIB_HYBRID) || (sndlib_name == NULL)) {
                 fprintf(stderr, "invalid sound library: %d\n", sndlib_type);
                 return EXIT_FAILURE;
             }
             break;
+        }
         case '?':
             fprintf(stderr, "unknown option %c\n", optopt);
             return EXIT_FAILURE;

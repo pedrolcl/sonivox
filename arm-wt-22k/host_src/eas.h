@@ -1057,6 +1057,16 @@ EAS_PUBLIC EAS_RESULT EAS_SearchFile(EAS_DATA_HANDLE pEASData,
                                      EAS_I32 len,
                                      EAS_I32 *pOffset);
 
+// Return the name of the default sound library for the specified type.
+// If sound library of the specified type is not available, NULL is returned.
+// The returned string is owned by the EAS library and must not be freed by the caller.
+EAS_PUBLIC const char* EAS_GetDefaultSoundLibrary(E_EAS_SNDLIB_TYPE sndlibType);
+
+// Return a handle to the sound library with the specified name.
+// The handle can be passed to EAS_SetSoundLibrary.
+// The returned handle is owned by the EAS library and must not be freed by the caller.
+EAS_PUBLIC EAS_SNDLIB_HANDLE EAS_GetSoundLibrary(EAS_DATA_HANDLE pEASData, const char* libraryName);
+
 #ifdef __cplusplus
 } /* end extern "C" */
 #endif

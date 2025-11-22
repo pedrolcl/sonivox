@@ -36,9 +36,13 @@ option(BUILD_SHARED_LIBS "Build the shared library (instead of a static lib)" TR
 option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
 option(SF2_SUPPORT "Enable SF2 support and float DCF" TRUE)
 option(ZLIB_SUPPORT "Enable XMF ZLIB Unpacker support" TRUE)
-option(EAS_WT_SYNTH "Enable WaveTable Synth" TRUE)
-option(EAS_FM_SYNTH "Enable FM Synth" FALSE)
-option(EAS_HYBRID_SYNTH "Enable Hybrid Synth" FALSE)
+option(EAS_WT_SYNTH "Enable WaveTable Synth and build its sound library" TRUE)
+option(EAS_FM_SYNTH "Enable FM Synth and build its sound library" FALSE)
+option(EAS_HYBRID_SYNTH "Enable Hybrid Synth and build its sound library" FALSE)
+
+if (NOT (EAS_WT_SYNTH OR EAS_FM_SYNTH OR EAS_HYBRID_SYNTH))
+    message(FATAL_ERROR "At least one synthesizer type must be enabled: EAS_WT_SYNTH, EAS_FM_SYNTH, EAS_HYBRID_SYNTH.")
+endif()
 
 include(CMakeDependentOption)
 cmake_dependent_option(MP3_SUPPORT "Enable MP3 Decoder support" TRUE "USE_16BITS_SAMPLES" FALSE)
@@ -163,24 +167,43 @@ list(APPEND SOURCES
   arm-wt-22k/lib_src/eas_tonecontrol.c
   arm-wt-22k/lib_src/eas_voicemgt.c
 #arm-wt-22k/lib_src/eas_wavefile.c
-  arm-wt-22k/lib_src/eas_wtengine.c
-  arm-wt-22k/lib_src/eas_wtsynth.c
   arm-wt-22k/lib_src/eas_xmf.c
 #arm-wt-22k/lib_src/jet.c
-  arm-wt-22k/lib_src/wt_200k_G.c
   arm-wt-22k/src/rmidi.c
+  arm-wt-22k/lib_src/eas_sndlibmgt.c
 )
+
+if(EAS_WT_SYNTH OR EAS_HYBRID_SYNTH)
+    list(APPEND SOURCES
+        arm-wt-22k/lib_src/eas_wtengine.c
+        arm-wt-22k/lib_src/eas_wtsynth.c
+    )
+endif()
 
 if(EAS_FM_SYNTH OR EAS_HYBRID_SYNTH)
     list(APPEND SOURCES
         arm-wt-22k/lib_src/eas_fmengine.c
         arm-wt-22k/lib_src/eas_fmsynth.c
         arm-wt-22k/lib_src/eas_fmtables.c
+    )
+endif()
+
+if(EAS_WT_SYNTH)
+    list(APPEND SOURCES
+        arm-wt-22k/lib_src/wt_200k_G.c
+    )
+endif()
+
+if(EAS_FM_SYNTH)
+    list(APPEND SOURCES
         arm-wt-22k/lib_src/eas_fmsndlib.c
     )
 endif()
 
 if(EAS_HYBRID_SYNTH)
+    if (USE_44KHZ OR USE_16BITS_SAMPLES)
+        message(FATAL_ERROR "Hybrid Synthesizer sound library only supports 22050 Hz and 8 bits samples.")
+    endif()
     list(APPEND SOURCES
         arm-wt-22k/lib_src/hybrid_22khz_mcu.c
     )
