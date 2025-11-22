@@ -225,6 +225,11 @@ check_include_file ( getopt.h HAVE_GETOPT_H )
 configure_file(arm-wt-22k/host_src/eas_version.cmake libsonivox/eas_version.h @ONLY)
 configure_file(arm-wt-22k/host_src/eas_options.cmake libsonivox/eas_options.h @ONLY)
 
+if (EXISTS "${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas.h")
+    message(NOTICE "Purging generated header file eas.h from previous builds.")
+    file(REMOVE "${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas.h")
+endif()
+
 list(APPEND PUBLIC_HEADERS
     arm-wt-22k/host_src/eas.h
     arm-wt-22k/host_src/eas_chorus.h
