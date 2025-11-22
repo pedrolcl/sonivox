@@ -32,10 +32,7 @@
 #include "eas_math.h"
 #include "eas_audioconst.h"
 #include "eas_fmengine.h"
-
-#if defined(EAS_FM_SYNTH) || defined(EAS_HYBRID_SYNTH) || defined(EAS_SPLIT_HYBRID_SYNTH) || defined(EAS_SPLIT_FM_SYNTH)
 #include "eas_data.h"
-#endif
 
 /* externals */
 extern const EAS_I16 sineTable[];

@@ -61,49 +61,6 @@
 #define MAX_VIRTUAL_SYNTHESIZERS    4
 #endif
 
-/* defines */
-#if defined(_HYBRID_SYNTH)
-#if !defined(NUM_PRIMARY_VOICES)
-#define NUM_PRIMARY_VOICES      (MAX_SYNTH_VOICES / 2)
-#endif
-#if !defined(NUM_SECONDARY_VOICES)
-#define NUM_SECONDARY_VOICES    (MAX_SYNTH_VOICES - NUM_PRIMARY_VOICES)
-#endif
-#else
-#ifndef NUM_PRIMARY_VOICES
-#define NUM_PRIMARY_VOICES      MAX_SYNTH_VOICES
-#endif
-#endif
-
-#if defined(EAS_WT_SYNTH)
-#define NUM_WT_VOICES           MAX_SYNTH_VOICES
-
-/* FM on MCU */
-#elif defined(EAS_FM_SYNTH)
-#define NUM_FM_VOICES           MAX_SYNTH_VOICES
-
-/* wavetable drums on MCU, wavetable melodic on DSP */
-#elif defined(EAS_SPLIT_WT_SYNTH)
-#define NUM_WT_VOICES           MAX_SYNTH_VOICES
-
-/* wavetable drums and FM melodic on MCU */
-#elif defined(EAS_HYBRID_SYNTH)
-#define NUM_WT_VOICES           NUM_PRIMARY_VOICES
-#define NUM_FM_VOICES           NUM_SECONDARY_VOICES
-
-/* wavetable drums on MCU, FM melodic on DSP */
-#elif defined(EAS_SPLIT_HYBRID_SYNTH)
-#define NUM_WT_VOICES           NUM_PRIMARY_VOICES
-#define NUM_FM_VOICES           NUM_SECONDARY_VOICES
-
-/* FM synth on DSP */
-#elif defined(EAS_SPLIT_FM_SYNTH)
-#define NUM_FM_VOICES           MAX_SYNTH_VOICES
-
-#else
-#error "Unrecognized architecture option"
-#endif
-
 #define NUM_SYNTH_CHANNELS      16
 
 #define DEFAULT_SYNTH_VOICES    MAX_SYNTH_VOICES
