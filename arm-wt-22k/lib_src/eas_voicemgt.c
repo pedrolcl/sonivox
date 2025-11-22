@@ -82,9 +82,6 @@
 // which is about -24 dB
 #define FM_OUTPUT_GAIN_ATTEN 4
 
-/* pointer to base sound library */
-extern S_EAS easlib_wt_200k_g;
-
 #ifdef TEST_HARNESS
 extern S_EAS easTestLib;
 EAS_SNDLIB_HANDLE VMGetLibHandle(EAS_INT libNum)
