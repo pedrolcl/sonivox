@@ -20,9 +20,9 @@
 #include <fcntl.h>
 #include <fstream>
 
-#include <libsonivox/eas.h>
-#include <libsonivox/eas_report.h>
-#include <libsonivox/eas_reverb.h>
+#include <eas.h>
+#include <eas_report.h>
+#include <eas_reverb.h>
 
 #include "SonivoxTestEnvironment.h"
 
