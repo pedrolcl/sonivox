@@ -22,7 +22,7 @@
  * Articulations
  *----------------------------------------------------------------------------
 */
-const S_ARTICULATION eas_articulations[] =
+static const S_ARTICULATION eas_articulations[] =
 {
     { /* articulation 0 */
         { 32767, 31730, 0, 31730 },
@@ -955,7 +955,7 @@ const S_ARTICULATION eas_articulations[] =
  * Regions
  *----------------------------------------------------------------------------
 */
-const S_WT_REGION eas_regions[] =
+static const S_WT_REGION eas_regions[] =
 {
     { { 0, 27, 27 }, -4068, 16422, 0, 0, 81, 0 }, /* region 0 */
     { { 0, 28, 28 }, -4768, 32767, 0, 0, 40, 0 }, /* region 1 */

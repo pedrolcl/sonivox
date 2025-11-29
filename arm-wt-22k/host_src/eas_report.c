@@ -166,13 +166,13 @@ EAS_PUBLIC void EAS_ReportEx (int severity, unsigned long hashCode, int serialNu
             }
             else
             {
-                vprintf(debugMessages[i].m_pDebugMsg, vargs);
+                vfprintf(stderr, debugMessages[i].m_pDebugMsg, vargs);
             }
             va_end(vargs);
             return;
         }
     }
-    printf("Unrecognized error: Severity=%d; HashCode=%lu; SerialNum=%d\n", severity, hashCode, serialNum);
+    fprintf(stderr, "Unrecognized error: Severity=%d; HashCode=%lu; SerialNum=%d\n", severity, hashCode, serialNum);
 } /* end EAS_ReportEx */
 
 /*----------------------------------------------------------------------------
@@ -200,7 +200,7 @@ EAS_PUBLIC void EAS_Report (int severity, const char *fmt, ...)
     }
     else
     {
-        vprintf(fmt, vargs);
+        vfprintf(stderr, fmt, vargs);
     }
     va_end(vargs);
 } /* end EAS_Report */
@@ -230,7 +230,7 @@ EAS_PUBLIC void EAS_ReportX (int severity, const char *fmt, ...)
     }
     else
     {
-        vprintf(fmt, vargs);
+        vfprintf(stderr, fmt, vargs);
     }
     va_end(vargs);
 } /* end EAS_ReportX */

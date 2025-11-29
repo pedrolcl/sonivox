@@ -34,7 +34,12 @@
 #include "eas_effects.h"
 #include "eas_options.h"
 #include "eas_sndlib.h"
+#include "eas_synthcfg.h"
 #include "eas_types.h"
+
+#ifdef DLS_SYNTHESIZER
+#include "eas_dlslib.h"
+#endif
 
 #ifdef _WT_SYNTH
 #include "eas_wtsynth.h"
@@ -54,42 +59,6 @@
 
 #ifndef MAX_VIRTUAL_SYNTHESIZERS
 #define MAX_VIRTUAL_SYNTHESIZERS    4
-#endif
-
-/* defines */
-#ifndef NUM_PRIMARY_VOICES
-#define NUM_PRIMARY_VOICES      MAX_SYNTH_VOICES
-#elif !defined(NUM_SECONDARY_VOICES)
-#define NUM_SECONDARY_VOICES    (MAX_SYNTH_VOICES - NUM_PRIMARY_VOICES)
-#endif
-
-#if defined(EAS_WT_SYNTH)
-#define NUM_WT_VOICES           MAX_SYNTH_VOICES
-
-/* FM on MCU */
-#elif defined(EAS_FM_SYNTH)
-#define NUM_FM_VOICES           MAX_SYNTH_VOICES
-
-/* wavetable drums on MCU, wavetable melodic on DSP */
-#elif defined(EAS_SPLIT_WT_SYNTH)
-#define NUM_WT_VOICES           MAX_SYNTH_VOICES
-
-/* wavetable drums and FM melodic on MCU */
-#elif defined(EAS_HYBRID_SYNTH)
-#define NUM_WT_VOICES           NUM_PRIMARY_VOICES
-#define NUM_FM_VOICES           NUM_SECONDARY_VOICES
-
-/* wavetable drums on MCU, FM melodic on DSP */
-#elif defined(EAS_SPLIT_HYBRID_SYNTH)
-#define NUM_WT_VOICES           NUM_PRIMARY_VOICES
-#define NUM_FM_VOICES           NUM_SECONDARY_VOICES
-
-/* FM synth on DSP */
-#elif defined(EAS_SPLIT_FM_SYNTH)
-#define NUM_FM_VOICES           MAX_SYNTH_VOICES
-
-#else
-#error "Unrecognized architecture option"
 #endif
 
 #define NUM_SYNTH_CHANNELS      16
@@ -301,6 +270,7 @@ typedef struct s_synth_tag
 {
     struct s_eas_data_tag   *pEASData;
     const S_EAS             *pEAS;
+    EAS_BOOL                isHybridLibrary;
 
 #ifdef DLS_SYNTHESIZER
     S_DLS                   *pDLS;
@@ -355,7 +325,8 @@ typedef struct s_voice_mgr_tag
     EAS_PCM                 voiceBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
 
 #ifdef _FM_SYNTH
-    EAS_PCM                 operMixBuffer[SYNTH_UPDATE_PERIOD_IN_SAMPLES];
+    EAS_I32                 operOutputBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
+    EAS_I32                 operMixBuffer[BUFFER_SIZE_IN_MONO_SAMPLES];
     S_FM_VOICE              fmVoices[NUM_FM_VOICES];
 #endif
 
@@ -384,7 +355,7 @@ typedef struct s_voice_mgr_tag
     EAS_FRAME_BUFFER_HANDLE pFrameBuffer;
 #endif
 
-#if defined(_SECONDARY_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
+#if defined(_HYBRID_SYNTH) || defined(EAS_SPLIT_WT_SYNTH)
     EAS_U16                 maxPolyphonyPrimary;
     EAS_U16                 maxPolyphonySecondary;
 #endif

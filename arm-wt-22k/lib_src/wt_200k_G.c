@@ -53,7 +53,7 @@
  * Programs
  *----------------------------------------------------------------------------
 */
-const S_PROGRAM eas_programs[] =
+static const S_PROGRAM eas_programs[] =
 {
     { 7864320, 0 } /* program 0 */
 }; /* end Programs */
@@ -62,7 +62,7 @@ const S_PROGRAM eas_programs[] =
  * Banks
  *----------------------------------------------------------------------------
 */
-const S_BANK eas_banks[] =
+static const S_BANK eas_banks[] =
 {
     { /* bank 0 */
         30976,
@@ -107,7 +107,7 @@ const S_BANK eas_banks[] =
 #define SAMPLE_RATE	0x5622
 #endif
 
-const S_EAS easSoundLib = {
+const S_EAS easlib_wt_200k_g = {
     0x01534145,
 
 #if defined (_8_BIT_SAMPLES)

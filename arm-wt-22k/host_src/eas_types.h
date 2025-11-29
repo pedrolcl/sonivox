@@ -188,6 +188,14 @@ typedef void *EAS_VOID_PTR;
 #define NULL 0
 #endif
 
+typedef enum
+{
+    EAS_SNDLIB_DEFAULT = 0,
+    EAS_SNDLIB_WT = 1,
+    EAS_SNDLIB_FM,
+    EAS_SNDLIB_HYBRID
+} E_EAS_SNDLIB_TYPE;
+
 /* metadata types for metadata return codes */
 typedef enum
 {
