@@ -401,7 +401,7 @@ int main (int argc, char **argv)
                 "5=details\n"
                 "\t-R, --reverb-post-mix\tignore CC91 reverb send.\n"
                 "\t-C, --chorus-post-mix\tignore CC93 chorus send.\n"
-                "\t-s, --sndlib n\t\tsound engine library: 0=wt, 1=fm, 2=hybrid.\n",
+                "\t-s, --sndlib n\t\tsound engine library: 1=wt, 2=fm, 3=hybrid.\n",
                 argv[0]);
             return EXIT_FAILURE;
         case 'v':

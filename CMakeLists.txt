@@ -36,15 +36,15 @@ option(BUILD_SHARED_LIBS "Build the shared library (instead of a static lib)" TR
 option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
 option(SF2_SUPPORT "Enable SF2 support and float DCF" TRUE)
 option(ZLIB_SUPPORT "Enable XMF ZLIB Unpacker support" TRUE)
-option(EAS_WT_SYNTH "Enable WaveTable Synth and build its sound library" TRUE)
-option(EAS_FM_SYNTH "Enable FM Synth and build its sound library" FALSE)
-option(EAS_HYBRID_SYNTH "Enable Hybrid Synth and build its sound library" FALSE)
+option(EAS_WT_SYNTH "Enable WaveTable Synth" TRUE)
+option(EAS_FM_SYNTH "Enable FM Synth" FALSE)
 
 if (NOT (EAS_WT_SYNTH OR EAS_FM_SYNTH OR EAS_HYBRID_SYNTH))
     message(FATAL_ERROR "At least one synthesizer type must be enabled: EAS_WT_SYNTH, EAS_FM_SYNTH, EAS_HYBRID_SYNTH.")
 endif()
 
 include(CMakeDependentOption)
+cmake_dependent_option(EAS_HYBRID_SYNTH "Enable Hybrid Synth" FALSE "NOT USE_44KHZ;NOT USE_16BITS_SAMPLES" FALSE)
 cmake_dependent_option(MP3_SUPPORT "Enable MP3 Decoder support" TRUE "USE_16BITS_SAMPLES" FALSE)
 cmake_dependent_option(BUILD_TESTING "Build the unit tests" TRUE "NOT ANDROID" FALSE)
 cmake_dependent_option(BUILD_APPLICATION "Build and install the CLI program" TRUE "NOT ANDROID" FALSE)
@@ -201,9 +201,6 @@ if(EAS_FM_SYNTH)
 endif()
 
 if(EAS_HYBRID_SYNTH)
-    if (USE_44KHZ OR USE_16BITS_SAMPLES)
-        message(FATAL_ERROR "Hybrid Synthesizer sound library only supports 22050 Hz and 8 bits samples.")
-    endif()
     list(APPEND SOURCES
         arm-wt-22k/lib_src/hybrid_22khz_mcu.c
     )
@@ -247,11 +244,6 @@ check_include_file ( getopt.h HAVE_GETOPT_H )
 
 configure_file(arm-wt-22k/host_src/eas_version.cmake libsonivox/eas_version.h @ONLY)
 configure_file(arm-wt-22k/host_src/eas_options.cmake libsonivox/eas_options.h @ONLY)
-
-if (EXISTS "${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas.h")
-    message(NOTICE "Purging generated header file eas.h from previous builds.")
-    file(REMOVE "${CMAKE_CURRENT_BINARY_DIR}/libsonivox/eas.h")
-endif()
 
 list(APPEND PUBLIC_HEADERS
     arm-wt-22k/host_src/eas.h
@@ -312,6 +304,9 @@ list(APPEND PRIVATE_HEADERS
     arm-wt-22k/lib_src/eas_audioconst.h
     arm-wt-22k/lib_src/eas_chorusdata.h
     arm-wt-22k/lib_src/eas_filter.h
+    arm-wt-22k/lib_src/eas_fmengine.h
+    arm-wt-22k/lib_src/eas_fmsynth.h
+    arm-wt-22k/lib_src/eas_dlslib.h
 )
 
 add_library( sonivox

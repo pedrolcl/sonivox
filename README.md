@@ -42,6 +42,12 @@ The build system has the following options:
 * `ZLIB_SUPPORT`: Enable XMF ZLIB Unpacker support. ON by default.
 * `BUILD_MANPAGE`: Build the manpage of the CLI program. OFF by default.
 
+The synthesizer types options (at least one must be enabled):
+
+* `EAS_WT_SYNTH`: Enable WaveTable Synth. ON by default.
+* `EAS_FM_SYNTH`: Enable FM Synth. OFF by default.
+* `EAS_HYBRID_SYNTH`: Enable Hybrid Synth. OFF by default. Requires both `USE_44KHZ` and `USE_16BITS_SAMPLES` to be OFF.
+
 * `MAX_VOICES`: Maximum number of voices. 64 by default.
 
 See also the [CMake documentation](https://cmake.org/cmake/help/latest/index.html) for common build options.
