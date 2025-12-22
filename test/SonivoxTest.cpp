@@ -354,21 +354,25 @@ TEST_P(SonivoxTest, DecodePauseResumeTest) {
     ASSERT_EQ(state, EAS_STATE_PLAY) << "Invalid state reached when resumed";
 }
 
-// clang-format off
-INSTANTIATE_TEST_SUITE_P(SonivoxTestAll,
+INSTANTIATE_TEST_SUITE_P(SonivoxTest1,
                          SonivoxTest,
-                         ::testing::Values( make_tuple("test.mid", 2400, "")
-                                           ,make_tuple("ants.mid", 17233, "")
-#if defined(_XMF_PARSER)
-                                           ,make_tuple("testmxmf.mxmf", 29095, "")
-#endif
-#if defined(DLS_SYNTHESIZER)
-                                           ,make_tuple("test.mid", 2400, "soundfont.dls")
-#endif
-                                          ));
-// clang-format on
+                         ::testing::Values(make_tuple("test.mid", 2400, ""),
+                                           make_tuple("ants.mid", 17233, "")));
 
-int main(int argc, char **argv) {
+#if defined(_XMF_PARSER)
+INSTANTIATE_TEST_SUITE_P(SonivoxTest2,
+                         SonivoxTest,
+                         ::testing::Values(make_tuple("testmxmf.mxmf", 29095, "")));
+#endif
+
+#if defined(DLS_SYNTHESIZER)
+INSTANTIATE_TEST_SUITE_P(SonivoxTest3,
+                         SonivoxTest,
+                         ::testing::Values(make_tuple("test.mid", 2400, "soundfont.dls")));
+#endif
+
+int main(int argc, char **argv)
+{
     gEnv = new SonivoxTestEnvironment();
     ::testing::AddGlobalTestEnvironment(gEnv);
     ::testing::InitGoogleTest(&argc, argv);
