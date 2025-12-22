@@ -31,7 +31,7 @@ jobs:
     name: 🚧${{ matrix.icon }} Linux CI ${{ matrix.arch }} format ${{ matrix.format }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: '${{ matrix.icon }} Preparation'
       run: sudo apt install libgtest-dev
@@ -67,7 +67,7 @@ jobs:
         tar cvf SonivoxV4.tar SonivoxV4
 
     - name: '${{ matrix.icon }} Upload Artifacts'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: SonivoxV4-Linux-${{matrix.arch}}-${{matrix.format}}
         path: SonivoxV4.tar

@@ -17,7 +17,7 @@ jobs:
       TEMP: ${{github.workspace}}/temp
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Temp Environment Variable
       run: |
         mkdir -p ${{github.workspace}}/temp
@@ -32,7 +32,7 @@ jobs:
 
     - name: FreeBSD test
       id: test
-      uses: vmactions/freebsd-vm@v1
+      uses: vmactions/freebsd-vm@
       with:
         envs: 'BUILD_TYPE INSTALL_LOCATION TEMP'
         usesh: true
@@ -52,7 +52,7 @@ jobs:
           cmake --install ${{github.workspace}}/build
           tar cvf SonivoxV4.tar SonivoxV4
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: SonivoxV4-freebsd
         path: SonivoxV4.tar

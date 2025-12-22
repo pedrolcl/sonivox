@@ -24,7 +24,7 @@ jobs:
     name: 🚧${{ matrix.icon }} msvc ${{ matrix.arch }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: '${{ matrix.icon }} Install NSIS'
       uses: repolevedavaj/install-nsis@v1.1.0
@@ -68,7 +68,7 @@ jobs:
       run: cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: '${{ matrix.icon }} Upload Artifacts'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: SonivoxV4-msvc-${{matrix.arch}}
         path: ${{env.INSTALL_LOCATION}}
@@ -76,7 +76,7 @@ jobs:
         overwrite: true
 
     - name: '${{ matrix.icon }} Upload Installer'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: SonivoxV4-msvc-installer-${{matrix.arch}}
         path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.arch}}.exe
