@@ -32,7 +32,7 @@ jobs:
 
     - name: FreeBSD test
       id: test
-      uses: vmactions/freebsd-vm@
+      uses: vmactions/freebsd-vm@v1
       with:
         envs: 'BUILD_TYPE INSTALL_LOCATION TEMP'
         usesh: true
