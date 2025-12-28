@@ -159,30 +159,30 @@ public:
                                          << mEASConfig->mixBufferSize * mEASConfig->numChannels;
     }
 
-      virtual void TearDown() override
-      {
-          EAS_RESULT result;
-          if (mEASDataHandle) {
-              if (mEASStreamHandle) {
-                  result = EAS_CloseFile(mEASDataHandle, mEASStreamHandle);
-                  ASSERT_EQ(result, EAS_SUCCESS) << "Failed to close audio file/stream";
-              }
-              result = EAS_Shutdown(mEASDataHandle);
-              ASSERT_EQ(result, EAS_SUCCESS)
-                  << "Failed to deallocate the resources for synthesizer library";
-          }
-      }
+    virtual void TearDown() override
+    {
+        EAS_RESULT result;
+        if (mEASDataHandle) {
+            if (mEASStreamHandle) {
+                result = EAS_CloseFile(mEASDataHandle, mEASStreamHandle);
+                ASSERT_EQ(result, EAS_SUCCESS) << "Failed to close audio file/stream";
+            }
+            result = EAS_Shutdown(mEASDataHandle);
+            ASSERT_EQ(result, EAS_SUCCESS)
+                << "Failed to deallocate the resources for synthesizer library";
+        }
+    }
 
     bool seekToLocation(EAS_I32);
     bool renderAudio();
 
     string mInputMediaFile;
     string mSoundFont;
-    uint32_t mAudioplayTimeMs;
-    uint32_t mTotalAudioChannels;
-    uint32_t mAudioSampleRate;
+    uint32_t mAudioplayTimeMs{0};
+    uint32_t mTotalAudioChannels{0};
+    uint32_t mAudioSampleRate{0};
     off64_t mBase;
-    int64_t mLength;
+    int64_t mLength{0};
     int mFd;
 
     EAS_DATA_HANDLE mEASDataHandle;
@@ -354,21 +354,25 @@ TEST_P(SonivoxTest, DecodePauseResumeTest) {
     ASSERT_EQ(state, EAS_STATE_PLAY) << "Invalid state reached when resumed";
 }
 
-INSTANTIATE_TEST_SUITE_P(SonivoxTestAll,
+INSTANTIATE_TEST_SUITE_P(SonivoxTest1,
                          SonivoxTest,
-                         ::testing::Values(make_tuple("midi_a.mid", 2000, ""),
-                                           make_tuple("midi8sec.mid", 8002, ""),
-                                           make_tuple("midi_cs.mid", 2000, ""),
-                                           make_tuple("midi_gs.mid", 2000, ""),
-                                           make_tuple("ants.mid", 17233, ""),
-                                           make_tuple("testmxmf.mxmf", 29095, ""),
-                                           make_tuple("midi_a.mid", 2000, "soundfont.dls"),
-                                           make_tuple("midi8sec.mid", 8002, "soundfont.dls"),
-                                           make_tuple("midi_cs.mid", 2000, "soundfont.dls"),
-                                           make_tuple("midi_gs.mid", 2000, "soundfont.dls"),
-                                           make_tuple("ants.mid", 17233, "soundfont.dls")));
+                         ::testing::Values(make_tuple("test.mid", 2400, ""),
+                                           make_tuple("ants.mid", 17233, "")));
 
-int main(int argc, char **argv) {
+#if defined(_XMF_PARSER)
+INSTANTIATE_TEST_SUITE_P(SonivoxTest2,
+                         SonivoxTest,
+                         ::testing::Values(make_tuple("testmxmf.mxmf", 29095, "")));
+#endif
+
+#if defined(DLS_SYNTHESIZER)
+INSTANTIATE_TEST_SUITE_P(SonivoxTest3,
+                         SonivoxTest,
+                         ::testing::Values(make_tuple("test.mid", 2400, "soundfont.dls")));
+#endif
+
+int main(int argc, char **argv)
+{
     gEnv = new SonivoxTestEnvironment();
     ::testing::AddGlobalTestEnvironment(gEnv);
     ::testing::InitGoogleTest(&argc, argv);

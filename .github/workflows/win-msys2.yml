@@ -30,7 +30,7 @@ jobs:
         shell: msys2 {0}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: '${{ matrix.icon }} Install NSIS'
       uses: repolevedavaj/install-nsis@v1.1.0
@@ -89,7 +89,7 @@ jobs:
       run: tar cvf ${{env.INSTALL_LOCATION}}.tar ${{env.INSTALL_LOCATION}}
 
     - name: '${{ matrix.icon }} Upload Artifacts'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ${{env.INSTALL_LOCATION}}-msys2-${{matrix.sys}}
         path: ${{env.INSTALL_LOCATION}}.tar
@@ -97,7 +97,7 @@ jobs:
         overwrite: true
 
     - name: '${{ matrix.icon }} Upload Installer'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: SonivoxV4-msys2-installer-${{matrix.sys}}
         path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.sys}}.exe
