@@ -111,6 +111,10 @@ Example 5: pipe the rendered audio thru the PulseAudio's **pacat** utility:
 
     $ sonivoxrender ants.mid | pacat
 
+Example 6: pipe the rendered audio thru the PipeWire's **pw-play** utility:
+
+    $ sonivoxrender ants.mid | pw-play --rate 44100 -
+
 # BUGS
 
 See Tickets at GitHub <https://github.com/pedrolcl/sonivox/issues/>

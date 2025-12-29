@@ -93,7 +93,7 @@ endif()
 
 include(GNUInstallDirs)
 
-# set(PROJECT_RELEASE_DATE "April 13, 2025")
+set(PROJECT_RELEASE_DATE "December 30, 2025")
 
 if (BUILD_TESTING)
     find_package(GTest CONFIG)
