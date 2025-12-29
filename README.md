@@ -1,4 +1,4 @@
-# Fork of the AOSP 'platform_external_sonivox' project to use it outside of Android 
+# Evolution of the AOSP 'platform_external_sonivox' project to use it outside of Android 
 
 [![Linux CI](https://github.com/pedrolcl/sonivox/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/linux-ci.yml)
 
@@ -12,8 +12,7 @@
 
 [![Android CI](https://github.com/pedrolcl/sonivox/actions/workflows/android-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/android-ci.yml)
 
-This project is a fork of the Android Open Source Project 'platform_external_sonivox', including a CMake based build system to be used not on Android, but on any other computer Operating System.
-Google licensed this work originally named Sonivox EAS (Embedded Audio Synthesis) from the company Sonic Network Inc. under the terms of the Apache License 2.0.
+This project originated as a fork of the Android Open Source Project 'platform_external_sonivox', including a CMake based build system to be used not on Android, but on any other computer Operating System. Google licensed this work originally named Sonivox EAS (Embedded Audio Synthesis) from the company Sonic Network Inc. under the terms of the Apache License 2.0.
 
 This is a Wave Table synthesizer, not using external soundfont files by default but embedded samples. It also supports external DLS or SF2 soundfont files for better rendering quality. It is also a real time GM synthesizer. It consumes very little resources, so it may be indicated in projects for small embedded devices.
 There is neither MIDI input nor Audio output facilities included in the library. You need to provide your own input/output.
