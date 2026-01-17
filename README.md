@@ -86,7 +86,7 @@ Options:
         -V, --Verbosity n       Verbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, 5=details
         -R, --reverb-post-mix   ignore CC91 reverb send.
         -C, --chorus-post-mix   ignore CC93 chorus send.
-        -s, --sndlib n		    sound engine library: 1=wt, 2=fm, 3=hybrid.
+        -s, --sndlib n          sound engine library: 1=wt, 2=fm, 3=hybrid.
 ~~~
 
 The following examples assume the default option USE_44KHZ=ON:

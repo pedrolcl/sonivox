@@ -117,7 +117,7 @@ Example 6: pipe the rendered audio thru the PipeWire's **pw-play** utility:
 
 # BUGS
 
-See Tickets at GitHub <https://github.com/pedrolcl/sonivox/issues/>
+See Tickets at GitHub <https://github.com/EnbeddedSynth/sonivox/issues/>
 
 # LICENSE AND COPYRIGHT
 
