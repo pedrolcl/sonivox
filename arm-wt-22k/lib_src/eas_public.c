@@ -2462,11 +2462,21 @@ EAS_PUBLIC EAS_RESULT EAS_MetricsReset (EAS_DATA_HANDLE pEASData)
 */
 EAS_PUBLIC EAS_RESULT EAS_SetSoundLibrary (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStream, EAS_SNDLIB_HANDLE pSndLib)
 {
-    if (pStream)
+    if (pStream != NULL)
     {
+      if (pStream->pParserModule != NULL)
+      {
         if (!EAS_StreamReady(pEASData, pStream))
-            return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
+          return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
         return EAS_IntSetStrmParam(pEASData, pStream, PARSER_DATA_EAS_LIBRARY, (EAS_IPTR) pSndLib);
+      }
+      else if (pStream->handle != NULL)
+      {
+        S_INTERACTIVE_MIDI *pMIDIStream = (S_INTERACTIVE_MIDI *) pStream->handle;
+        return VMSetEASLib(pMIDIStream->pSynth, pSndLib);
+      }
+      else
+        return EAS_FAILURE;
     }
 
     return VMSetGlobalEASLib(pEASData->pVoiceMgr, pSndLib);
@@ -2537,7 +2547,7 @@ EAS_PUBLIC EAS_RESULT EAS_LoadDLSCollection (EAS_DATA_HANDLE pEASData, EAS_HANDL
     EAS_RESULT result;
     EAS_DLSLIB_HANDLE pDLS;
 
-    if (pStream != NULL)
+    if (pStream != NULL && pStream->pParserModule != NULL)
     {
         if (!EAS_StreamReady(pEASData, pStream))
             return EAS_ERROR_NOT_VALID_IN_THIS_STATE;
@@ -2553,14 +2563,24 @@ EAS_PUBLIC EAS_RESULT EAS_LoadDLSCollection (EAS_DATA_HANDLE pEASData, EAS_HANDL
 
     if (result == EAS_SUCCESS)
     {
-
-        /* if a stream pStream is specified, point it to the DLS collection */
-        if (pStream)
-            result = EAS_IntSetStrmParam(pEASData, pStream, PARSER_DATA_DLS_COLLECTION, (EAS_IPTR) pDLS);
-
-        /* global DLS load */
+      /* if a stream pStream is specified, point it to the DLS collection */
+      if (pStream != NULL)
+      {
+        if (pStream->pParserModule != NULL)
+        {
+          result = EAS_IntSetStrmParam(pEASData, pStream, PARSER_DATA_DLS_COLLECTION, (EAS_IPTR) pDLS);
+        }
+        else if (pStream->handle != NULL)
+        {
+          S_INTERACTIVE_MIDI *pMIDIStream = (S_INTERACTIVE_MIDI *) pStream->handle;
+          result = VMSetDLSLib(pMIDIStream->pSynth, pDLS);
+        }
         else
-            result = VMSetGlobalDLSLib(pEASData, pDLS);
+          result = EAS_FAILURE;
+      }
+      /* global DLS load */
+      else
+          result = VMSetGlobalDLSLib(pEASData, pDLS);
     }
 
     return result;
