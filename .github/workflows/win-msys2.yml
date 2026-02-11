@@ -71,6 +71,7 @@ jobs:
         -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
         -DDEPENDENCY_DIRS=${{steps.msys2.outputs.msys2-location}}/${{matrix.sys}}/bin
         -DCPACK_SYSTEM_NAME=${{matrix.sys}}
+        -DINSTALL_DEPENDENCIES=ON
       id: configuration
 
     - name: '${{ matrix.icon }} Build'
