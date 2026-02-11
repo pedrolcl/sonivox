@@ -71,6 +71,7 @@ jobs:
         -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
         -DDEPENDENCY_DIRS=${{steps.msys2.outputs.msys2-location}}/${{matrix.sys}}/bin
         -DCPACK_SYSTEM_NAME=${{matrix.sys}}
+      id: configuration
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build build --config ${{env.BUILD_TYPE}}
@@ -100,6 +101,6 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: SonivoxV4-msys2-installer-${{matrix.sys}}
-        path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.sys}}.exe
+        path: ${{github.workspace}}/build/sonivox-${{steps.configuration.outputs.config_version}}-${{matrix.sys}}.exe
         retention-days: 90
         overwrite: true

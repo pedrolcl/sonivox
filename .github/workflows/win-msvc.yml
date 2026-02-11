@@ -53,6 +53,7 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
         -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
         -DCPACK_SYSTEM_NAME=${{matrix.arch}}
+      id: configuration
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
@@ -79,6 +80,6 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: SonivoxV4-msvc-installer-${{matrix.arch}}
-        path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.arch}}.exe
+        path: ${{github.workspace}}/build/sonivox-${{steps.configuration.outputs.config_version}}-${{matrix.arch}}.exe
         retention-days: 90
         overwrite: true
