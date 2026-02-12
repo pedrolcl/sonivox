@@ -40,11 +40,12 @@ The build system has the following options:
 * `SF2_SUPPORT`: Enable SF2 support and float DCF. ON by default.
 * `ZLIB_SUPPORT`: Enable XMF ZLIB Unpacker support. ON by default.
 * `BUILD_MANPAGE`: Build the manpage of the CLI program. OFF by default.
+* `INSTALL_DEPENDENCIES`: Deploy dependency libraries. OFF by default.
 
 The synthesizer types options (at least one must be enabled):
 
 * `EAS_WT_SYNTH`: Enable WaveTable Synth. ON by default.
-* `EAS_FM_SYNTH`: Enable FM Synth. OFF by default.
+* `EAS_FM_SYNTH`: Enable FM Synth. ON by default.
 * `EAS_HYBRID_SYNTH`: Enable Hybrid Synth. OFF by default. Requires both `USE_44KHZ` and `USE_16BITS_SAMPLES` to be OFF.
 
 * `MAX_VOICES`: Maximum number of voices. 64 by default.
@@ -133,7 +134,7 @@ Example 8: pipe the rendered audio thru the ['mpv' media player](https://mpv.io/
 
 Besides being multiplatform, this supports progress view and better navigation (backed by in-memory cache).
 
-You may replace "ants.mid" by another MIDI or XMF file, like "test/res/testmxmf.mxmf"
+You may replace [ants.mid](https://github.com/EmbeddedSynth/sonivox/blob/devel/test/res/ants.mid) by another MIDI or XMF file, like [testmxmf.mxmf](https://github.com/EmbeddedSynth/sonivox/blob/devel/test/res/testmxmf.mxmf)
 
 ## Unit tests
 

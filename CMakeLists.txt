@@ -92,6 +92,13 @@ if (SF2_SUPPORT)
     set(_FLOAT_DCF ON)
 endif()
 
+if (DEFINED ENV{GITHUB_OUTPUT})
+    file(APPEND
+        "$ENV{GITHUB_OUTPUT}"
+        "config_version=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\n"
+    )
+endif()
+
 include(GNUInstallDirs)
 
 # set(PROJECT_RELEASE_DATE "December 30, 2025")
