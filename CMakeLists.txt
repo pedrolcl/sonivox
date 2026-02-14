@@ -1,5 +1,5 @@
 #[=========================================================================[
-  Copyright (c) 2022-2025 Pedro López-Cabanillas
+  Copyright (c) 2022-2026 Pedro López-Cabanillas
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.21)
 
 project( sonivox
     LANGUAGES C CXX
-    VERSION 4.0.0.0
+    VERSION 4.0.1.0
 )
 
 # GoogleTest requires at least C++14
@@ -37,7 +37,8 @@ option(NEW_HOST_WRAPPER "Use the new host wrapper" TRUE)
 option(SF2_SUPPORT "Enable SF2 support and float DCF" TRUE)
 option(ZLIB_SUPPORT "Enable XMF ZLIB Unpacker support" TRUE)
 option(EAS_WT_SYNTH "Enable WaveTable Synth" TRUE)
-option(EAS_FM_SYNTH "Enable FM Synth" FALSE)
+option(EAS_FM_SYNTH "Enable FM Synth" TRUE)
+option(INSTALL_DEPENDENCIES "Deploy dependency libraries" FALSE)
 
 if (NOT (EAS_WT_SYNTH OR EAS_FM_SYNTH OR EAS_HYBRID_SYNTH))
     message(FATAL_ERROR "At least one synthesizer type must be enabled: EAS_WT_SYNTH, EAS_FM_SYNTH, EAS_HYBRID_SYNTH.")
@@ -91,9 +92,16 @@ if (SF2_SUPPORT)
     set(_FLOAT_DCF ON)
 endif()
 
+if (DEFINED ENV{GITHUB_OUTPUT})
+    file(APPEND
+        "$ENV{GITHUB_OUTPUT}"
+        "config_version=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}\n"
+    )
+endif()
+
 include(GNUInstallDirs)
 
-set(PROJECT_RELEASE_DATE "December 30, 2025")
+set(PROJECT_RELEASE_DATE "February 14, 2026")
 
 if (BUILD_TESTING)
     find_package(GTest CONFIG)
@@ -490,7 +498,7 @@ if (BUILD_APPLICATION)
     add_subdirectory(example)
 endif()
 
-if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+if (INSTALL_DEPENDENCIES)
     message(STATUS "DEPENDENCY_DIRS: ${DEPENDENCY_DIRS}")
     install(RUNTIME_DEPENDENCY_SET sonivox-dependencies
         COMPONENT sonivox_runtime

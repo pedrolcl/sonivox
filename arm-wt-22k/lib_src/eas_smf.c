@@ -29,6 +29,9 @@
  *----------------------------------------------------------------------------
 */
 
+#include <stdint.h> // For uint64_t
+#include <limits.h> // For USHRT_MAX
+
 #define LOG_TAG "Sonivox"
 #include "log/log.h"
 
@@ -46,8 +49,6 @@
 #ifdef JET_INTERFACE
 #include "jet_data.h"
 #endif
-
-#include "compute_tick_conv.c"
 
 //3 dls: The timebase for this module is adequate to keep MIDI and
 //3 digital audio synchronized for only a few minutes. It should be
@@ -882,22 +883,23 @@ static EAS_RESULT SMF_ParseMetaEvent (S_EAS_DATA *pEASData, S_SMF_DATA *pSMFData
                 return result;
             temp = (temp << 8) | c;
         }
-        /* Replaced this horrible obfuscated code:
+        // note: temp is microseconds per quarter note. if SMF tempo is 120 quarters per minute, then:
+        // temp = 60'000'000 / 120 = 500'000 (SMF_DEFAULT_TIMEBASE)
+        // temp will be maximum 28 bits. See also SMF_ParseHeader() and SMF_UpdateTime()
         {
-            // pSMFData->tickConv = (EAS_U16) (((temp * 1024) / pSMFData->ppqn + 500) / 1000);
-            uint64_t temp64;
-            if (__builtin_mul_overflow(temp, 1024u, &temp64) ||
-                    pSMFData->ppqn == 0 ||
-                    (temp64 /= pSMFData->ppqn, false) ||
-                    __builtin_add_overflow(temp64, 500, &temp64) ||
-                    (temp64 /= 1000, false) ||
-                    temp64 > 65535) {
-                pSMFData->tickConv = 65535;
+            uint64_t temp64 = temp * 1024; // will never overflow
+            if (pSMFData->ppqn > 0) {
+              // see https://en.wikipedia.org/wiki/MIDI_beat_clock#Pulses_per_quarter_note
+              temp64 /= pSMFData->ppqn; // ticks per quarter note, values typically between 24 and 960
+              temp64 += 500;
+              temp64 /= 1000;
+            }
+            if (temp64 > USHRT_MAX) {
+                pSMFData->tickConv = 65535; // unlikely!
             } else {
                 pSMFData->tickConv = (EAS_U16) temp64;
             }
-        }*/
-        pSMFData->tickConv = compute_tick_conv(temp, pSMFData->ppqn);
+        }
         pSMFData->flags |= SMF_FLAGS_HAS_TEMPO;
     }
 

@@ -2,17 +2,17 @@
 
 # NOTICE: This is only a fork of the main project's repository: [EmbeddedSynth/sonivox](https://github.com/EmbeddedSynth/sonivox).
 
-[![Linux CI](https://github.com/pedrolcl/sonivox/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/linux-ci.yml)
+[![Linux CI](https://github.com/EmbeddedSynth/sonivox/actions/workflows/linux-ci.yml/badge.svg)](https://github.com/EmbeddedSynth/sonivox/actions/workflows/linux-ci.yml)
 
-[![Windows MSYS2 CI](https://github.com/pedrolcl/sonivox/actions/workflows/win-msys2.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/win-msys2.yml)
+[![Windows MSYS2 CI](https://github.com/EmbeddedSynth/sonivox/actions/workflows/win-msys2.yml/badge.svg)](https://github.com/EmbeddedSynth/sonivox/actions/workflows/win-msys2.yml)
 
-[![Windows MSVC CI](https://github.com/pedrolcl/sonivox/actions/workflows/win-msvc.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/win-msvc.yml)
+[![Windows MSVC CI](https://github.com/EmbeddedSynth/sonivox/actions/workflows/win-msvc.yml/badge.svg)](https://github.com/EmbeddedSynth/sonivox/actions/workflows/win-msvc.yml)
 
-[![macOS CI](https://github.com/pedrolcl/sonivox/actions/workflows/mac-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/mac-ci.yml)
+[![macOS CI](https://github.com/EmbeddedSynth/sonivox/actions/workflows/mac-ci.yml/badge.svg)](https://github.com/EmbeddedSynth/sonivox/actions/workflows/mac-ci.yml)
 
-[![FreeBSD CI](https://github.com/pedrolcl/sonivox/actions/workflows/freebsd-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/freebsd-ci.yml)
+[![FreeBSD CI](https://github.com/EmbeddedSynth/sonivox/actions/workflows/freebsd-ci.yml/badge.svg)](https://github.com/EmbeddedSynth/sonivox/actions/workflows/freebsd-ci.yml)
 
-[![Android CI](https://github.com/pedrolcl/sonivox/actions/workflows/android-ci.yml/badge.svg)](https://github.com/pedrolcl/sonivox/actions/workflows/android-ci.yml)
+[![Android CI](https://github.com/EmbeddedSynth/sonivox/actions/workflows/android-ci.yml/badge.svg)](https://github.com/EmbeddedSynth/sonivox/actions/workflows/android-ci.yml)
 
 This project originated as a fork of the Android Open Source Project 'platform_external_sonivox', including a CMake based build system to be used not on Android, but on any other computer Operating System. Google licensed this work originally named Sonivox EAS (Embedded Audio Synthesis) from the company Sonic Network Inc. under the terms of the Apache License 2.0.
 
@@ -42,11 +42,12 @@ The build system has the following options:
 * `SF2_SUPPORT`: Enable SF2 support and float DCF. ON by default.
 * `ZLIB_SUPPORT`: Enable XMF ZLIB Unpacker support. ON by default.
 * `BUILD_MANPAGE`: Build the manpage of the CLI program. OFF by default.
+* `INSTALL_DEPENDENCIES`: Deploy dependency libraries. OFF by default.
 
 The synthesizer types options (at least one must be enabled):
 
 * `EAS_WT_SYNTH`: Enable WaveTable Synth. ON by default.
-* `EAS_FM_SYNTH`: Enable FM Synth. OFF by default.
+* `EAS_FM_SYNTH`: Enable FM Synth. ON by default.
 * `EAS_HYBRID_SYNTH`: Enable Hybrid Synth. OFF by default. Requires both `USE_44KHZ` and `USE_16BITS_SAMPLES` to be OFF.
 
 * `MAX_VOICES`: Maximum number of voices. 64 by default.
@@ -57,9 +58,9 @@ See also the [CMake documentation](https://cmake.org/cmake/help/latest/index.htm
 
 This fork currently reverts these commits:
 
-* Full revert of [af41595](https://github.com/pedrolcl/platform_external_sonivox/commit/af41595537b044618234fe7dd9ebfcc652de1576) (Remove unused code from midi engine)
-* Full revert of [34ba480](https://github.com/pedrolcl/platform_external_sonivox/commit/34ba4804f643549b8ac74e5f56bfe64db3234447) (Remove unused code)
-* Partial revert of [2fa59c8](https://github.com/pedrolcl/platform_external_sonivox/commit/2fa59c8c6851b453271f33f254c7549fa79d07fb) (Build separate sonivox libs with and without jet...)
+* Full revert of [af41595](https://github.com/aosp-mirror/platform_external_sonivox/commit/af41595537b044618234fe7dd9ebfcc652de1576) (Remove unused code from midi engine)
+* Full revert of [34ba480](https://github.com/aosp-mirror/platform_external_sonivox/commit/34ba4804f643549b8ac74e5f56bfe64db3234447) (Remove unused code)
+* Partial revert of [2fa59c8](https://github.com/aosp-mirror/platform_external_sonivox/commit/2fa59c8c6851b453271f33f254c7549fa79d07fb) (Build separate sonivox libs with and without jet...)
 
 All the sources from the Android repository are kept in place, but some are not built and included in the compiled products. A few headers, mostly empty, are included in the 'fakes' subdirectory to allow compilation outside Android.
 
@@ -88,7 +89,7 @@ Options:
         -V, --Verbosity n       Verbosity: 0=no, 1=fatals, 2=errors, 3=warnings, 4=infos, 5=details
         -R, --reverb-post-mix   ignore CC91 reverb send.
         -C, --chorus-post-mix   ignore CC93 chorus send.
-        -s, --sndlib n		sound engine library: 1=wt, 2=fm, 3=hybrid.
+        -s, --sndlib n          sound engine library: 1=wt, 2=fm, 3=hybrid.
 ~~~
 
 The following examples assume the default option USE_44KHZ=ON:
@@ -135,7 +136,7 @@ Example 8: pipe the rendered audio thru the ['mpv' media player](https://mpv.io/
 
 Besides being multiplatform, this supports progress view and better navigation (backed by in-memory cache).
 
-You may replace "ants.mid" by another MIDI or XMF file, like "test/res/testmxmf.mxmf"
+You may replace [ants.mid](https://github.com/EmbeddedSynth/sonivox/blob/devel/test/res/ants.mid) by another MIDI or XMF file, like [testmxmf.mxmf](https://github.com/EmbeddedSynth/sonivox/blob/devel/test/res/testmxmf.mxmf)
 
 ## Unit tests
 
@@ -158,7 +159,7 @@ There are two environment variables that you may set before running the tests (m
 
 ## License
 
-Copyright (c) 2022-2025 Pedro López-Cabanillas and others.
+Copyright (c) 2022-2026 Pedro López-Cabanillas and others.
 
 Copyright (c) 2008-2024, The Android Open Source Project.
 

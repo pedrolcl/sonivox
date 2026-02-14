@@ -18,13 +18,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { icon: '🟪', arch: "x64", os: "windows-latest" }
-          - { icon: '🟩', arch: "arm64", os: "windows-11-arm" }
+          - { icon: '🟪', arch: "win64", os: "windows-latest", triplet: "x64-windows" }
+          - { icon: '🟫', arch: "win32", os: "windows-latest", triplet: "x86-windows" }
+          - { icon: '🟩', arch: "arm64", os: "windows-11-arm", triplet: "arm64-windows" }
     runs-on: ${{ matrix.os }}
     name: 🚧${{ matrix.icon }} msvc ${{ matrix.arch }}
 
     steps:
     - uses: actions/checkout@v6
+
+    - name: '${{ matrix.icon }} Build vcpkg'
+      uses: johnwason/vcpkg-action@v7
+      id: vcpkg
+      with:
+        pkgs: gtest zlib
+        triplet: ${{ matrix.triplet }}
+        token: ${{ github.token }}
 
     - name: '${{ matrix.icon }} Install NSIS'
       uses: repolevedavaj/install-nsis@v1.1.0
@@ -48,11 +57,15 @@ jobs:
         enable-cross-os-archive: true
 
     - name: '${{ matrix.icon }} Configure CMake'
+      id: configuration
       run: >
-        cmake -G Ninja -B ${{github.workspace}}/build
+        cmake ${{ steps.vcpkg.outputs.vcpkg-cmake-config }}
+        -G Ninja -B ${{github.workspace}}/build
         -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
         -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_LOCATION}}
         -DCPACK_SYSTEM_NAME=${{matrix.arch}}
+        -DDEPENDENCY_DIRS=${{github.workspace}}/vcpkg/installed/${{matrix.triplet}}/bin
+        -DINSTALL_DEPENDENCIES=ON
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
@@ -79,6 +92,6 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: SonivoxV4-msvc-installer-${{matrix.arch}}
-        path: ${{github.workspace}}/build/sonivox-4.0.0-${{matrix.arch}}.exe
+        path: ${{github.workspace}}/build/sonivox-${{steps.configuration.outputs.config_version}}-${{matrix.arch}}.exe
         retention-days: 90
         overwrite: true

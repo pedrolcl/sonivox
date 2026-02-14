@@ -3,16 +3,16 @@
 
 # NAME
 
-**sonivoxrender** — Render standard MIDI files into raw PCM audio
+**sonivoxrender** — Render MIDI song files into raw PCM audio
 
 # SYNOPSIS
 
-| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _soundfont_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..196_] [**-V|-\-Verbosity** _0..5_] [**-R|-\-reverb-post-mix**] [**-C|-\-chorus-post-mix**] [**-s|-\-sndlib** _1..3_] _midi_file_
+| **sonivoxrender** [**-h|-\-help**] [**-v|-\-version**] [**-d|-\-dls** _soundfont_] [**-r|-\-reverb** _0..4_] [**-w|-\-wet** _0..32767_] [**-n|-\-dry** _0..32767_] [**-c|-\-chorus** _0..4_] [**-l|-\-level** _0..32767_] [**-g|-\-gain** _0..196_] [**-V|-\-Verbosity** _0..5_] [**-R|-\-reverb-post-mix**] [**-C|-\-chorus-post-mix**] [**-s|-\-sndlib** _1..3_] _song_file_
 
 # DESCRIPTION
 
 This program is a MIDI file renderer based on the sonivox synthesizer library.
-It reads .MID (Standard MIDI Files) file format, and writes an audio stream to the standard output as raw 16 bit stereo PCM samples.
+It reads .MID (Standard MIDI Files), .RMI (RIFF-RMID), and .XMF (Extensible Music Files) file formats, and writes an audio stream to the standard output as raw 16 bit stereo PCM samples.
 
 ## Options
 
@@ -79,9 +79,9 @@ It reads .MID (Standard MIDI Files) file format, and writes an audio stream to t
 
 ## Arguments
 
-_midi_file_
+_song_file_
 
-:   Input MID file name.
+:   Input [**MID|RMI|XMF**] file name.
 
 # EXAMPLES
 
@@ -115,12 +115,20 @@ Example 6: pipe the rendered audio thru the PipeWire's **pw-play** utility:
 
     $ sonivoxrender ants.mid | pw-play --rate 44100 -
 
+Example 7: pipe the rendered audio thru the FFmpeg's **ffplay** utility:
+
+    $ sonivoxrender ants.mid | ffplay -i - -f s16le -ar 44.1k -ac 2 -nodisp -autoexit -loglevel quiet
+
+Example 8: pipe the rendered audio thru the **mpv** media player:
+
+    $ sonivoxrender ants.mid | mpv --demuxer=rawaudio -demuxer-rawaudio-format=s16le --demuxer-rawaudio-rate=44100 --demuxer-rawaudio-channels=2 --no-video -
+
 # BUGS
 
-See Tickets at GitHub <https://github.com/pedrolcl/sonivox/issues/>
+See Tickets at GitHub <https://github.com/EmbeddedSynth/sonivox/issues/>
 
 # LICENSE AND COPYRIGHT
 
 Licensed under the Apache License, Version 2.0
 
-Copyright (c) 2022-2025 Pedro López-Cabanillas and contributors
+Copyright (c) 2022-2026 Pedro López-Cabanillas and contributors
