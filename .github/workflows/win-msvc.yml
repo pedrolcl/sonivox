@@ -18,7 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { icon: '🟪', arch: "x64", os: "windows-latest" }
+          - { icon: '🟪', arch: "win64", os: "windows-latest" }
+          - { icon: '🟫', arch: "win32", os: "windows-latest" }
           - { icon: '🟩', arch: "arm64", os: "windows-11-arm" }
     runs-on: ${{ matrix.os }}
     name: 🚧${{ matrix.icon }} msvc ${{ matrix.arch }}
