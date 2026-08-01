@@ -57,13 +57,13 @@ jobs:
         echo "cache_path=$(cygpath -m $TEMP)" >> $GITHUB_OUTPUT
         echo "dependencies=$(cygpath -m $MSYSTEM_PREFIX/bin)" >> $GITHUB_OUTPUT
 
-    # - name: '${{ matrix.icon }} Downloading a DLS file for testing'
-    #   uses: ethanjli/cached-download-action@v0.1.4
-    #   with:
-    #     url: http://www.ronimusic.com/sf2/Airfont_340.dls
-    #     destination: ${{steps.tmp.outputs.cache_path}}/soundfont.dls
-    #     cache-key: cached.soundfont.dls
-    #     enable-cross-os-archive: true
+    - name: '${{ matrix.icon }} Downloading a DLS file for testing'
+      uses: ethanjli/cached-download-action@v0.1.4
+      with:
+        url: https://ftp.chasnah.com/soundfonts/Airfont_340.dls
+        destination: ${{steps.tmp.outputs.cache_path}}/soundfont.dls
+        cache-key: cached.soundfont.dls
+        enable-cross-os-archive: true
 
     - name: '${{ matrix.icon }} Configure CMake'
       id: configuration
@@ -74,6 +74,7 @@ jobs:
         -DDEPENDENCY_DIRS=${{steps.tmp.outputs.dependencies}}
         -DCPACK_SYSTEM_NAME=${{matrix.sys}}
         -DINSTALL_DEPENDENCIES=ON
+        -DSOUNDFONT_TEST=ON
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build build --config ${{env.BUILD_TYPE}}
