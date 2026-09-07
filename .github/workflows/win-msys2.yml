@@ -29,12 +29,12 @@ jobs:
         shell: msys2 {0}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: '${{ matrix.icon }} Install NSIS'
-      uses: repolevedavaj/install-nsis@v1.1.0
+      uses: repolevedavaj/install-nsis@v1.3.0
       with:
-        nsis-version: '3.11'
+        nsis-version: '3.12'
 
     - name: '${{ matrix.icon }} Setup MSYS2'
       uses: msys2/setup-msys2@v2
@@ -58,9 +58,9 @@ jobs:
         echo "dependencies=$(cygpath -m $MSYSTEM_PREFIX/bin)" >> $GITHUB_OUTPUT
 
     - name: '${{ matrix.icon }} Downloading a DLS file for testing'
-      uses: ethanjli/cached-download-action@v0.1.3
+      uses: ethanjli/cached-download-action@v0.1.4
       with:
-        url: http://www.ronimusic.com/sf2/Airfont_340.dls
+        url: https://ftp.chasnah.com/soundfonts/Airfont_340.dls
         destination: ${{steps.tmp.outputs.cache_path}}/soundfont.dls
         cache-key: cached.soundfont.dls
         enable-cross-os-archive: true
@@ -74,6 +74,7 @@ jobs:
         -DDEPENDENCY_DIRS=${{steps.tmp.outputs.dependencies}}
         -DCPACK_SYSTEM_NAME=${{matrix.sys}}
         -DINSTALL_DEPENDENCIES=ON
+        -DSOUNDFONT_TEST=ON
 
     - name: '${{ matrix.icon }} Build'
       run: cmake --build build --config ${{env.BUILD_TYPE}}
@@ -92,7 +93,7 @@ jobs:
       run: tar cvf ${{env.INSTALL_LOCATION}}.tar ${{env.INSTALL_LOCATION}}
 
     - name: '${{ matrix.icon }} Upload Artifacts'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: ${{env.INSTALL_LOCATION}}-msys2-${{matrix.sys}}
         path: ${{env.INSTALL_LOCATION}}.tar
@@ -100,7 +101,7 @@ jobs:
         overwrite: true
 
     - name: '${{ matrix.icon }} Upload Installer'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: SonivoxV4-msys2-installer-${{matrix.sys}}
         path: ${{github.workspace}}/build/sonivox-${{steps.configuration.outputs.config_version}}-${{matrix.sys}}.exe

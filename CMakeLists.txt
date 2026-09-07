@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.21)
 
 project( sonivox
     LANGUAGES C CXX
-    VERSION 4.0.1.0
+    VERSION 4.0.2.0
 )
 
 # GoogleTest requires at least C++14
@@ -48,6 +48,7 @@ include(CMakeDependentOption)
 cmake_dependent_option(EAS_HYBRID_SYNTH "Enable Hybrid Synth" FALSE "NOT USE_44KHZ;NOT USE_16BITS_SAMPLES" FALSE)
 cmake_dependent_option(MP3_SUPPORT "Enable MP3 Decoder support" TRUE "USE_16BITS_SAMPLES" FALSE)
 cmake_dependent_option(BUILD_TESTING "Build the unit tests" TRUE "NOT ANDROID" FALSE)
+cmake_dependent_option(SOUNDFONT_TEST "Test DLS processing" FALSE "BUILD_TESTING" FALSE)
 cmake_dependent_option(BUILD_APPLICATION "Build and install the CLI program" TRUE "NOT ANDROID" FALSE)
 cmake_dependent_option(BUILD_MANPAGE "Build the manpage of the CLI program" FALSE "BUILD_APPLICATION" FALSE)
 
@@ -92,6 +93,10 @@ if (SF2_SUPPORT)
     set(_FLOAT_DCF ON)
 endif()
 
+set(DLS_URL  "https://ftp.chasnah.com/soundfonts/Airfont_340.dls" CACHE STRING "DLS file URL for testing")
+set(DLS_SIZE "81362584" CACHE STRING "DLS file size")
+set(DLS_HASH "beb3e39e3c9fc51ef4dff36fdd8db0361471a91d244c3ee78af90f6d3c783b04" CACHE STRING "DLS file SHA256 hash")
+
 if (DEFINED ENV{GITHUB_OUTPUT})
     file(APPEND
         "$ENV{GITHUB_OUTPUT}"
@@ -101,7 +106,7 @@ endif()
 
 include(GNUInstallDirs)
 
-set(PROJECT_RELEASE_DATE "February 14, 2026")
+set(PROJECT_RELEASE_DATE "September 7, 2026")
 
 if (BUILD_TESTING)
     find_package(GTest CONFIG)
@@ -474,17 +479,20 @@ if (BUILD_TESTING)
         message(FATAL_ERROR "Cannot find a temporary directory. Define the TEMP environment variable.")
     endif()
 
-    set(SOUNDFONT "${TEMPDIR}/soundfont.dls")
-    if (NOT EXISTS ${SOUNDFONT})
-        message(STATUS "Downloading DLS file for testing to ${SOUNDFONT}")
-        file(DOWNLOAD "http://www.ronimusic.com/sf2/Airfont_340.dls" ${SOUNDFONT})
+    if (SOUNDFONT_TEST)
+        set(SOUNDFONT "${TEMPDIR}/soundfont.dls")
+        target_compile_definitions(SonivoxTest PUBLIC SOUNDFONT_TEST)
+        if (NOT EXISTS ${SOUNDFONT})
+            message(STATUS "Downloading DLS file from ${DLS_URL} for testing to ${SOUNDFONT}")
+            file(DOWNLOAD ${DLS_URL} ${SOUNDFONT})
 
-        file(SIZE ${SOUNDFONT} SOUNDFONTSIZE)
-        file(MD5 ${SOUNDFONT} SOUNDFONTHASH)
-        message(STATUS "DLS file ${SOUNDFONT} size: ${SOUNDFONTSIZE}")
-        message(STATUS "DLS file ${SOUNDFONT} MD5 hash: ${SOUNDFONTHASH}")
-        if (NOT (SOUNDFONTSIZE EQUAL 81362584 AND SOUNDFONTHASH STREQUAL "40c0cd4ad29ae411a8fc3d6681002a2b"))
-            message(FATAL_ERROR "The downloaded DLS file is corrupted.")
+            file(SIZE ${SOUNDFONT} SOUNDFONTSIZE)
+            file(SHA256 ${SOUNDFONT} SOUNDFONTHASH)
+            message(STATUS "DLS file ${SOUNDFONT} size: ${SOUNDFONTSIZE}")
+            message(STATUS "DLS file ${SOUNDFONT} SHA256 hash: ${SOUNDFONTHASH}")
+            if (NOT (SOUNDFONTSIZE EQUAL ${DLS_SIZE} AND SOUNDFONTHASH STREQUAL ${DLS_HASH}))
+                message(FATAL_ERROR "The downloaded DLS file is corrupted.")
+            endif()
         endif()
     endif()
 

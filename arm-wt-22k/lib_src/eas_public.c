@@ -1908,8 +1908,8 @@ EAS_PUBLIC EAS_RESULT EAS_GetPriority (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStr
  *
  * Inputs:
  * pEASData         - pointer to overall EAS data structure
- * volume           - the desired master gain (100 is max)
- * handle           - file or stream handle
+ * pStream          - file or stream handle (may be NULL)
+ * volume           - the desired master gain (EAS_MAX_VOLUME = 196 is max)
  *
  * Outputs:
  *
@@ -1963,14 +1963,14 @@ EAS_PUBLIC EAS_RESULT EAS_SetVolume (EAS_DATA_HANDLE pEASData, EAS_HANDLE pStrea
  *----------------------------------------------------------------------------
  * Purpose:
  * Returns the master volume for the synthesizer. The default volume setting is
- * 50. The volume range is 0 to 100;
+ * 100 (+0 dB). The volume range is 0 to 196;
  *
  * Inputs:
  * pEASData         - pointer to overall EAS data structure
- * volume           - the desired master volume
- * handle           - file or stream handle
+ * pStream          - file or stream handle
  *
  * Outputs:
+ * volume           - the current master volume
  *
  *
  * Side Effects:
