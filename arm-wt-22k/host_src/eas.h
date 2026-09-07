@@ -383,11 +383,12 @@ EAS_PUBLIC EAS_RESULT EAS_GetPriority (EAS_DATA_HANDLE pEASData, EAS_HANDLE stre
  *----------------------------------------------------------------------------
  * Purpose:
  * Set the master volume for the mixer. The default volume setting is
- * 90 (-10 dB). The volume range is 0 to 100 in 1dB increments.
+ * 100 (+0 dB). The volume range is 0 to EAS_MAX_VOLUME=196 in 1dB increments.
  *
  * Inputs:
  * pEASData         - pointer to overall EAS data structure
- * volume           - the desired master volume
+ * streamHandle     - file or stream handle (may be NULL)
+ * volume           - the desired master volume (EAS_MAX_VOLUME = 196 is max)
  *
  * Outputs:
  *
@@ -407,9 +408,10 @@ EAS_PUBLIC EAS_RESULT EAS_SetVolume (EAS_DATA_HANDLE pEASData, EAS_HANDLE stream
  *
  * Inputs:
  * pEASData         - pointer to overall EAS data structure
- * volume           - the desired master volume
+ * streamHandle     - file or stream handle
  *
  * Outputs:
+ * volume           - the current master volume
  *
  *
  * Side Effects:
